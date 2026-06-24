@@ -1,0 +1,30 @@
+# Claude Code
+.claude/settings.local.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Data & model artifacts (LAS files, weights — added per phase)
+data/
+models/
+outputs/
+planning/diseno/
+
+# Debug scaffolding (always gitignored)
+debug/
+
+# Common
+.env
+*.key
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
