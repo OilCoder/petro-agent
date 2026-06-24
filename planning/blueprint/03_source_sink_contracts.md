@@ -43,7 +43,7 @@ determined by an agent at runtime.
 | `GR` | Gamma ray | API units | 0 – 300 API | lasio sentinel → masked before compute |
 | `RHOB` | Bulk density | g/cc | 1.0 – 3.0 g/cc | masked; triggers bad-hole flag if > 50% of interval |
 | `NPHI` | Neutron porosity | v/v fraction | 0.0 – 1.0 v/v | masked; see unit-variant note below |
-| `RT` | True resistivity | Ω·m | 0.01 – 50 000 Ω·m | masked; passed in linear Ω·m to the engine — the log₁₀ transform is applied only in the validator/cross-plot layer, never on the quantitative path |
+| `RT` | True resistivity | Ω·m | 0.01 – 50 000 Ω·m (provisional upper bound — to confirm) | masked; passed in linear Ω·m to the engine — the log₁₀ transform is applied only in the validator/cross-plot layer, never on the quantitative path |
 
 The four curves above (`GR`, `RHOB`, `NPHI`, `RT`) are the hard-required set: each is a
 direct input to a quantitative computation. If any of them is absent the intake gate

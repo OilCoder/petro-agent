@@ -145,8 +145,9 @@ collect all objections.
    - Violation → `objection_type = mechanical`.
 
 2. **Cross-curve consistency** (`src.validators.cross_curve`):
-   - PHIE decreases monotonically as Vsh increases within a window (shale volumes
-     should not co-exist with high porosity — flags if correlation is inverted).
+   - Vsh–PHIE anti-correlation: in a ±20-sample window, the Pearson correlation
+     between Vsh and PHIE must be ≤ +0.3 (shale volumes should not co-occur with
+     high porosity without explanation). Strong positive correlation is flagged.
    - RT vs. Sw directional consistency: at depths where computed Sw < 0.4, RT must
      exceed `rt_hydrocarbon_floor` (low Sw co-occurring with low RT is implausible
      without a model-mismatch flag).

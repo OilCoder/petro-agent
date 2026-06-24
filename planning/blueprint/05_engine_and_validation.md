@@ -544,10 +544,13 @@ chosen. All model-mismatch objections are typed `irreducible`.
 - M index: `M = (Δt_fl - Δt) / (ρb - ρfl) × 0.01` where Δt is compressional
   slowness (DT). If DT is absent, the M-N check is skipped and a degradation entry
   is logged (`validator_id: mn_skipped_no_dt`).
-- N index: `N = (Φnfl - Φn) / (Φb - Φfl)` where Φnfl and Φb are neutron
-  porosity of fluid and bulk.
+- N index: `N = (Φnfl - Φn) / (ρb - ρfl)` where Φnfl and Φn are neutron porosity
+  of fluid and formation, and ρb and ρfl are bulk and fluid density (same density
+  denominator as the M index). Formula to be confirmed against the reference before
+  freezing.
 - Positions compared against Schlumberger (1989) reference mineral points. Deviations
-  beyond 0.1 index units from the nearest mineral point are flagged.
+  beyond 0.1 index units (provisional tolerance — to be confirmed against the
+  reference) from the nearest mineral point are flagged.
 - The crossplot PNG (`outputs/<UWI>_..._crossplot_mn.png`) is generated as evidence.
 
 **Crossplot output specifications** (both PNGs):
