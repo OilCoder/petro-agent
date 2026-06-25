@@ -234,3 +234,34 @@ corruption (the 1e10 RT) and restores the evidence chain the blueprint promised 
 
 **Deferred.** The `~Other`-before-`~Curve` reorder guard and wrapped-LAS fallback (the 7
 unparseable files) remain — they need field-level intake plumbing, better suited to Block 5.
+
+---
+
+## D10 (2026-06-25, Block 6) — Blueprint reconciliation: file renames + honest gaps
+
+**Context.** Audit BC-06/BC-07 found PLAN tasks marked `[x]` citing files that do not
+exist on disk. Investigation shows most are real work under CONSOLIDATED filenames (the
+autonomous run merged modules per a D3-style minimalism), not missing work. This records
+the cited→actual map so PLAN stays auditable, and flags the genuinely-unbuilt items.
+
+**Renames (work exists, filename differs — PLAN paths left as historical record):**
+- `src/uncertainty/propagation.py` → `src/uncertainty/montecarlo.py`
+- `src/evaluation/volve_metrics.py` → `src/evaluation/calibration.py`
+- `src/agents/ollama_client.py` → `src/agents/client.py`
+- `src/validators/cross_curve.py` → `src/validators/physical.py` (vsh_phie, rt_sw live there)
+- `src/field/rollup.py`, `src/field/field_writer.py`, `src/field/field_figures.py`
+  → `src/agents/field_report.py` + `src/agents/log_plot.py` (no `src/field/` package)
+
+**Genuinely NOT built (now flagged honestly):**
+- `src/evaluation/robustness.py` (multi-seed robustness check) — never created; the Monte
+  Carlo uses a single fixed seed (42). PLAN line flipped to `[!]` BLOCKED.
+- `src/validators/data_quality.py` (downgrade a FIRM computation at a DEGRADED depth) — not
+  built as a separate validator. Currently moot: no run reaches a FIRM tier (no core/offset
+  parameters), so there is nothing to downgrade. The per-irreducible-objection downgrade
+  that WAS built lives in `gating()` (Phase 11). Revisit if a core-calibrated well appears.
+- HCPV field aggregation (Charter FIELD-SCALE) — the field report reports cross-well net pay
+  statistics, not HCPV/NRV volumetrics. Deferred (audit BC-11).
+
+**Also reconciled this block:** Charter success criterion 4 amended to "infra-ready,
+unmeasured" (calibration never run — no VOLVE); MANIFEST gained decisions (b) soft-abstention
+and (e) ECE-deferred, which the PLAN had marked done before they were logged.

@@ -59,13 +59,16 @@ Failure on any one threshold is a pipeline regression failure.
 - The final claim-verifier passes: no sentence in the emitted report asserts more
   certainty than the ledger supports.
 
-### 4. Confidence calibration — statistical (required from v1)
-On the VOLVE benchmark, measure reliability / calibration using a reliability diagram
-and Expected Calibration Error (ECE): when the system assigns a confidence level to a
-result block, the observed accuracy on held-out VOLVE wells must match that stated
-confidence level within a meaningful margin. Threshold is set during Phase 7 once the
-calibration methodology is implemented; the infrastructure for measuring ECE is
-required by v1.
+### 4. Confidence calibration — statistical (infra-ready, UNMEASURED in v1)
+**Amended 2026-06-25 (audit BC-01, DECISIONS D8): scope corrected from "required from
+v1" to "infrastructure-ready, unmeasured".** The reliability-diagram / Expected
+Calibration Error (ECE) infrastructure is implemented and golden-tested, but the
+measurement was never run: the VOLVE benchmark data is navigation-gated behind an
+Equinor login and was not obtainable autonomously (NEEDS-HANDSON — see `regression.py`).
+So in the current state statistical calibration is **not demonstrated** — confidence is
+procedural (criterion 3) only. v1 honestly reports this gap rather than claiming a
+calibration it cannot show. To close it: obtain VOLVE, run the regression, set the ECE
+threshold, and flip Phase 8 from BLOCKED back to active.
 
 ### 5. Full ledger traceability
 Every number in the emitted report traces in the ledger to: input curve(s) + function

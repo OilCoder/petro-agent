@@ -45,3 +45,12 @@ Started: 2026-06-24
   have LAS; combining runs per well → 28 full density-neutron (modern 2009-2024,
   the v1 working set), 61 single-porosity, 72 GR/RT-only. Chosen over higher-volume
   fields (Bemis-Shutts/Trapp/Chase-Silica) for validatability vs KGS OFR2000-79 + core.
+- 2026-06-25: decision (b) RESOLVED = SOFT abstention, not hard refusal. When no
+  high-leverage parameter is core/offset-calibrated, the run does NOT hard-refuse to
+  emit; it emits with an explicit ABSTENTION banner + tier downgrade (gating sets
+  `abstain`/`abstain_reasons`; `src/orchestrator/stages.py`, `gating/rules.py`). Recorded
+  late — the PLAN had marked it `[x]` before it was actually logged here (audit BC-05, D8).
+- 2026-06-25: decision (e) DEFERRED = the ECE threshold for statistical confidence cannot
+  be set: VOLVE was never obtained, so no ECE was measured (Charter criterion 4 amended to
+  infra-ready/unmeasured; Phase 8 BLOCKED). Set the threshold once VOLVE is available
+  (audit BC-01/BC-05, D8).
