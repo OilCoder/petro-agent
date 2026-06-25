@@ -1,5 +1,16 @@
 # Autonomous Run — mandate (2026-06-25 → user away ~2 days)
 
+> **STATUS: PROJECT COMPLETE (2026-06-25 ~05:20).** All 9 phases (0–8) implemented,
+> verified (100 tests + ruff + mypy green), committed, and pushed to
+> https://github.com/OilCoder/petro-agent. 3 final qwen3:30b reports in
+> `documentation/sample_reports/`. **Remaining NEEDS-HANDSON** (require the user on return,
+> not design decisions I should invent): (1) VOLVE regression DATA (Equinor navigation-gated
+> download) — the regression framework is built & tested; (2) cutoff/Rw calibration +
+> zonation merging (net pay reads high, flagged `bracketed`); (3) product decision (b) hard
+> abstention; (4) numeric ECE threshold. See planning/DECISIONS.md (D1–D6) for every
+> off-blueprint decision. Final action per mandate: shut down the Windows PC.
+
+
 The user (Carlos) is away ~2 days and authorized completing the **entire project**
 end-to-end autonomously. This file is the standing mandate + my operating protocol.
 It is also the record so the user can audit what I was told and how I worked.

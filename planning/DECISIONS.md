@@ -5,6 +5,30 @@ justification, so they are auditable on return. Newest first.
 
 ---
 
+## D6 (2026-06-25, Phase 8) — Final reports: invariant proven; writer prompt hardened
+
+Generated 3 canonical reports with qwen3:30b-a3b (writer) + llama3.1:8b (reviewer),
+cross-family, in `documentation/sample_reports/`. Two findings:
+
+1. **The invariant works, demonstrably.** On 2 of 3 wells the deterministic
+   `claim_verifier` returned **FLAGS** — qwen3:30b introduced a decimal not in the
+   ledger, and the verifier caught it. No LLM-introduced number is trusted. This is the
+   project's central promise, observed in action.
+2. **Even a strong local model needs firm domain framing.** qwen3:30b initially
+   misread the report genre as "data-convergence / optimization assessment" (driven by
+   the `convergence_status` field) and described net-pay zone thicknesses as "oscillating
+   outliers". I hardened the writer system prompt (explicit petrophysics framing; defined
+   `convergence_status` as an internal QC flag, not an optimizer; demanded a rock/fluids
+   interpretation) and reframed the user prompt; then regenerated the reports.
+
+**Watch items (NEEDS-HANDSON, recorded for the user's return):** net-pay values are high
+(~200-400 m) due to deferred zonation-merging + cutoff/Rw calibration — the `bracketed`
+tier and high-leverage warning already flag these as low-confidence. VOLVE regression
+data was not obtainable autonomously (navigation-gated Equinor download); the regression
+FRAMEWORK is built and tested, awaiting the data.
+
+---
+
 ## D5 (2026-06-25, Phase 5) — Proof report used llama3.1:8b; qwen3:30b-a3b is canonical writer
 
 The writer agent is designed to run **qwen3:30b-a3b**, but qwen was still downloading

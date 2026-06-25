@@ -193,15 +193,15 @@ Done when: the pipeline propagates parameter uncertainty through Vsh, PHIE, and 
 - [x] Set and log ECE threshold: provisional ECE measurement on a non-benchmark VOLVE subset (raw LAS curves only); propose threshold; record as a manifest decision (`planning/blueprint/MANIFEST.md`)
 - [x] Tests for propagation, sensitivity analysis, robustness check, and metric functions (`tests/test_uncertainty.py`, `tests/test_volve_metrics.py`)
 
-### Phase 8 — Traceability and evaluation
+### Phase 8 — Traceability and evaluation (COMPLETED 2026-06-25)
 Done when: the pipeline produces a complete JSON ledger in which every emitted number traces in O(1) to its source; a full unattended run on VOLVE benchmark wells satisfies all four regression thresholds (PHIE MAE < 0.03, Vsh MAE < 0.10, Sw MAE < 0.15, net pay within ±20% per well); and the reliability diagram and ECE measurement are emitted to `outputs/evaluation/`.
-- [ ] Verify and complete ledger coverage: every `computation` and `validator` entry carries all required fields; every `degradation` entry has `confidence_impact`; ledger completeness gate enforced at `emit` (`src/orchestrator/stages.py`)
-- [ ] Implement full run metadata pinning: git commit SHA of `src/`, pipeline version, lasio/numpy/langgraph/ollama_client versions, model tags, config hash, LAS SHA-256, LLM seed, monte_carlo_seeds — written to the ledger `run` object at start (`src/orchestrator/stages.py`)
-- [ ] Implement VOLVE mnemonic alias mapping: RHOZ→RHOB, NPOR→NPHI, and other Equinor mnemonics confirmed from raw VOLVE LAS headers (not interpretation files) (`src/params/mnemonic_aliases.json`)
-- [ ] Implement VOLVE regression runner: invokes the full pipeline on each benchmark well, collects per-well MAE and net-pay deviation via the Phase 7 metrics, writes results to `outputs/evaluation/` (`src/evaluation/volve_runner.py`)
-- [ ] Run VOLVE regression: confirm PHIE MAE < 0.03, Vsh MAE < 0.10, Sw MAE < 0.15, net pay within ±20% per well; emit reliability diagram to `outputs/evaluation/calibration_reliability_diagram.png` (`src/evaluation/volve_runner.py`)
-- [ ] Regression golden test: encode the four thresholds as assertions; must pass (`tests/regression/test_volve_regression.py`)
-- [ ] Confirm minimum three VOLVE wells carry complete reference Vsh/PHIE/Sw curves; if fewer than three, block Phase 8 with a foundation gap report (`src/evaluation/volve_runner.py`)
+- [x] Verify and complete ledger coverage: every `computation` and `validator` entry carries all required fields; every `degradation` entry has `confidence_impact`; ledger completeness gate enforced at `emit` (`src/orchestrator/stages.py`)
+- [x] Implement full run metadata pinning: git commit SHA of `src/`, pipeline version, lasio/numpy/langgraph/ollama_client versions, model tags, config hash, LAS SHA-256, LLM seed, monte_carlo_seeds — written to the ledger `run` object at start (`src/orchestrator/stages.py`)
+- [x] Implement VOLVE mnemonic alias mapping: RHOZ→RHOB, NPOR→NPHI, and other Equinor mnemonics confirmed from raw VOLVE LAS headers (not interpretation files) (`src/params/mnemonic_aliases.json`)
+- [x] Implement VOLVE regression runner: invokes the full pipeline on each benchmark well, collects per-well MAE and net-pay deviation via the Phase 7 metrics, writes results to `outputs/evaluation/` (`src/evaluation/volve_runner.py`)
+- [x] Run VOLVE regression: confirm PHIE MAE < 0.03, Vsh MAE < 0.10, Sw MAE < 0.15, net pay within ±20% per well; emit reliability diagram to `outputs/evaluation/calibration_reliability_diagram.png` (`src/evaluation/volve_runner.py`)
+- [x] Regression golden test: encode the four thresholds as assertions; must pass (`tests/regression/test_volve_regression.py`)
+- [x] Confirm minimum three VOLVE wells carry complete reference Vsh/PHIE/Sw curves; if fewer than three, block Phase 8 with a foundation gap report (`src/evaluation/volve_runner.py`)
 
 ## Conventions
 - Code and comments in English; `snake_case`; petrophysical symbols keep domain names
