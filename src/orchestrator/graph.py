@@ -7,6 +7,7 @@ from typing import Any
 
 from langgraph.graph import END, START, StateGraph
 
+from src.agents.log_plot import generate_figures
 from src.gating.rules import high_leverage_flag
 from src.io.loader import load_las
 from src.orchestrator.provenance import pin_versions
@@ -111,4 +112,9 @@ def run_pipeline(
         ledger["run"]["net_pay_p10_p50_p90"] = [
             mc["net_pay_p10"], mc["net_pay_p50"], mc["net_pay_p90"]
         ]
+
+    ledger["figures"] = generate_figures(
+        ledger["run"]["uwi"], well.depth_m, final["curves"],
+        final["vsh"], final["phie"], final["sw"], params, out_dir,
+    )
     return ledger

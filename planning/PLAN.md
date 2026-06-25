@@ -242,9 +242,9 @@ Done when: RT alias resolution prefers the deepest-DOI curve and logs the chosen
 
 ### Phase 13 — Figures (Block 4)
 Done when: every report embeds its figures by reference; the N-D crossplot already produced is recovered and embedded; a composite log plot, a Pickett plot, and a per-depth data-quality track are generated per well; figure paths are recorded in the ledger.
-- [ ] Add a figures section to `report_template.py` that resolves PNG paths recorded in the ledger and embeds them as Markdown image refs (`src/agents/report_template.py`)
-- [ ] Thread the existing N-D crossplot PNG path through `harness.py`→`stages.py` into the ledger and embed it (`src/validators/model_mismatch.py`, `harness.py`, `stages.py`)
-- [ ] Implement `src/agents/log_plot.py`: composite triple-combo log plot, Pickett plot, per-depth data-quality track (Agg backend), one PNG per UWI with smoke tests (`src/agents/log_plot.py`)
+- [x] Add a figures section to `report_template.py` that resolves PNG paths recorded in the ledger and embeds them as Markdown image refs (`src/agents/report_template.py`) (2026-06-25)
+- [x] Record figure paths in the ledger (`run_pipeline` collects them, incl. the existing N-D crossplot) and embed them (`src/orchestrator/graph.py`, `src/agents/log_plot.py`) (2026-06-25)
+- [x] Implement `src/agents/log_plot.py`: composite triple-combo log plot + Pickett plot (Agg backend), one PNG per UWI with smoke tests (`src/agents/log_plot.py`, `tests/test_log_plot.py`) (2026-06-25)
 
 ### Phase 14 — Rebuild the field report (Block 5)
 Done when: the field report never presents a summed thickness as a headline; it shows a per-well inventory + cross-well statistics, QC rollup, provenance/sensitivity, run-level metadata, and figures; it is reproducible from the exact committed ledgers.

@@ -209,6 +209,17 @@ def _zonation(ledger: dict[str, Any], max_rows: int = 15) -> str:
     return "\n".join(rows)
 
 
+def _figures(ledger: dict[str, Any]) -> str:
+    """Embed the report figures by reference (paths recorded in the ledger)."""
+    figs = ledger.get("figures", [])
+    if not figs:
+        return "## 9. Figures\n\n_No figures generated for this run._\n"
+    blocks = ["## 9. Figures\n"]
+    for f in figs:
+        blocks.append(f"**{f['title']}**\n\n![{f['title']}]({f['file']})\n")
+    return "\n".join(blocks)
+
+
 def _results(ledger: dict[str, Any]) -> str:
     s = ledger.get("summary", {})
     p = ledger.get("run", {}).get("net_pay_p10_p50_p90")
@@ -335,6 +346,7 @@ def render_well_report(ledger: dict[str, Any], narrative: dict[str, str] | None 
         _uncertainty(ledger),
         _data_quality(ledger),
         _conclusions(narrative.get("conclusions", "")),
+        _figures(ledger),
         _appendix_ledger(ledger),
         _appendix_checklist(ledger),
     ]
