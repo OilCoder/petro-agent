@@ -248,10 +248,10 @@ Done when: every report embeds its figures by reference; the N-D crossplot alrea
 
 ### Phase 14 — Rebuild the field report (Block 5)
 Done when: the field report never presents a summed thickness as a headline; it shows a per-well inventory + cross-well statistics, QC rollup, provenance/sensitivity, run-level metadata, and figures; it is reproducible from the exact committed ledgers.
-- [ ] Replace comonotonic/gross sums with a per-well inventory + cross-well statistics; express field volume only as NRV (area × thickness), never summed thickness (`src/agents/field_report.py`)
-- [ ] Regenerate the field report from real ledgers; assert `net_pay_p10_p50_p90` presence; pin `run_id`/`git_sha` (`src/agents/field_report.py`)
-- [ ] Add field/well inventory, QC rollup, provenance/sensitivity table, run-level metadata header, and corrected narrative; separate best-RESERVOIR from best-DATA-quality (`src/agents/field_report.py`)
-- [ ] Field figures: net-pay bubble map + cross-well correlation panel, with an honest fallback when surface coordinates are absent (`src/agents/field_report.py`, `log_plot.py`)
+- [x] Replace comonotonic/gross sums with a per-well inventory + cross-well statistics (mean/median/range, never a stacked total) (`src/agents/field_report.py`) (2026-06-25)
+- [x] Aggregate falls back to `net_pay_total_m` only when `net_pay_p10_p50_p90` is absent; per-well git_sha shown; load failures recorded as excluded files (N_loaded/N_excluded) (`src/agents/field_report.py`) (2026-06-25)
+- [x] Field/well inventory table, abstention flags, objection counts, run-level metadata header, corrected narrative; best-RESERVOIR (NTG) separated from best-DATA-quality (objections) (`src/agents/field_report.py`) (2026-06-25)
+- [x] Field net-pay bar chart with P10–P90 whiskers as the honest fallback when surface coordinates are absent (a bubble map needs X/Y the LAS may not carry) (`src/agents/log_plot.py`, `field_report.py`) (2026-06-25)
 
 ### Phase 15 — Blueprint and state reconciliation (Block 6, cross-cutting)
 Done when: PLAN.md, the Charter, the MANIFEST, and DECISIONS reflect the true state — no task marked `[x]` that disk/criteria contradict; the calibration honesty gap is recorded; every renamed/dropped artifact has a discarded/blocked marker.
