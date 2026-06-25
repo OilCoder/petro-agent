@@ -5,7 +5,7 @@ import os
 from src.agents.claim_verifier import verify_report
 from src.agents.compute_agent import select_method
 from src.agents.report import generate_report
-from src.agents.writer import write_report
+from src.agents.writer import write_narrative
 
 FIXTURE = os.path.join(os.path.dirname(__file__), "fixtures", "synthetic_oldrocks.las")
 
@@ -38,16 +38,16 @@ def test_claim_verifier_flags_hallucination():
     assert out["passed"] is False and 0.37 in out["flags"]
 
 
-def test_writer_uses_injected_chat():
+def test_writer_returns_prose_slots():
     captured = {}
 
     def fake_chat(system, user):
         captured["system"] = system
-        return "# Petrophysical Report\nNet pay 1.5 m."
+        return "The reservoir interval is bracketed; parameters are regional defaults."
 
-    out = write_report({"run": {"confidence_tier": "bracketed"}}, fake_chat)
-    assert "Petrophysical Report" in out
-    assert "ONLY the numbers" in captured["system"]  # the no-compute rule is enforced
+    out = write_narrative({"run": {"confidence_tier": "bracketed"}}, fake_chat)
+    assert set(out) == {"executive_summary", "conclusions"}
+    assert "PROSE ONLY" in captured["system"]  # narrative-only enforcement
 
 
 def test_generate_report_integration_mock(tmp_path):

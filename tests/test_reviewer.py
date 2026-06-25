@@ -47,5 +47,6 @@ def test_generate_report_with_reviewer(tmp_path):
     result = generate_report(
         FIXTURE, writer, out_dir=str(tmp_path), reviewer_chat=reviewer, max_revisions=1
     )
-    assert writes["n"] == 2  # initial + one revision
+    # write_narrative makes 2 prose-slot calls (exec + conclusions); initial + one revision = 4
+    assert writes["n"] == 4
     assert result["ledger"]["run"]["adversarial_review"]["result"] == "PASS"

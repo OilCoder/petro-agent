@@ -1,74 +1,95 @@
-"""Writer agent: produces the prose report from the ledger, tone bound by confidence.
+"""Writer agent: produces ONLY the narrative prose slots of the report.
 
-Hard rule in the system prompt: use ONLY the numbers present in the ledger; never
-compute or invent a number. Tone is bound to ``confidence_tier``.
+The deterministic renderer (``report_template``) owns every number and table. The LLM
+writes two prose blocks — executive summary and conclusions — from a pre-formatted facts
+digest, and is forbidden from introducing any number not already in that digest. This is
+the invariant in practice: the model narrates, it does not compute or transcribe values.
 """
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
 from src.agents.client import ChatFn
 
 VERSION = "0.1.0"
 
-_SYSTEM = """You are a senior PETROPHYSICIST writing a well-log interpretation report for
-an oil & gas well. You interpret ROCK and FLUIDS from well logs — shale volume (Vsh),
-effective porosity (PHIE), water saturation (Sw), and net pay zones — NOT software,
-algorithms, optimization, or "data convergence".
-
-DOMAIN — what the numbers mean:
-- Vsh = fraction of shale/clay in the rock.
-- PHIE = effective porosity (fluid-storage capacity), v/v.
-- Sw = water saturation; (1 - Sw) is the hydrocarbon-bearing fraction.
-- net_pay zones = depth intervals (top_m, base_m) that pass the reservoir cutoffs;
-  net_pay_m is each zone's THICKNESS in metres — these are real reservoir intervals,
-  NOT "oscillating values" or "outliers".
-- "convergence_status" is an INTERNAL pipeline QC flag: DID_NOT_CONVERGE means the
-  automated validation loop hit a data-limited objection it could not resolve without
-  calibration data. Mention it ONLY as a one-line data-quality caveat. Do NOT make the
-  report about convergence/iterations/algorithms — that is a misreading.
+_SYSTEM = """You are a senior PETROPHYSICIST writing narrative prose for a well-log report.
+You interpret ROCK and FLUIDS — shale volume (Vsh), effective porosity (PHIE), water
+saturation (Sw), and net-pay zones — NOT software, algorithms, or "data convergence".
 
 ABSOLUTE RULES:
-- Use ONLY the numbers present in the ledger JSON. Never compute, derive, re-round, or
-  invent a number. If a value is not in the ledger, do not state it.
-- Bind TONE to confidence_tier: firm = declarative; qualified = hedged; bracketed =
-  state values as uncertain ranges (use the P10/P50/P90 net pay if present) and name the
-  limitation (parameters are regional DEFAULTS, no core calibration; bad-hole/degraded
-  intervals). Quote the high_leverage_warning if present.
-- Be honest about limitations; never assert more certainty than the tier allows.
-
-Write a Markdown report describing THE WELL (rock, porosity, saturation, pay), with:
-# Petrophysical Interpretation Report — <well>
-## Executive summary (the reservoir/pay story in plain petrophysical terms)
-## Methodology and parameters (Larionov Vsh, density-neutron PHIE, Archie Sw; provenance)
-## Net pay and zonation (total net pay with its P10/P50/P90 range; reservoir intervals)
-## Uncertainty and limitations (what dominates the uncertainty; why bracketed)
-## Conclusions
+- Write PROSE ONLY. Do NOT output tables, headings, bullet lists, or JSON.
+- Use ONLY the numbers in the FACTS block. Never introduce, compute, or re-round a number.
+  If you want to cite a value, copy it verbatim from FACTS. The tables are rendered
+  separately by code — do not reproduce them.
+- Bind tone to the confidence tier: firm = declarative; qualified = hedged; bracketed =
+  speak of ranges and name the limitation (parameters are regional DEFAULTS, no core).
+- "DID_NOT_CONVERGE" is an INTERNAL QC flag (the validation loop hit a data-limited
+  objection); mention it at most as a one-line caveat. Do NOT make the report about it.
+- 2 to 4 sentences. Be honest; never assert more certainty than the tier allows.
 """
 
 
-def write_report(ledger: dict[str, Any], chat: ChatFn, feedback: str = "") -> str:
-    """Generate the Markdown prose report from the ledger using the writer LLM.
-
-    If ``feedback`` is provided (from the adversarial reviewer), the writer revises the
-    report to address each objection while keeping every number tied to the ledger.
-    """
+def _facts(ledger: dict[str, Any]) -> str:
+    """Build a compact, pre-formatted facts digest (the ONLY numbers the LLM may use)."""
     run = ledger.get("run", {})
-    fb = (
-        f"\n\nA reviewer raised these objections; revise to address EACH while keeping "
-        f"every number tied to the ledger:\n{feedback}"
-        if feedback
-        else ""
+    summary = ledger.get("summary", {})
+    unc = ledger.get("uncertainty", {})
+    sens = unc.get("sensitivity", {})
+    warn = unc.get("high_leverage_warning", {})
+    p = run.get("net_pay_p10_p50_p90")
+    np_str = (
+        f"P10/P50/P90 = {p[0]:.1f}/{p[1]:.1f}/{p[2]:.1f} m"
+        if p
+        else f"{ledger.get('net_pay_total_m', float('nan')):.1f} m"
     )
-    user = (
-        f"Ledger JSON (the ONLY source of numbers):\n```json\n"
-        f"{json.dumps(ledger, indent=2)[:12000]}\n```\n\n"
-        f"Confidence tier for this run: {run.get('confidence_tier', 'bracketed')}. "
-        f"Internal pipeline QC flag (mention only as a one-line data-quality caveat, do "
-        f"NOT make the report about it): {run.get('convergence_status', 'unknown')}. "
-        f"Write the PETROPHYSICAL interpretation now (rock, porosity, saturation, net pay), "
-        f"binding tone to the confidence tier.{fb}"
+    lines = [
+        f"- Well: {run.get('uwi', '?')}",
+        f"- Confidence tier: {run.get('confidence_tier', 'bracketed')}",
+        f"- Convergence status: {run.get('convergence_status', '?')}",
+        f"- Net pay: {np_str}",
+        f"- Gross interval: {summary.get('gross_m', float('nan')):.1f} m, "
+        f"net-to-gross {summary.get('ntg', float('nan')):.3f}",
+        f"- Net-pay averages: PHIE {summary.get('avg_phie', float('nan')):.3f}, "
+        f"Sw {summary.get('avg_sw', float('nan')):.3f}, "
+        f"Vsh {summary.get('avg_vsh', float('nan')):.3f}",
+        f"- Dominant uncertainty parameter: {sens.get('dominant_parameter', '?')} "
+        f"(swing {sens.get('dominant_swing_m', float('nan')):.1f} m)",
+        f"- Validator objections: {len(ledger.get('objections', []))}",
+    ]
+    if warn.get("warn"):
+        lines.append(f"- High-leverage warning: {warn.get('message')}")
+    return "\n".join(lines)
+
+
+def write_narrative(ledger: dict[str, Any], chat: ChatFn, feedback: str = "") -> dict[str, str]:
+    """Generate the executive-summary and conclusions prose blocks via the writer LLM.
+
+    Args:
+        ledger: the completed ledger (source of the facts digest).
+        chat: the writer chat function.
+        feedback: optional reviewer objections to address in the revision.
+
+    Returns:
+        ``{"executive_summary": str, "conclusions": str}`` — prose only, no numbers
+        beyond the facts digest.
+    """
+    facts = _facts(ledger)
+    fb = f"\n\nA reviewer raised these objections; address EACH:\n{feedback}" if feedback else ""
+
+    exec_user = (
+        f"FACTS (the ONLY numbers you may use):\n{facts}\n\n"
+        f"Write the EXECUTIVE SUMMARY narrative: the reservoir/pay story in plain "
+        f"petrophysical terms (rock, porosity, saturation, net pay), tone bound to the "
+        f"confidence tier.{fb}"
     )
-    return chat(_SYSTEM, user)
+    concl_user = (
+        f"FACTS (the ONLY numbers you may use):\n{facts}\n\n"
+        f"Write the CONCLUSIONS narrative: the key takeaway and the single highest-leverage "
+        f"next action to reduce uncertainty, tone bound to the confidence tier.{fb}"
+    )
+    return {
+        "executive_summary": chat(_SYSTEM, exec_user).strip(),
+        "conclusions": chat(_SYSTEM, concl_user).strip(),
+    }

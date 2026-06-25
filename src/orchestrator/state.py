@@ -36,4 +36,5 @@ class PipelineState(TypedDict, total=False):
     confidence_tier: str
     zones: list[dict[str, Any]]
     net_pay_total_m: float
+    summary: dict[str, Any]
     ledger: dict[str, Any]

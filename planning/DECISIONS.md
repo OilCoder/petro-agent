@@ -136,3 +136,37 @@ design tradeoff for the user to decide.
   (`tests/fixtures/synthetic_oldrocks.las`) for reproducibility; a separate integration test
   loads a real Schaben LAS only if `data/` is populated (skips otherwise), honoring the
   Phase-0 "loads a Kansas/Schaben LAS" done-when without depending on gitignored data.
+
+---
+
+## D7 (2026-06-25, post-Phase 8) — Deterministic report renderer (numbers leave the LLM)
+
+**Context.** The user compared the generated reports to the approved pre-form
+(`planning/informe_preform.md`) and they matched nothing: 5 freeform prose sections vs the
+designed 10-section structured report, and the prose contained invented numbers ("net pay
+5 feet" where the engine computed 437 m; "Sw 14"). Root cause: `writer.py` dumped the
+ledger JSON and asked the LLM to author the WHOLE report — so the model had to transcribe
+every number by hand, which a 8B model does badly.
+
+**Decision.** Split number-rendering from prose. New deterministic renderer
+(`src/agents/report_template.py`) emits the full pre-form structure with every number and
+table pulled from the ledger by code; the writer LLM (`writer.py`) now produces ONLY two
+narrative slots (executive summary, conclusions) from a pre-formatted facts digest, and is
+forbidden from introducing any number outside it. `report.py` assembles the two and
+claim-verifies ONLY the narrative (the renderer's numbers cannot hallucinate by design).
+Added a field rollup (`src/agents/field_report.py`) per the pre-form's field scope.
+
+**Why at my discretion.** This does not change any equation, parameter, or the invariant —
+it *strengthens* the invariant ("the LLM never authors a number"), which the previous
+writer quietly violated by making the LLM responsible for placing every value. It realizes
+the report structure the user already approved in the pre-form. No new design tradeoff.
+
+**Supporting changes.** Enriched the ledger (`stages.py` zonate/emit) with per-zone
+avg PHIE/Sw/Vsh and a well summary (gross, NTG, net-pay averages) so the tables render from
+real data. The zonation table caps to the thickest 15 intervals (the 147-interval tail is a
+symptom of the un-calibrated cutoffs — separate NEEDS-HANDSON, not a renderer bug).
+
+**Impact (measured).** Reports grew ~1.2 KB → ~14 KB (structured); claim_verifier PASS on
+all three (was FLAGS on one); adversarial review PASS / 0 objections (was 3 each). 112 tests
+green, ruff + mypy clean. The high net pay (~330 m, 26% NTG) is unchanged — that is the
+cutoff/Rw calibration item, still NEEDS-HANDSON.

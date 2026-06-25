@@ -203,6 +203,15 @@ Done when: the pipeline produces a complete JSON ledger in which every emitted n
 - [x] Regression golden test: encode the four thresholds as assertions; must pass (`tests/regression/test_volve_regression.py`)
 - [x] Confirm minimum three VOLVE wells carry complete reference Vsh/PHIE/Sw curves; if fewer than three, block Phase 8 with a foundation gap report (`src/evaluation/volve_runner.py`)
 
+### Phase 9 — Structured report renderer + field rollup (COMPLETED 2026-06-25)
+Done when: the report is rendered deterministically from the ledger following the pre-form structure (every number and table emitted by code, the LLM contributing only narrative prose); sample-resolution net-pay runs merge into geological intervals; a multi-well field rollup aggregates net pay; all covered by golden tests with `pytest -q`, `ruff`, and `mypy` green.
+- [x] Enrich the ledger with per-zone avg PHIE/Sw/Vsh and a well summary (gross, NTG, net-pay averages) (`src/orchestrator/stages.py`, `src/orchestrator/state.py`) (2026-06-25)
+- [x] Implement the deterministic report renderer: zone merging + the pre-form section structure, numbers straight from the ledger (`src/agents/report_template.py`) (2026-06-25)
+- [x] Reduce the writer LLM to narrative-only prose slots (executive summary, conclusions) from a pre-formatted facts digest; the renderer owns every number (`src/agents/writer.py`) (2026-06-25)
+- [x] Wire `generate_report` to assemble via the renderer and claim-verify ONLY the LLM narrative (`src/agents/report.py`) (2026-06-25)
+- [x] Implement the field rollup: aggregate per-well ledgers to field net pay P10/P50/P90 and render the field report (`src/agents/field_report.py`) (2026-06-25)
+- [x] Golden tests for zone merging, renderer structure/numbers, and field aggregation (`tests/test_report_template.py`, `tests/test_field_report.py`) (2026-06-25)
+
 ## Conventions
 - Code and comments in English; `snake_case`; petrophysical symbols keep domain names
   (`vsh`, `phie`, `sw`, `rhob`, `nphi`, `gr`, `rt`).

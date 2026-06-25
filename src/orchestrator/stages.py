@@ -29,6 +29,14 @@ def _pv(state: PipelineState, key: str) -> float:
     return float(state["params"][key].value)
 
 
+def _safe_mean(values: Any) -> float:
+    """Mean over finite samples; NaN if the slice is empty or all-NaN."""
+    arr = np.asarray(values, dtype=float)
+    if arr.size == 0 or bool(np.all(np.isnan(arr))):
+        return float("nan")
+    return float(np.nanmean(arr))
+
+
 def compute(state: PipelineState) -> dict[str, Any]:
     """Run the three core deterministic computations."""
     curves = state["curves"]
@@ -92,9 +100,10 @@ def gating(state: PipelineState) -> dict[str, Any]:
 
 
 def zonate(state: PipelineState) -> dict[str, Any]:
-    """Delineate contiguous net-pay zones and their thickness."""
+    """Delineate contiguous net-pay zones, their thickness, and per-zone averages."""
+    vsh, phie, sw = state["vsh"], state["phie"], state["sw"]
     flag = apply_cutoffs(
-        state["vsh"], state["phie"], state["sw"],
+        vsh, phie, sw,
         _pv(state, "vsh_cutoff"), _pv(state, "phie_cutoff"), _pv(state, "sw_cutoff"),
     )
     depth = state["depth_m"]
@@ -111,12 +120,34 @@ def zonate(state: PipelineState) -> dict[str, Any]:
                 "top_m": float(depth[i]),
                 "base_m": float(depth[j - 1]),
                 "net_pay_m": float((j - i) * step),
+                "avg_phie": _safe_mean(phie[i:j]),
+                "avg_sw": _safe_mean(sw[i:j]),
+                "avg_vsh": _safe_mean(vsh[i:j]),
             })
             i = j
         else:
             i += 1
     total = float(sum(z["net_pay_m"] for z in zones))
-    return {"zones": zones, "net_pay_total_m": total}
+    summary = _well_summary(flag, depth, vsh, phie, sw, total, len(zones))
+    return {"zones": zones, "net_pay_total_m": total, "summary": summary}
+
+
+def _well_summary(
+    flag: Any, depth: Any, vsh: Any, phie: Any, sw: Any,
+    net_pay_total_m: float, n_zones_raw: int,
+) -> dict[str, Any]:
+    """Well-level aggregates over the net-pay interval (deterministic, ledger-bound)."""
+    gross_m = float(depth[-1] - depth[0]) if np.asarray(depth).size > 1 else 0.0
+    pay = np.asarray(flag, dtype=bool)
+    return {
+        "gross_m": gross_m,
+        "net_pay_m": net_pay_total_m,
+        "ntg": float(net_pay_total_m / gross_m) if gross_m > 0 else 0.0,
+        "avg_phie": _safe_mean(np.asarray(phie)[pay]),
+        "avg_sw": _safe_mean(np.asarray(sw)[pay]),
+        "avg_vsh": _safe_mean(np.asarray(vsh)[pay]),
+        "n_zones_raw": n_zones_raw,
+    }
 
 
 def emit(state: PipelineState) -> dict[str, Any]:
@@ -135,6 +166,7 @@ def emit(state: PipelineState) -> dict[str, Any]:
         },
         "zones": state["zones"],
         "net_pay_total_m": state["net_pay_total_m"],
+        "summary": state.get("summary", {}),
         "objections": [
             {"validator_id": o.validator_id, "type": o.objection_type, "detail": o.detail}
             for o in state["objections"]
