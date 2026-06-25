@@ -3,36 +3,36 @@
     "uwi": "15-135-24,881-00-00",
     "status": "DID_NOT_CONVERGE",
     "tier": "bracketed",
-    "net_pay_p50": 106.60380000000006,
+    "net_pay_p50": 71.24700000000004,
     "claim_verifier": "FLAGS",
     "review": {
       "result": "PASS",
       "count": 0
     },
-    "report_bytes": 7284
+    "report_bytes": 7599
   },
   {
     "uwi": "15-135-24,974-00-00",
     "status": "DID_NOT_CONVERGE",
     "tier": "bracketed",
-    "net_pay_p50": 235.53420000000014,
-    "claim_verifier": "FLAGS",
-    "review": {
-      "result": "PASS",
-      "count": 0
-    },
-    "report_bytes": 6741
-  },
-  {
-    "uwi": "15-135-24,938-00-00",
-    "status": "DID_NOT_CONVERGE",
-    "tier": "bracketed",
-    "net_pay_p50": 281.8638000000002,
+    "net_pay_p50": 154.5336000000001,
     "claim_verifier": "PASS",
     "review": {
       "result": "PASS",
       "count": 0
     },
-    "report_bytes": 6764
+    "report_bytes": 7686
+  },
+  {
+    "uwi": "15-135-24,938-00-00",
+    "status": "DID_NOT_CONVERGE",
+    "tier": "bracketed",
+    "net_pay_p50": 190.7286000000001,
+    "claim_verifier": "PASS",
+    "review": {
+      "result": "PASS",
+      "count": 0
+    },
+    "report_bytes": 7616
   }
 ]
