@@ -29,6 +29,14 @@ ALIASES: dict[str, list[str]] = {
     "PEF": ["PEF", "PE"],
 }
 
+# Phase 2: prefer the versioned alias table in src/params; fall back to the map above.
+try:
+    from src.params.config_loader import load_aliases as _load_aliases
+
+    ALIASES = _load_aliases()
+except Exception:  # noqa: BLE001 - keep the embedded fallback if the JSON is unavailable
+    pass
+
 
 @dataclass
 class WellData:

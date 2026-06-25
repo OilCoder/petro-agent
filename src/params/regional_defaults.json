@@ -1,0 +1,42 @@
+{
+  "version": "0.1.0",
+  "regional_defaults": {
+    "paleozoic_kansas": {
+      "gr_min":   {"value": 20.0,  "unit": "API",   "provenance": "default", "source_description": "regional clean-sand GR baseline, Mississippian Kansas"},
+      "gr_max":   {"value": 120.0, "unit": "API",   "provenance": "default", "source_description": "regional shale GR baseline, Mississippian Kansas"},
+      "rho_ma":   {"value": 2.71,  "unit": "g/cc",  "provenance": "default", "source_description": "limestone matrix density (Mississippi Lime carbonate)"},
+      "rho_fl":   {"value": 1.00,  "unit": "g/cc",  "provenance": "default", "source_description": "fresh-water/brine fluid density"},
+      "phie_max": {"value": 0.45,  "unit": "v/v",   "provenance": "default", "source_description": "physical-plausibility ceiling for consolidated rock"},
+      "a":        {"value": 1.0,   "unit": "-",     "provenance": "default", "source_description": "Archie tortuosity factor (Winsauer 1952)"},
+      "m":        {"value": 2.0,   "unit": "-",     "provenance": "default", "source_description": "Archie cementation exponent (Archie 1942)"},
+      "n":        {"value": 2.0,   "unit": "-",     "provenance": "default", "source_description": "Archie saturation exponent (Archie 1942)"},
+      "Rw":       {"value": 0.04,  "unit": "ohm-m", "provenance": "default", "source_description": "KGS Schaben regional formation-water resistivity"},
+      "rt_hydrocarbon_floor": {"value": 5.0, "unit": "ohm-m", "provenance": "default", "source_description": "RT-Sw cross-curve validator floor"},
+      "vsh_cutoff":  {"value": 0.40, "unit": "v/v", "provenance": "default", "source_description": "net-pay shale-volume cutoff"},
+      "phie_cutoff": {"value": 0.08, "unit": "v/v", "provenance": "default", "source_description": "net-pay porosity cutoff"},
+      "sw_cutoff":   {"value": 0.60, "unit": "v/v", "provenance": "default", "source_description": "net-pay water-saturation cutoff"},
+      "bit_size_config":    {"value": 7.875, "unit": "in", "provenance": "default", "source_description": "typical bit size for bad-hole fallback"},
+      "qc_abort_threshold": {"value": 0.80,  "unit": "-",  "provenance": "default", "source_description": "max DEGRADED/EXCLUDED fraction before abort"},
+      "circuit_breaker_n":  {"value": 3.0,   "unit": "-",  "provenance": "default", "source_description": "max correctable-objection loop iterations"}
+    },
+    "north_sea_jurassic": {
+      "gr_min":   {"value": 15.0,  "unit": "API",   "provenance": "default", "source_description": "VOLVE clean-sand baseline (Heimdal Fm)"},
+      "gr_max":   {"value": 110.0, "unit": "API",   "provenance": "default", "source_description": "VOLVE shale baseline"},
+      "rho_ma":   {"value": 2.65,  "unit": "g/cc",  "provenance": "default", "source_description": "sandstone matrix density (Heimdal)"},
+      "rho_fl":   {"value": 1.03,  "unit": "g/cc",  "provenance": "default", "source_description": "North Sea brine fluid density"},
+      "phie_max": {"value": 0.45,  "unit": "v/v",   "provenance": "default", "source_description": "physical-plausibility ceiling"},
+      "a":        {"value": 1.0,   "unit": "-",     "provenance": "default", "source_description": "Archie tortuosity (Winsauer 1952)"},
+      "m":        {"value": 2.0,   "unit": "-",     "provenance": "default", "source_description": "Archie cementation exponent"},
+      "n":        {"value": 2.0,   "unit": "-",     "provenance": "default", "source_description": "Archie saturation exponent"},
+      "Rw":       {"value": 0.03,  "unit": "ohm-m", "provenance": "default", "source_description": "North Sea brine Rw (NEEDS-HANDSON vs VOLVE)"},
+      "rt_hydrocarbon_floor": {"value": 5.0, "unit": "ohm-m", "provenance": "default", "source_description": "RT-Sw validator floor"},
+      "vsh_cutoff":  {"value": 0.40, "unit": "v/v", "provenance": "default", "source_description": "net-pay cutoff"},
+      "phie_cutoff": {"value": 0.08, "unit": "v/v", "provenance": "default", "source_description": "net-pay cutoff"},
+      "sw_cutoff":   {"value": 0.60, "unit": "v/v", "provenance": "default", "source_description": "net-pay cutoff"},
+      "bit_size_config":    {"value": 8.5,  "unit": "in", "provenance": "default", "source_description": "typical bit size"},
+      "qc_abort_threshold": {"value": 0.80, "unit": "-",  "provenance": "default", "source_description": "QC abort fraction"},
+      "circuit_breaker_n":  {"value": 3.0,  "unit": "-",  "provenance": "default", "source_description": "loop iteration cap"}
+    }
+  },
+  "well_overrides": {}
+}

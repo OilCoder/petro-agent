@@ -1,0 +1,9 @@
+{
+  "a":   {"value": "1.0", "valid_range": "0.6-1.0", "author": "Winsauer et al.", "year": "1952", "locator": "AAPG Bull. 36(2)", "scope": "Archie tortuosity factor"},
+  "m":   {"value": "2.0", "valid_range": "1.8-2.5", "author": "Archie, G.E.", "year": "1942", "locator": "Trans. AIME 146", "scope": "cementation exponent, consolidated rock"},
+  "n":   {"value": "2.0", "valid_range": "1.8-2.2", "author": "Archie, G.E.", "year": "1942", "locator": "Trans. AIME 146", "scope": "saturation exponent"},
+  "Rw":  {"value": "0.04", "valid_range": "0.02-0.06", "author": "Kansas Geological Survey", "year": "2000", "locator": "OFR2000-79 (Schaben)", "scope": "regional formation-water resistivity, Mississippian Kansas"},
+  "rho_ma": {"value": "2.71", "valid_range": "2.68-2.87", "author": "Schlumberger", "year": "1989", "locator": "Log Interpretation Charts", "scope": "limestone matrix density"},
+  "vsh_method": {"value": "Larionov old-rocks", "valid_range": "pre-Tertiary", "author": "Larionov, V.V.", "year": "1969", "locator": "Borehole Radiometry, Nedra", "scope": "Vsh from GR, Paleozoic/Mesozoic rocks"},
+  "phie_method": {"value": "density-neutron crossplot", "valid_range": "-", "author": "Schlumberger", "year": "1989", "locator": "Log Interpretation Principles", "scope": "effective porosity"}
+}

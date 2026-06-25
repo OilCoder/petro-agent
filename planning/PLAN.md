@@ -127,17 +127,17 @@ Done when: a Kansas/Schaben LAS passes through `qc_gate` and produces a per-dept
 - [x] Build per-depth data-quality map: GOOD / DEGRADED / EXCLUDED integer array; abort run if > 80% of depth range is EXCLUDED or DEGRADED (`src/qc/quality_map.py`)
 - [x] Tests for null masking, spike removal, bad-hole masking, quality-map construction, and the 80% abort threshold (`tests/test_qc.py`)
 
-### Phase 2 — Parameters with provenance
+### Phase 2 — Parameters with provenance (COMPLETED 2026-06-25)
 Done when: a parameter config JSON loads and resolves every parameter for a Kansas well to a value, a provenance tier (`core | offset | default`), and a source description; the static citations table resolves every parameter to exactly one source (unknown parameter → hard fail) and joins into the ledger; the SHA-256 config hash is logged in the ledger `run` object.
-- [ ] Define and implement the config JSON schema: top-level `version`, `regional_defaults`, `well_overrides`; each parameter carries `value`, `unit`, `provenance`, `source_description` (`src/params/schema.py`)
-- [ ] Populate `regional_defaults.paleozoic_kansas`: gr_min/gr_max, variant=old_rocks, rho_ma, rho_fl, phie_max, a, m, n, Rw, rt_hydrocarbon_floor, vsh/phie/sw cutoffs, bit_size_config, qc_abort_threshold, circuit_breaker_n (`src/params/regional_defaults.json`)
-- [ ] Populate `regional_defaults.north_sea_jurassic` with VOLVE-compatible defaults for Rw, a, m, n, matrix density (variant set for Jurassic) (`src/params/regional_defaults.json`)
-- [ ] Implement `well_overrides` lookup: per-well UWI overrides take precedence over regional defaults; absent UWI falls through with `provenance = default` (`src/params/config_loader.py`)
-- [ ] Implement PROV-tag-driven Larionov variant selection: `paleozoic`→old_rocks, `tertiary`→tertiary, absent/unrecognised→old_rocks + degradation entry (`src/params/config_loader.py`)
-- [ ] Implement mnemonic alias table covering GR, RHOB (RHOZ, DEN), NPHI (NPOR, TNPH), RT (ILD, RDEEP, AT90), CALI (CAL, C1), DCAL (CALX, CALY) (`src/params/mnemonic_aliases.json`)
-- [ ] Implement config hash computation (SHA-256 of the JSON file) and log into ledger `run.config_hash_sha256` at pipeline start (`src/params/config_loader.py`)
-- [ ] Define and implement the static citations-table schema (per parameter: value/default, valid range, source author/year, locator page/DOI, applicability scope) seeded with Archie 1942, Larionov 1969 old-rocks, and KGS/USGS Schaben values; wire it to the ledger so each parameter selection emits a frozen citation (no RAG) (`src/params/citations.py`, `src/params/citations.json`)
-- [ ] Tests for provenance lookup, PROV-tag routing, alias resolution, hash computation, well-override precedence, and citations resolution (every parameter resolves to exactly one source; unknown parameter hard-fails) (`tests/test_params.py`)
+- [x] Define and implement the config JSON schema: top-level `version`, `regional_defaults`, `well_overrides`; each parameter carries `value`, `unit`, `provenance`, `source_description` (`src/params/schema.py`)
+- [x] Populate `regional_defaults.paleozoic_kansas`: gr_min/gr_max, variant=old_rocks, rho_ma, rho_fl, phie_max, a, m, n, Rw, rt_hydrocarbon_floor, vsh/phie/sw cutoffs, bit_size_config, qc_abort_threshold, circuit_breaker_n (`src/params/regional_defaults.json`)
+- [x] Populate `regional_defaults.north_sea_jurassic` with VOLVE-compatible defaults for Rw, a, m, n, matrix density (variant set for Jurassic) (`src/params/regional_defaults.json`)
+- [x] Implement `well_overrides` lookup: per-well UWI overrides take precedence over regional defaults; absent UWI falls through with `provenance = default` (`src/params/config_loader.py`)
+- [x] Implement PROV-tag-driven Larionov variant selection: `paleozoic`→old_rocks, `tertiary`→tertiary, absent/unrecognised→old_rocks + degradation entry (`src/params/config_loader.py`)
+- [x] Implement mnemonic alias table covering GR, RHOB (RHOZ, DEN), NPHI (NPOR, TNPH), RT (ILD, RDEEP, AT90), CALI (CAL, C1), DCAL (CALX, CALY) (`src/params/mnemonic_aliases.json`)
+- [x] Implement config hash computation (SHA-256 of the JSON file) and log into ledger `run.config_hash_sha256` at pipeline start (`src/params/config_loader.py`)
+- [x] Define and implement the static citations-table schema (per parameter: value/default, valid range, source author/year, locator page/DOI, applicability scope) seeded with Archie 1942, Larionov 1969 old-rocks, and KGS/USGS Schaben values; wire it to the ledger so each parameter selection emits a frozen citation (no RAG) (`src/params/citations.py`, `src/params/citations.json`)
+- [x] Tests for provenance lookup, PROV-tag routing, alias resolution, hash computation, well-override precedence, and citations resolution (every parameter resolves to exactly one source; unknown parameter hard-fails) (`tests/test_params.py`)
 
 ### Phase 3 — Independent validators
 Done when: the validator harness in `src/validators/` runs to completion on computed Vsh/PHIE/Sw arrays and returns a typed objection list; the model-mismatch validator produces a neutron-density crossplot PNG and a Pickett-plot PNG in `outputs/` (the M-N crossplot is deferred for v1, gated on DT/PEF presence, with the existing `mn_skipped_no_dt` degradation path retained); all validator modules have golden tests that pass.
