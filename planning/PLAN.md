@@ -176,7 +176,7 @@ Done when: a single end-to-end pipeline run on a Kansas/Schaben well produces a 
 
 ### Phase 6 — Adversarial reviewer
 Done when: a second adversarial agent reviews the draft before the claim verifier; objections from the adversarial reviewer route through `typify_objections` and feed the loop; generator and critic use decorrelated models or prompts; design decision (a) is resolved and recorded in the manifest.
-- [ ] Resolve decision (a) — adversarial reviewer model choice: Llama3.1:8b (second family) vs. adversarial-role prompt on Qwen3:30b-a3b; record in `planning/blueprint/MANIFEST.md`
+- [x] Decision (a) — RESOLVED (2026-06-25): adversarial reviewer uses the second model family Llama3.1:8b; recorded in `planning/blueprint/MANIFEST.md`
 - [ ] Implement adversarial reviewer: receives draft report and ledger; produces a typed objection list (mechanical / support / irreducible) rewarded for finding faults; uses the chosen model (`src/agents/reviewer.py`)
 - [ ] Wire adversarial reviewer before `claim_verify`; reviewer objections route back through `typify_objections` so correctable ones re-enter the compute→validate loop (`src/orchestrator/graph.py`)
 - [ ] Log reviewer model tag and seed in `run.model_tags` (`src/agents/ollama_client.py`)

@@ -11,9 +11,6 @@ venv/
 .ruff_cache/
 .ipynb_checkpoints/
 
-# Claude coding assistant system files
-.claude/
-
 # Data & model artifacts (LAS files, weights — added per phase)
 data/
 models/

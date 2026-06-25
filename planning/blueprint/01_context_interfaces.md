@@ -9,7 +9,7 @@
 | Format | LAS 2.0 (CWLS standard) |
 | Loader | lasio — produces a `lasio.LASFile`; curves exposed as numpy arrays |
 | Depth index | 1-D float array (MD, metres or feet as declared in `~Well` header) |
-| Curve set — required | `GR` (gamma ray, API), `RHOB` (bulk density, g/cc), `NPHI` (neutron porosity, v/v or p.u.), `RT` (true resistivity, Ω·m) — absence of any rejects the file at intake |
+| Curve set — required | `GR` (gamma ray, API), `RT` (true resistivity, Ω·m), and at least one of `RHOB` (bulk density, g/cc) or `NPHI` (neutron porosity, v/v or p.u.) — absence of `GR`, `RT`, or both porosity curves rejects the file at intake; a file with only one porosity curve is degraded to the single-porosity PHIE path, not rejected (see `03_source_sink_contracts.md`) |
 | Curve set — optional | `CALI` (caliper, inches) and `DCAL` (differential caliper = CALI − bit size, inches), used for bad-hole masking. If `DCAL` is absent, masking uses `CALI` vs. a bit-size constant from the config library; if both are absent, bad-hole masking is unavailable and the affected computations are tier-downgraded with a degradation entry (no file rejection). Also accepted: `DT` (compressional slowness, µs/ft) and `PEF` (photoelectric factor, barns/electron) — reserved for the Phase 3 M-N / lithology cross-plots, not on the v1 quantitative path (canonical schema in `03_source_sink_contracts.md`) |
 | Null / absent curves | lasio sets absent samples to a sentinel (default −9999.25); the QC gate (Phase 1) intercepts and masks before any computation |
 | LAS header fields consumed | `WELL`, `UWI` (or `API`), `COMP`, `STRT`, `STOP`, `STEP`, `NULL`, `PROV` (formation/region tag used to select the Larionov variant) |
@@ -95,7 +95,7 @@
 
 - All LLM calls go through the Ollama HTTP API on `localhost` (default port 11434).
 - **Primary model**: Qwen3:30b-a3b — used for the compute agent (method/parameter selection), writer (prose), and claim verifier.
-- **Secondary model**: Llama3.1:8b — used for fast iteration during development; candidate for the adversarial reviewer in Phase 6 (decision deferred to Phase 6).
+- **Secondary model**: Llama3.1:8b — used for fast iteration during development; the adversarial reviewer (Phase 6) — decision (a) CLOSED 2026-06-25, second model family.
 - Models must be pre-pulled to the Ollama instance before a run; the pipeline does not pull models at runtime.
 - Both models run locally; no cloud LLM endpoint is called at any point during report generation.
 - Model tags are pinned at invocation and logged in the ledger.
@@ -137,7 +137,7 @@
 - **LAS 3.0 or DLIS formats** — only LAS 2.0 is supported in v1; other well-log formats are out of scope.
 - **Human-in-the-loop callbacks or approval gates** — per-report human interaction is the prior MVP scope (agente-llm-registros); it is not part of this system.
 - **Automatic model pulling or version resolution** — models must be pre-pulled to Ollama; the pipeline does not manage model lifecycle.
-- **RAG over petrophysical papers** — whether to add retrieval-augmented generation for parameter justification is deferred to Phase 5 and listed as an open question in the Charter; it is not a v1 interface.
+- **RAG over petrophysical papers** — retrieval-augmented generation for parameter justification is excluded from v1 (decision (d) RESOLVED 2026-06-24 = no RAG). A static curated citations table supplies parameter provenance instead (see Charter and `03_source_sink_contracts.md`); it is not a v1 interface.
 
 ---
 

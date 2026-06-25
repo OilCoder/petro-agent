@@ -32,8 +32,9 @@ The user reviewed this document and decided:
   (each parameter → exactly one source); this is NOT paper curation / not RAG. (User may
   still choose to drop even the table.)
 - **All other topics — proceed with the recommendation** (own engine, cross-family Llama
-  critic, Monte Carlo, Ollama v1, raw-data QC, style-guide split). Decision (a) = second
-  model family is taken as final; (b) hard abstention stays deferred to Phase 7.
+  critic, Monte Carlo, Ollama v1, raw-data QC, style-guide split). **Decision (a) = second
+  model family (Llama3.1:8b, distinct from the Qwen3:30b-a3b writer) is CLOSED (confirmed
+  2026-06-25)**; (b) hard abstention stays deferred to Phase 7.
 
 ---
 
@@ -128,12 +129,47 @@ golden-tested engine.
 
 **Decision/Recommendation.** Confirm **Schaben field (Mississippian, Ness County,
 Kansas)** as the v1 development dataset; reserve VOLVE for the Phase 8 regression
-benchmark (as the roadmap already says). Anchor on the type-log well **Schaben #4
-(API 15-135-21452)** plus the **three cored wells**. Pull raw LAS from the KGS
-Magellan portal (`https://www.kgs.ku.edu/Magellan/Logs/`), searchable by Ness
-County / API / lease, or via the bulk `ks_las_files.zip`; join via the KGS KID
-identifier. Build the engine to degrade gracefully to density-only or neutron-only
-porosity (older wells may lack RHOB) and record the degradation in the ledger.
+benchmark (as the roadmap already says). The choice is **field-agnostic** — Schaben
+is chosen for v1; other fields can be added later **without engine changes** (see
+the field-agnostic note below). Pull raw LAS from the KGS Magellan portal
+(`https://www.kgs.ku.edu/Magellan/Logs/`) / the statewide LAS index, searchable by
+Ness County / API / lease, or via the bulk `ks_las_files.zip`; join via the KGS KID
+identifier (`KID = KGS_ID`). Build the engine to degrade gracefully to density-only
+or neutron-only porosity (older wells lack RHOB) and record the degradation in the
+ledger.
+
+**REAL Schaben inventory (verified this session — KGS geodatabase [516,763 Kansas
+wells] joined to the statewide LAS index `ks_las_files` by `KID = KGS_ID`).**
+Producing formation predominantly **Mississippian** (Paleozoic carbonate /
+"Mississippi Lime") → Larionov **old-rocks** (never Tertiary).
+
+- **353** Schaben field wells total; **161** have ≥1 digital LAS; **205** LAS files
+  (a well can have multiple runs — combine all runs per well before judging curves).
+- Combining runs per well, by intake classification:
+  - **28 ACCEPT** — full density-neutron suite (GR, RHOB, NPHI, RT, +CALI/DPHI/DT/PEF/SP),
+    all MODERN (2009–2024). **THIS IS THE v1 WORKING SET.**
+  - **61 DEGRADE** — single-porosity (typically GR + NPHI + RT, no RHOB); vintage
+    1964–1998; usable via the engine's neutron-only PHIE degradation path.
+  - **72 REJECT** — GR + RT only (oldest, 1952–1967; several also carry sonic DT).
+- Typical depth **~3650–4550 ft MD (~1110–1390 m)** — *not* 1600–2000 m.
+- Curve reality: density-neutron exists ONLY in the modern wells; vintage wells are
+  GR + resistivity (+ sometimes sonic/old-neutron count). The intake gate's
+  ACCEPT/DEGRADE/REJECT classification (`03`) already handles this; `calc_phie`'s
+  neutron-only/density-only fallback (`05`) covers the DEGRADE wells.
+- Loader gotchas: the LAS index serves `www.kgs.ku.edu/b_1/...` URLs that 404 on
+  direct fetch — the real files live on
+  `kgsimages.blob.core.windows.net/web/web_1/...` (rewrite the host); a few LAS are
+  "wrapped" format and need `lasio` `engine='normal'`.
+
+**Anchor-well correction.** The previously named anchor well **"Schaben #4
+(API 15-135-21452)" has NO digital LAS** in the KGS collection. The working set
+**anchors on the 28 modern density-neutron wells, NOT on #4**.
+
+**Field-agnostic decision.** Keep **Schaben for v1** (chosen for validatability
+against the published KGS OFR2000-79 interpretation + core, over higher-volume
+fields like Bemis-Shutts / Trapp / Chase-Silica). The design stays **field-agnostic**:
+the PROV formation tag + the config library (`regional_defaults`) + mnemonic aliases
+let other fields be added later **WITHOUT engine changes**.
 
 **Rationale.** Schaben is the strongest fit on **three confirmed axes**: Paleozoic
 carbonate → Larionov old-rocks branch applies directly (explicitly not Tertiary);
@@ -173,16 +209,26 @@ silently.
 > KGS-published Schaben core be treated as authoritative calibration once
 > depth-registered, overriding blueprint 02's "no core data"? — user's call.
 
-**Status.** RECOMMENDED on the three confirmed axes (file-level curve completeness
-**and** core-data usability are both NEEDS-HANDSON-DATA; the blueprint-02 amendment
-above is NEEDS-USER-INPUT).
+**Status.** RESOLVED — Schaben confirmed for v1 with the REAL inventory verified this
+session (28 ACCEPT / 61 DEGRADE / 72 REJECT over 161 LAS-bearing wells of 353);
+field-agnostic so other fields add later without engine changes. **Core-data
+usability stays NEEDS-HANDSON-DATA** and the blueprint-02 "no core data → BRACKETED"
+amendment stays NEEDS-USER-INPUT (do NOT flip — see core note below).
 
-**Blueprint impact.** `02_problem_data.md`: add the confirmed KGS Magellan access
-URL, the KID join mechanism, and the anchor wells (Schaben #4 + 3 cored). Do **not**
-yet rewrite line 50 / the BRACKETED confidence statement — that edit is gated on the
-Foundation-gap decision above; record it as a pending logged decision, not an
-applied change. `07_site_style_guide.md`: fill the "Kansas/Schaben public data
-source link" open question with the Magellan URL.
+**On core control — keep "no core data → BRACKETED" as governing.** The
+KGS-published Schaben core stays a **PENDING logged decision** (hands-on
+verification still needed). **Do NOT flip** to a calibrated Kansas path.
+
+**Blueprint impact.** `02_problem_data.md`: add the confirmed KGS Magellan / LAS-index
+access URL, the `KID = KGS_ID` join mechanism, the REAL inventory (353 wells / 161 with
+LAS / 205 LAS files; 28 ACCEPT modern density-neutron working set / 61 DEGRADE
+single-porosity / 72 REJECT GR+RT-only), the ~3650–4550 ft MD depth range, and the
+loader host-rewrite + wrapped-LAS gotchas. **Anchor wells correction**: drop "Schaben
+#4 (API 15-135-21452)" — it has NO digital LAS; anchor on the **28 modern
+density-neutron wells** instead. Do **not** yet rewrite line 50 / the BRACKETED
+confidence statement — that edit is gated on the Foundation-gap decision above; record
+it as a pending logged decision, not an applied change. `07_site_style_guide.md`: fill
+the "Kansas/Schaben public data source link" open question with the Magellan URL.
 
 ### Topic 3 — Report scope: single-well vs whole-field
 
@@ -308,11 +354,13 @@ fixed*, and the ledger surfaces any selection divergence for audit (aligned with
 10's best-effort, non-bit-exact LLM reproducibility). The decorrelation mechanism itself
 is recorded under Topic 6 / `04` Stage 9, not as a new write-stage path.
 
-### Topic 6 — Adversarial reviewer (INCOMPLETE)
+### Topic 6 — Adversarial reviewer (RESOLVED 2026-06-25)
 
-**Decision/Recommendation.** Resolve decision **(a) = use the second model family
-(Llama3.1:8b)** as the adversarial reviewer, rather than a role-only adversarial
-prompt on Qwen. It provides genuine cross-family decorrelation at acceptable
+**Decision/Recommendation.** Decision **(a) = use the second model family
+(Llama3.1:8b)** as the adversarial reviewer — **CONFIRMED by the user (2026-06-25)**:
+the adversarial reviewer runs on a SECOND MODEL FAMILY (Llama3.1:8b), distinct from
+the Qwen3:30b-a3b writer — not a role-only adversarial prompt on Qwen. It provides
+genuine cross-family decorrelation at acceptable
 operational cost (the model is already in the stack for the fast path), and on
 16 GB it coexists with the 30B model via sequential load/unload (Ollama keep_alive
 eviction). The loop terminates on **"every remaining objection is irreducible,"**
@@ -324,13 +372,12 @@ on the same weights; the design notes already prefer "another model family for t
 critic, or at least an adversarial role." The deterministic validators carry most of
 the reliability weight, so this is a marginal-but-positive decorrelation gain.
 
-**Status.** RECOMMENDED for (a); but the user's sentence "...I need ___" was left
-unfinished — the **specific unstated requirement for the adversarial reviewer is
-still pending** → NEEDS-USER-INPUT.
+**Status.** RESOLVED (2026-06-25) — decision (a) CLOSED: adversarial reviewer = second
+model family (Llama3.1:8b), distinct from the Qwen3:30b-a3b writer. The user confirmed
+the requirement; no item remains pending on this topic.
 
 **Blueprint impact.** `00_charter.md` / `09_implementation_plan.md` open question (a):
-record the recommendation (second family) as provisional, pending the user's
-unstated need. Do not mark (a) closed until the user completes the requirement.
+mark CLOSED = second model family (Llama3.1:8b), distinct from the Qwen3:30b-a3b writer.
 
 ### Topic 7 — Uncertainty propagation = Monte Carlo (RESOLVED)
 
@@ -395,7 +442,7 @@ masking, and logs every edit. Confirmed feasible.
 the CWLS ASCII natively; the `01`/`03` unit-variant contract already auto-converts
 unambiguous NPHI (%→v/v) and RHOB (kg/m³→g/cc) and rejects ambiguous ranges, all
 logged. The hard constraint is **minimum-curve intake**: the system cannot fabricate
-missing curves — a well lacking the hard-required set (GR, RHOB, NPHI, RT) is
+missing curves — a well lacking the hard-required set (GR, RT, and at least one of RHOB/NPHI) is
 rejected or degraded (density-only / neutron-only PHIE) with the degradation logged
 in the ledger; it is never imputed.
 
@@ -480,9 +527,9 @@ Phase 5 completion (matches its existing open question).
 
 ### Canonical (a–e) — from `00_charter.md` / `09_implementation_plan.md`
 
-- **(a) Adversarial reviewer — second family vs role-only prompt.** RECOMMEND
-  second model family (Llama3.1:8b); record as provisional pending the user's
-  unfinished requirement (Topic 6). Not closed.
+- **(a) Adversarial reviewer — second family vs role-only prompt.** **CLOSED
+  (2026-06-25) → second model family (Llama3.1:8b), distinct from the Qwen3:30b-a3b
+  writer** (Topic 6). User-confirmed.
 - **(b) Hard abstention as a product decision.** DEFER to Phase 7 entry —
   genuine product call (refuse to emit when no high-leverage param is calibrated);
   engineering can implement either. NEEDS-USER-INPUT before gating rules finalize.
@@ -511,8 +558,10 @@ Phase 5 completion (matches its existing open question).
   05 config JSON structure** (add the citations join + version pinning). Without those
   amendments the recommendation is unanchored to any phase's acceptance criterion —
   flag, do not assume it slots into Phase 2 unchanged.
-- **02 — Kansas well count & curve availability.** NEEDS-HANDSON-DATA — pull
-  Schaben LAS, confirm per-well GR/RHOB/NPHI/RT (+CALI); engine degrades gracefully.
+- **02 — Kansas well count & curve availability.** **RESOLVED this session** — 353
+  Schaben wells / 161 with LAS / 205 LAS files; 28 ACCEPT (full density-neutron, modern)
+  / 61 DEGRADE (single-porosity) / 72 REJECT (GR+RT). Per-file mnemonic/null-gap parsing
+  remains hands-on; engine degrades gracefully.
 - **02 — VOLVE accepted-interpretation format / well subset / Larionov variant /
   North Sea defaults.** DEFER to Phase 8; all NEEDS-HANDSON-DATA except "add a North
   Sea/Jurassic default parameter set in Phase 2" (action, not a question).
@@ -596,12 +645,16 @@ Phase 5 completion (matches its existing open question).
   cross-model `correct`-loop selection divergence is a ledger-tracked numeric-difference
   source, not a failure) (Topics 5, 6, 7). No write-stage / `model_tags` change —
   single-writer design stands.
-- [x] `02_problem_data.md` — add KGS Magellan access URL, KID join, anchor wells
-  (Schaben #4 + 3 cored), core calibration source, North Sea default param set
+- [x] `02_problem_data.md` — add KGS Magellan / LAS-index access URL, `KID = KGS_ID`
+  join, the REAL inventory (353 wells / 161 with LAS / 205 LAS files; 28 ACCEPT working
+  set / 61 DEGRADE / 72 REJECT), ~3650–4550 ft MD depth, loader host-rewrite + wrapped-LAS
+  gotchas; **anchor on the 28 modern density-neutron wells, NOT Schaben #4 (no digital
+  LAS)**; keep core as PENDING (BRACKETED governs, do not flip); field-agnostic design
+  (Schaben v1, other fields later without engine changes); North Sea default param set
   reminder for Phase 2 (Topic 2).
 - [x] `00_charter.md` / `09_implementation_plan.md` — mark (c) CLOSED = Monte Carlo;
-  record (d) = no RAG/curated table; record (a) provisional = second model family
-  pending the user's requirement (Topics 6, 7, 8).
+  record (d) = no RAG/curated table; mark (a) CLOSED = second model family (Llama3.1:8b,
+  distinct from the Qwen3:30b-a3b writer), user-confirmed 2026-06-25 (Topics 6, 7, 8).
 - [x] `09_implementation_plan.md` — add a citations-table-schema task to Phase 2 and
   extend the Phase-2 Done-when to cover it; `05_engine_and_validation.md` — extend the
   config JSON structure (lines ~357–373) with the citations join + version pinning
@@ -621,10 +674,15 @@ Phase 5 completion (matches its existing open question).
 
 ## Needs hands-on data confirmation
 
-- Per-well Schaben curve completeness: do GR, RHOB, NPHI, RT (and CALI) co-exist on
-  the same wells? Exact LAS mnemonics (GR vs SGR/CGR; RHOB vs DEN/RHOZ; NPHI vs
-  NPOR/PHIN; ILD/LLD/RT; CALI), depth coverage/units, null gaps. (Topics 2, 9)
-- KID→LAS retrieval pattern verified by an actual Magellan query. (Topic 2)
+- Per-well Schaben curve completeness: **inventory now verified this session** — 28
+  ACCEPT wells carry the full density-neutron suite (GR, RHOB, NPHI, RT, +CALI/DPHI/
+  DT/PEF/SP), 61 DEGRADE are single-porosity (GR + NPHI + RT, no RHOB), 72 REJECT are
+  GR + RT only. Remaining hands-on work is per-file parsing: exact LAS mnemonics
+  (GR vs SGR/CGR; RHOB vs DEN/RHOZ; NPHI vs NPOR/PHIN; ILD/LLD/RT; CALI), depth
+  coverage/units, null gaps, combining multiple runs per well. (Topics 2, 9)
+- KID→LAS retrieval pattern **verified** (`KID = KGS_ID` join; host rewrite
+  `www.kgs.ku.edu/b_1` → `kgsimages.blob.core.windows.net/web/web_1`; a few wrapped
+  LAS need `lasio` `engine='normal'`). (Topic 2)
 - Schaben core data in `core_analysis_wells.xlsx` downloadable and depth-registerable
   to the LAS; freeze Rw / a / m / n / matrix-density per lithology for golden tests
   (KGS Rw=0.04, m=n=2, core m 1.97–2.5 are **published starting points, not confirmed
@@ -650,10 +708,8 @@ Phase 5 completion (matches its existing open question).
 
 ## Still needs user input
 
-- **Topic 3 — single-well vs whole-field for v1.** I recommend single-well
-  (batch-capable), but if the portfolio goal is a field-scale showcase that is a
-  product decision only the user can make; it cascades into `03`/`04`/`06` and
-  Topic 10 (vLLM).
+- **Topic 3 — single-well vs whole-field for v1. CLOSED (USER = field-scale).**
+  Resolved by the user (see lines 25, 235, 248); no longer pending.
 - **Topic 2 — may KGS-published Schaben core override blueprint 02's "no core
   data"?** If the published core (Rw, m, n, matrix density) is verified
   depth-registerable to our wells, treating it as authoritative calibration would
@@ -661,9 +717,6 @@ Phase 5 completion (matches its existing open question).
   the Charter confidence architecture. This is a blueprint-amendment decision, not a
   research finding — only the user can authorize overriding a design condition (see
   the Topic 2 Foundation-gap proposal). Default until then: keep BRACKETED.
-- **Topic 6 — the adversarial reviewer's unstated requirement.** The user's
-  sentence "...but I need ___" was left unfinished. The model-family recommendation
-  (second family, Llama3.1:8b) is provisional until the user states the actual need.
 - **Topic 8 — the user's extra (unstated) RAG questions.** The no-RAG/curated-table
   recommendation stands, but the user flagged additional questions here that were
   not provided.

@@ -165,8 +165,11 @@ Each phase delivers a verifiable artifact before the next begins.
 
 ### Data
 - Development data: Kansas / Schaben dataset (Paleozoic, quality known, zero
-  acquisition friction). Hard-required curves (absence rejects the file): GR, RHOB,
-  NPHI, RT. Caliper curves (CALI, DCAL) are optional — used for bad-hole masking when
+  acquisition friction). Hard-required curves (absence rejects the file): GR, RT, and
+  at least one porosity curve (RHOB or NPHI). RHOB and NPHI are one-of-required: when
+  only one is present the file is **degraded** to the density-only / neutron-only PHIE
+  path (logged), not rejected; rejection happens only when both are absent. Caliper
+  curves (CALI, DCAL) are optional — used for bad-hole masking when
   present; when both are absent the masking degrades honestly and the affected
   computations are tier-downgraded (see `03_source_sink_contracts.md`). DT
   (compressional slowness) and PEF (photoelectric factor) are also accepted optional
@@ -181,16 +184,13 @@ No external services budget. Stack is entirely open-source and local.
 
 ## Open questions
 
-- **(a) Adversarial reviewer — second model family vs. role-only adversarial prompt.**
-  Decision deferred to Phase 6. The question is whether using Llama3.1:8b as the
-  reviewer (different model family, lower shared-prior risk) adds enough decorrelation
-  value over a role-only adversarial prompt on Qwen to justify the operational
-  complexity. The deterministic validators carry most of the reliability weight; this
-  is a marginal decorrelation question.
-  **Provisional (2026-06-24): use the second model family (Llama3.1:8b)** as the
-  adversarial reviewer — genuine cross-family decorrelation at acceptable cost (the
-  model is already in the stack). Recorded provisional, **not closed**: the user's
-  specific requirement for the reviewer is still pending (unstated need).
+- **(a) Adversarial reviewer — model family. CLOSED (2026-06-25).**
+  **The adversarial reviewer uses a second model family (Llama3.1:8b)** — a different
+  model family from the Qwen3:30b-a3b writer, for genuine cross-family decorrelation
+  (lower shared-prior risk than a role-only prompt on the same weights) at acceptable
+  cost, since Llama3.1:8b is already in the stack and fits the 16 GB ceiling. The
+  deterministic validators still carry most of the reliability weight; the cross-family
+  critic is a marginal-but-positive decorrelation gain. Implemented at Phase 6.
 
 - **(b) Hard abstention as a product decision.**
   Decision deferred to Phase 7. Can the system refuse to emit a report when no

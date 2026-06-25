@@ -289,13 +289,12 @@ objections from the adversarial reviewer route through `typify_objections` and f
 loop; generator and critic use decorrelated models or prompts; design decision (a) is
 resolved and recorded in the manifest.
 
-- [ ] Decision (a) — resolve adversarial reviewer model choice: Llama3.1:8b as the
-  reviewer (second model family) vs. adversarial-role prompt on Qwen3:30b-a3b; record
-  decision in `planning/blueprint/MANIFEST.md` under Decisions
+- [x] Decision (a) — RESOLVED (2026-06-25): adversarial reviewer uses the second model
+  family **Llama3.1:8b** (different family from the Qwen3:30b-a3b writer), not a
+  role-only prompt; recorded in `planning/blueprint/MANIFEST.md` under Decisions
 - [ ] Implement adversarial reviewer (`src/agents/reviewer.py`): receives draft report and
   ledger; produces a typed objection list (mechanical / support / irreducible) rewarded
-  for finding faults, not for approving the draft; uses the chosen model (Llama3.1:8b
-  or Qwen3:30b-a3b with adversarial prompt)
+  for finding faults, not for approving the draft; uses Llama3.1:8b (second model family)
 - [ ] Wire adversarial reviewer before `claim_verify` in the LangGraph graph; reviewer
   objections route back through `typify_objections` so correctable ones re-enter the
   compute→validate loop (`src/orchestrator/graph.py`)
@@ -314,10 +313,9 @@ the dominant parameter for net pay; the multi-seed robustness check passes; the 
 threshold is set, logged as a manifest decision, and the reliability diagram
 infrastructure is in place.
 
-- [ ] Decision (c) — resolve uncertainty propagation method: Monte Carlo vs. analytic
-  ranges; record decision in `planning/blueprint/MANIFEST.md`; implement the chosen
-  method in `src/uncertainty/propagation.py`; if Monte Carlo, implement seed management
-  and population of `run.monte_carlo_seeds`
+- [ ] Decision (c) — CLOSED as Monte Carlo per-depth sampling: implement Monte Carlo
+  per-depth sampling in `src/uncertainty/propagation.py` with seed management and
+  population of `run.monte_carlo_seeds`
 - [ ] Decision (b) — resolve hard abstention policy: can the system refuse to emit a report
   when no high-leverage parameter (a, m, n, Rw) is constrained by calibration? Record
   decision in `planning/blueprint/MANIFEST.md`; implement the policy in
@@ -412,8 +410,6 @@ to `outputs/evaluation/`.
   full ledger transparency. Using a black-box third-party library that hides equation
   variants or null-handling is excluded.
 
----
-
 ## Invariants
 
 These must hold throughout every phase. Amending any invariant requires a logged
@@ -464,7 +460,7 @@ introduced by preceding phases.
 | Phase 3 | Phase 2 complete: parameter config library (provenance, formation tag) is required by the model-mismatch validator to select matrix density reference values |
 | Phase 4 | Phase 3 complete: all validator modules and the typify stage must exist before the LangGraph loop can be wired; no placeholder stubs are permitted in the orchestrator |
 | Phase 5 | Phase 4 complete: Ollama service running with Qwen3:30b-a3b pre-pulled; full pipeline loop wired before LLM agents are inserted as nodes |
-| Phase 6 | Phase 5 complete: decision (a) resolved before implementing the adversarial reviewer; Llama3.1:8b pre-pulled if chosen |
+| Phase 6 | Phase 5 complete: decision (a) resolved before implementing the adversarial reviewer; Llama3.1:8b pre-pulled |
 | Phase 7 | Phase 6 complete: uncertainty propagation method (decision c) and abstention policy (decision b) must be resolved before implementation; ECE threshold must be set and logged before Phase 8 is unblocked |
 | Phase 8 | Phase 7 complete and ECE threshold logged; VOLVE LAS files in `data/`; accepted interpretation files available but not examined before Phase 8 begins; minimum three VOLVE benchmark wells confirmed to carry complete reference curves |
 
@@ -483,10 +479,10 @@ introduced by preceding phases.
 
 | Decision | Resolves in | Blocks |
 |---|---|---|
-| (a) Adversarial reviewer model choice | Phase 6 entry | Phase 6 implementation |
+| (a) Adversarial reviewer model choice | CLOSED 2026-06-25 = Llama3.1:8b (second family) | — |
 | (b) Hard abstention policy | Phase 7 | Phase 7 gating implementation |
-| (c) Uncertainty propagation method | Phase 7 entry | Phase 7 propagation and Phase 8 ECE infrastructure |
-| (d) RAG vs. system-prompt knowledge | Phase 5 | Phase 5 compute agent implementation |
+| (c) Uncertainty propagation method | CLOSED 2026-06-24 = Monte Carlo | Phase 7 propagation and Phase 8 ECE infrastructure |
+| (d) RAG vs. system-prompt knowledge | RESOLVED 2026-06-24 = no RAG (curated citations table) | Phase 5 compute agent (implementation only) |
 | (e) ECE numeric threshold | Phase 7 exit | Phase 8 start (hard block) |
 
 ---
@@ -601,11 +597,10 @@ work proceeds.
 
 ## Open questions
 
-- **(a) Adversarial reviewer — model family decision.** PROVISIONAL → second model
-  family (Llama3.1:8b) for genuine cross-family decorrelation, vs. an adversarial-role
-  prompt on Qwen3:30b-a3b (lower operational complexity). Recommendation recorded as
-  provisional pending the user's unstated reviewer requirement; not closed. Resolve at
-  Phase 6 entry.
+- **(a) Adversarial reviewer — model family decision. CLOSED (2026-06-25).** The
+  adversarial reviewer uses the second model family **Llama3.1:8b** (different family
+  from the Qwen3:30b-a3b writer) for genuine cross-family decorrelation — not a
+  role-only prompt on Qwen. Implemented at Phase 6.
 
 - **(b) Hard abstention policy.** Whether the system should refuse to emit any prose
   report when no high-leverage Archie parameter is constrained by calibration. Resolve at

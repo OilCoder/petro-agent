@@ -45,14 +45,17 @@ determined by an agent at runtime.
 | `NPHI` | Neutron porosity | v/v fraction | 0.0 – 1.0 v/v | masked; see unit-variant note below |
 | `RT` | True resistivity | Ω·m | 0.01 – 50 000 Ω·m (provisional upper bound — to confirm) | masked; passed in linear Ω·m to the engine — the log₁₀ transform is applied only in the validator/cross-plot layer, never on the quantitative path |
 
-The four curves above (`GR`, `RHOB`, `NPHI`, `RT`) are the hard-required set: each is a
-direct input to a quantitative computation. If any of them is absent the intake gate
-rejects the file with an explicit error message naming the missing curve. There is no
-silent fallback for a missing required curve.
+The hard-required set is `GR`, `RT`, and **at least one** porosity curve (`RHOB` or
+`NPHI`): each is a direct input to a quantitative computation. If `GR`, `RT`, or both
+porosity curves are absent, the intake gate rejects the file with an explicit error
+message naming the missing curve(s). There is no silent fallback for a missing required
+curve. A file carrying `GR`, `RT`, and exactly one of `RHOB`/`NPHI` is **not** rejected —
+it takes the graceful-degradation porosity path described next.
 
 **No curve fabrication.** The system never synthesises, imputes, or interpolates a
-missing curve. A well lacking the hard-required set is **rejected**; a well missing a
-porosity input that supports graceful degradation (density-only / neutron-only PHIE) is
+missing curve. A well lacking the hard-required set (no `GR`, no `RT`, or no porosity
+curve at all) is **rejected**; a well that has `GR` + `RT` but only one of the two
+porosity inputs supports graceful degradation (density-only / neutron-only PHIE) and is
 **degraded** with the degradation recorded in the ledger. Missing data is never filled
 with a model-derived or guessed curve — it is rejected or degraded, and logged.
 
@@ -264,7 +267,7 @@ until the ledger covers all quantitative claims.
     "compute_agent": "qwen3:30b-a3b",
     "writer": "qwen3:30b-a3b",
     "claim_verifier": "qwen3:30b-a3b",
-    "reviewer": "<resolved at Phase 6 — Charter Open question (a); null until then>"
+    "reviewer": "llama3.1:8b"
   },
   "llm_seed": <int>,
   "uncertainty_method": "monte_carlo",
@@ -277,8 +280,8 @@ until the ledger covers all quantitative claims.
 `model_tags` carries one slot per LLM role actually invoked: `compute_agent`, `writer`,
 and `claim_verifier` (all served by Qwen3:30b-a3b in v1, logged with their pinned model
 tag), and `reviewer` for the Phase 6 adversarial reviewer. The `reviewer` slot is `null`
-until Charter Open question (a) is resolved at Phase 6 entry; the resolved value is
-either `llama3.1:8b` or `qwen3:30b-a3b` (adversarial prompt). `llm_seed` is the Ollama
+until the Phase 6 reviewer node is wired; the resolved value is `llama3.1:8b`
+(decision (a) CLOSED 2026-06-25, second model family). `llm_seed` is the Ollama
 `seed` parameter pinned for all LLM calls (see `06_evaluation_protocol.md`).
 `uncertainty_method` is fixed to `monte_carlo` for v1: per-depth Monte Carlo sampling
 produces true distributional outputs, so `result_p10`/`result_p50`/`result_p90` are
@@ -584,7 +587,7 @@ alphanumeric and underscores. The timestamp is the UTC date of the run.
 
 | Dataset | Wells | Approximate depth samples per well | Expected ledger size per well |
 |---|---|---|---|
-| Kansas / Schaben (dev) | 7–15 | 1 500 – 5 000 | 50–200 KB JSON |
+| Kansas / Schaben (dev) | ~28 ACCEPT (v1 working set) of 161 LAS-bearing / 353 field wells, +61 DEGRADE | 1 500 – 5 000 | 50–200 KB JSON |
 | VOLVE (regression, Phase 8) | subset of 24 | up to 20 000 | up to 1 MB JSON |
 
 These are order-of-magnitude estimates. No streaming or chunked I/O is required

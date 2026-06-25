@@ -36,3 +36,12 @@ Started: 2026-06-24
   (each parameter -> exactly one source), wired to the JSON ledger and golden-tested.
 - 2026-06-24: decision (a) provisional = second model family (adversarial reviewer,
   Fase 6) pending the user's unstated requirement; revisit before Phase 6.
+- 2026-06-25: decision (a) CLOSED = the adversarial reviewer uses a SECOND MODEL FAMILY
+  (Llama3.1:8b), different family from the Qwen3:30b-a3b writer, for cross-family
+  decorrelation — not a role-only prompt. User-confirmed.
+- 2026-06-25: field = Schaben confirmed for v1, design kept FIELD-AGNOSTIC (PROV tag +
+  config library + mnemonic aliases) so other fields can be added later. Real data
+  inventory (KGS geodatabase + LAS index, KID=KGS_ID join): of 353 Schaben wells, 161
+  have LAS; combining runs per well → 28 full density-neutron (modern 2009-2024,
+  the v1 working set), 61 single-porosity, 72 GR/RT-only. Chosen over higher-volume
+  fields (Bemis-Shutts/Trapp/Chase-Silica) for validatability vs KGS OFR2000-79 + core.

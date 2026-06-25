@@ -5,7 +5,7 @@
 The task is supervised petrophysical interpretation from wireline well logs.
 
 Given a set of measured depth-indexed log curves for a single well — the hard-required
-set GR, RHOB, NPHI, RT, plus the optional caliper curves CALI and DCAL (both optional;
+set GR, RT, and at least one porosity curve (RHOB or NPHI), plus the optional caliper curves CALI and DCAL (both optional;
 used for bad-hole masking when present, see `03_source_sink_contracts.md`) — the system
 must produce:
 
@@ -21,7 +21,7 @@ The equations are fixed and domain-selected:
 | Output | Equation | Applicable condition |
 |---|---|---|
 | Vsh | Larionov (old rocks): Vsh = 0.33 · (2^(2 · IGR) − 1), where IGR = (GR − GRmin) / (GRmax − GRmin) | Paleozoic formations; hardcoded for Kansas/Schaben per Invariant 6 |
-| PHIE | Density-neutron crossplot: PHIE = (φD + φN) / 2 with density-derived φD = (ρma − ρb) / (ρma − ρfl) | When both RHOB and NPHI are present and hole quality is acceptable |
+| PHIE | Density-neutron crossplot: PHIE = (φD + φN) / 2 with density-derived φD = (ρma − ρb) / (ρma − ρfl) | When both RHOB and NPHI are present and hole quality is acceptable; when only one porosity curve is present the single-porosity degradation path (density-only / neutron-only PHIE) is used and logged |
 | Sw | Archie: Sw^n = (a · Rw) / (Rt · φ^m) | Clean-sand / carbonate Archie; degradation recorded in ledger when lithology deviates |
 
 Because the equations are analytically fixed (not trained), this is not a machine-learning
@@ -40,16 +40,17 @@ parameters, not from any learned model.
 | Attribute | Value |
 |---|---|
 | Source | U.S. Geological Survey (USGS) open data — Kansas Geological Survey (KGS) well log repository, public domain |
-| Raw-LAS access | KGS Magellan portal (`https://www.kgs.ku.edu/Magellan/Logs/`), searchable by Ness County / API / lease, or via the bulk `ks_las_files.zip`. Wells are joined to logs via the KGS KID identifier. |
-| Formation | Paleozoic (mixed carbonate and clastic section, Schaben oil field, Ness County, Kansas) |
+| Raw-LAS access | KGS Magellan portal + the statewide LAS index `ks_las_files`, searchable by Ness County / API / lease. Wells are joined to logs by **KID = KGS_ID**. **Loader gotcha**: the index serves `www.kgs.ku.edu/b_1/...` URLs that 404 on direct fetch — the real files live on `kgsimages.blob.core.windows.net/web/web_1/...`, so rewrite the host before fetching. |
+| Formation | **Mississippian** (Paleozoic carbonate / "Mississippi Lime", Schaben oil field, Ness County, Kansas) → Larionov **old-rocks** branch required (never Tertiary). |
 | Scope (v1) | **Field-scale**: the v1 dataset is the **full Schaben well set**, not a single well. The pipeline processes wells one-by-one and a deterministic field-rollup stage aggregates them (per-well results plus field net pay / NTG / HCPV, cross-well zone correlation, and a field net-pay/quality map). |
-| Anchor wells | Type-log well **Schaben #4 (API 15-135-21452)** plus the **three cored wells** — used to anchor zonation and as candidate calibration controls (see core note below). |
-| Number of wells | Approximately 7–15 wells available in the Schaben area; exact count not yet confirmed — see Open questions |
-| Curve availability | GR, RHOB, NPHI, RT present in most wells; CALI / DCAL availability varies by well and vintage |
-| Depth range (typical) | Roughly 1 600–2 000 m MD depending on well; exact depths well-specific |
-| File format | LAS 2.0 |
+| Anchor wells | The previously named type-log well **Schaben #4 (API 15-135-21452)** has **no digital LAS** in the KGS collection — it cannot anchor the working set. Re-anchored on the **28 modern density-neutron wells** (the ACCEPT set) as the v1 working set for zonation and calibration controls. |
+| Number of wells | **353 Schaben field wells** total; **161 have ≥1 digital LAS** (205 LAS files — a well can carry multiple runs; combine all runs per well before judging curves). Working set after intake classification: **28 ACCEPT** (full density-neutron, modern) = the **v1 working set**, plus **61 DEGRADE** (single-porosity, usable via the neutron-only/density-only PHIE degradation path), and 72 REJECT (GR + RT only). |
+| Curve availability | The full density-neutron suite (GR, RHOB, NPHI, RT, +CALI/DPHI/DT/PEF/SP) exists **only in the 28 modern wells (2009–2024, the ACCEPT set)**. Vintage wells are **GR + resistivity (+ sometimes sonic)** with no RHOB. The intake gate's ACCEPT / DEGRADE / REJECT classification (`03_source_sink_contracts.md`) handles this: ACCEPT wells run the full crossplot, DEGRADE wells (typically GR + NPHI + RT) run `calc_phie`'s neutron-only fallback (Phase 5), REJECT wells (GR + RT only) cannot yield PHIE. |
+| Depth range (typical) | Roughly **3 650–4 550 ft MD (~1 110–1 390 m)** depending on well; exact depths well-specific |
+| File format | LAS 2.0 (a few are "wrapped" format — load with lasio `engine='normal'`) |
 | Acquisition friction | Zero — already in use; quality is known from prior work |
-| Known characteristics | Old rocks → Larionov old-rocks formula required (not Tertiary). Carbonate intervals present alongside clastics — model-mismatch detection (Phase 3) is relevant here. |
+| Known characteristics | Mississippian (Paleozoic carbonate) → Larionov old-rocks formula required (not Tertiary). Carbonate / "Mississippi Lime" facies — model-mismatch detection (Phase 3) is relevant here. |
+| Field-agnostic design | Schaben is the **v1 field only** (chosen for validatability against the published KGS OFR2000-79 interpretation + core, over higher-volume Kansas fields like Bemis-Shutts / Trapp / Chase-Silica, noted as future candidates). The design stays **field-agnostic**: the PROV formation tag + the config library (`regional_defaults`) + the mnemonic-alias layer let other fields be added later **without engine changes**. |
 | No core data | Kansas/Schaben wells available for this project carry no core measurements; all parameters (a, m, n, Rw, matrix density) come from regional defaults or offset calibration. This is the primary source of parameter uncertainty for the dev dataset. **This remains the governing assumption — all Kansas outputs are BRACKETED.** |
 | Published core (PENDING — do not flip) | KGS has published Schaben core values (Rw = 0.04, m = n = 2, core m ≈ 1.97 intergranular to 2.5 vuggy). These are **published starting points, not confirmed inputs**: treating them as authoritative calibration would lift some Kansas outputs above BRACKETED and amend the confidence architecture. This is a **PENDING logged decision, gated on hands-on verification** that the core is downloadable and depth-registerable to our specific wells. Until verified, the "no core data → BRACKETED" assumption above governs; do **not** flip to a calibrated Kansas path. |
 
@@ -189,25 +190,29 @@ parameters. Any "overfitting to Kansas" is geological, not statistical (see risk
 
 ## Open questions
 
-- **Exact Kansas well count and curve availability**: the exact number of Schaben wells
-  with the hard-required curve set (GR, RHOB, NPHI, RT) has not been verified. Some
-  wells may be missing RHOB or NPHI, restricting PHIE calculation to density-only or
-  neutron-only fallback. Caliper (CALI/DCAL) availability also varies by well; its
-  absence degrades bad-hole masking rather than rejecting the well (see
-  `03_source_sink_contracts.md`). The count and curve inventory should be confirmed
-  before Phase 0 begins.
+- **Exact Kansas well count and curve availability** (RESOLVED 2026-06-25): verified by
+  querying the KGS geodatabase (516,763 Kansas wells) + the statewide LAS index
+  `ks_las_files`, joined by KID = KGS_ID. **353 Schaben field wells; 161 have ≥1 digital
+  LAS (205 LAS files).** Combining runs per well by intake class: **28 ACCEPT** (full
+  density-neutron, modern 2009–2024 — the v1 working set), **61 DEGRADE** (single-porosity,
+  typically GR + NPHI + RT, no RHOB, vintage 1964–1998 — usable via the neutron-only PHIE
+  fallback), **72 REJECT** (GR + RT only, oldest 1952–1967). Density-neutron exists **only**
+  in the modern wells; vintage wells are GR + resistivity (+ sometimes sonic). The intake
+  gate (`03_source_sink_contracts.md`) and `calc_phie`'s neutron-only/density-only fallback
+  (Phase 5) already cover the DEGRADE wells. Caliper absence degrades bad-hole masking
+  rather than rejecting the well.
 
-- **VOLVE accepted interpretation format**: the exact format, schema, and depth
+- **VOLVE accepted interpretation format** (NEEDS-HANDSON): the exact format, schema, and depth
   registration of the Equinor-released accepted interpretation (Petrel exports vs.
   ASCII curve exports vs. PDF reports) determines how Phase 8 labels are ingested and
   compared. This must be confirmed when Phase 8 setup begins.
 
-- **VOLVE well subset for regression**: not all 24 VOLVE wells carry a complete accepted
+- **VOLVE well subset for regression** (NEEDS-HANDSON): not all 24 VOLVE wells carry a complete accepted
   interpretation. The subset of wells usable as benchmark labels has not been identified.
   Phase 8 planning requires knowing which wells, how many, and whether they cover a
   representative range of conditions.
 
-- **Larionov formula applicability on VOLVE**: VOLVE is a North Sea Jurassic–Cretaceous
+- **Larionov formula applicability on VOLVE** (NEEDS-HANDSON): VOLVE is a North Sea Jurassic–Cretaceous
   dataset. The old-rocks Larionov formula is not necessarily the most appropriate variant
   for those formations (Tertiary formula may be more accurate for some intervals). The
   Larionov variant to use on VOLVE, and whether the system correctly selects it via the

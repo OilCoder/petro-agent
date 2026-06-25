@@ -44,8 +44,11 @@ metres, and produce a typed internal structure ready for QC.
    `unit_conversion` edit; if `RHOB_max > 10.0` convert (`RHOB / 1000`) and log
    similarly; if the value falls in an ambiguous zone (NPHI between 1.0 and 2.0)
    abort with a diagnostic requiring the operator to confirm units.
-4. Verify that all hard-required curves are present (GR, RHOB, NPHI, RT); reject
-   with an error naming any missing curve. No partial run. CALI and DCAL are optional
+4. Verify the hard-required curves are present: GR, RT, and at least one porosity
+   curve (RHOB or NPHI). Reject with an error naming the missing curve only when GR,
+   RT, or BOTH porosity curves are absent. A file with GR+RT+exactly one of RHOB/NPHI
+   is NOT rejected — it takes the single-porosity degradation path (logged), per
+   `03_source_sink_contracts.md` and Stage 3 step 3. CALI and DCAL are optional
    (bad-hole masking degrades when absent — see `qc_gate` and
    `03_source_sink_contracts.md`).
 5. Verify `PROV` header field; if absent or unrecognised, degrade to `unknown` and
@@ -350,10 +353,9 @@ parameter selections that the evidence does not justify — before the determini
 claim verifier runs. This stage is introduced in Phase 6; prior to Phase 6 the
 pipeline transitions `write → claim_verify` directly.
 
-**Actor**: adversarial reviewer (`src.agents.reviewer`). The model choice — Llama3.1:8b
-(second model family, stronger decorrelation) versus an adversarial-role prompt on
-Qwen3:30b-a3b (lower operational complexity) — is Charter Open question (a), deferred
-to Phase 6 and recorded in the manifest at Phase 6 entry. The reviewer is rewarded for
+**Actor**: adversarial reviewer (`src.agents.reviewer`). The reviewer uses the second
+model family Llama3.1:8b (stronger decorrelation) — decision (a) CLOSED 2026-06-25,
+recorded in the MANIFEST — implemented at Phase 6. The reviewer is rewarded for
 finding faults, not for approving the draft.
 
 **Actions**:
@@ -561,7 +563,7 @@ State fields:
 | `gating` | `src.orchestrator.stages.gating` | deterministic |
 | `zonate` | `src.orchestrator.stages.zonate` (calls net-pay engine) | deterministic |
 | `write` | `src.agents.writer` (Qwen3:30b-a3b via Ollama) | LLM-bounded |
-| `review` (Phase 6) | `src.agents.reviewer` (Llama3.1:8b or Qwen3:30b-a3b adversarial prompt — choice deferred to Phase 6) | LLM-bounded |
+| `review` (Phase 6) | `src.agents.reviewer` (Llama3.1:8b — second model family, decision (a) CLOSED 2026-06-25) | LLM-bounded |
 | `claim_verify` | `src.agents.claim_verifier` (Qwen3:30b-a3b via Ollama) | LLM-bounded |
 | `emit` | `src.orchestrator.stages.emit` | deterministic |
 
