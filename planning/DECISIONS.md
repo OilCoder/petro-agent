@@ -21,6 +21,16 @@ cross-family, in `documentation/sample_reports/`. Two findings:
    `convergence_status` as an internal QC flag, not an optimizer; demanded a rock/fluids
    interpretation) and reframed the user prompt; then regenerated the reports.
 
+**qwen3:30b empty on 16 GB (the deliverable reports use llama3.1:8b).** When regenerating
+with the hardened prompt, qwen3:30b-a3b returned EMPTY content for all 3 wells — slow,
+partially-offloaded inference on the 16 GB VRAM ceiling (exactly the Charter/R3
+NEEDS-HANDSON risk). The deliverable reports in `documentation/sample_reports/` were
+therefore generated with **llama3.1:8b + the hardened domain prompt** — non-empty, correctly
+framed as petrophysical interpretations (rock/porosity/saturation/net pay), honest about the
+`bracketed` tier. Quality is 8B-limited (some generic phrasing; the claim_verifier guards
+against hallucinated numbers). To get qwen3:30b reports the user should run on >16 GB VRAM
+or a smaller/more-quantized qwen variant (NEEDS-HANDSON).
+
 **Watch items (NEEDS-HANDSON, recorded for the user's return):** net-pay values are high
 (~200-400 m) due to deferred zonation-merging + cutoff/Rw calibration — the `bracketed`
 tier and high-leverage warning already flag these as low-confidence. VOLVE regression
