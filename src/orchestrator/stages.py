@@ -15,6 +15,7 @@ from typing import Any
 import numpy as np
 
 from src.orchestrator.state import CONVERGED, DID_NOT_CONVERGE, PipelineState
+from src.petrophysics.lithology import estimate_matrix_density, estimate_shale_points
 from src.petrophysics.netpay import apply_cutoffs
 from src.petrophysics.phie import calc_phie
 from src.petrophysics.sw import calc_sw
@@ -38,27 +39,51 @@ def _safe_mean(values: Any) -> float:
 
 
 def compute(state: PipelineState) -> dict[str, Any]:
-    """Run the three core deterministic computations."""
+    """Run the three core deterministic computations with data-driven lithology.
+
+    Matrix density and the shale endpoints are derived from the curves (deterministic
+    parameter selection) so PHIE is effective porosity of the rock actually logged; the
+    regional defaults are the fallback when there is too little clean/shale rock.
+    """
     curves = state["curves"]
     n = state["depth_m"].size
     nan = np.full(n, np.nan)
+    rhob, nphi = curves.get("RHOB", nan), curves.get("NPHI", nan)
+    rho_fl = _pv(state, "rho_fl")
+
     vsh = calc_vsh(curves["GR"], _pv(state, "gr_min"), _pv(state, "gr_max"), state["variant"])
+
+    # Substep — deterministic parameter selection from the data (replaces dead compute agent)
+    rho_ma, ma_dd = estimate_matrix_density(rhob, vsh, default=_pv(state, "rho_ma"))
+    phi_sh_d, phi_sh_n, sh_dd = estimate_shale_points(
+        rhob, nphi, vsh, rho_ma, rho_fl,
+        _pv(state, "phi_sh_d"), _pv(state, "phi_sh_n"),
+    )
+
     phie = calc_phie(
-        curves.get("RHOB", nan), curves.get("NPHI", nan),
-        _pv(state, "rho_ma"), _pv(state, "rho_fl"), _pv(state, "phie_max"),
-        vsh=vsh, phi_sh_d=_pv(state, "phi_sh_d"), phi_sh_n=_pv(state, "phi_sh_n"),
+        rhob, nphi, rho_ma, rho_fl, _pv(state, "phie_max"),
+        vsh=vsh, phi_sh_d=phi_sh_d, phi_sh_n=phi_sh_n,
     )
     sw = calc_sw(
         curves["RT"], phie, _pv(state, "a"), _pv(state, "m"), _pv(state, "n"), _pv(state, "Rw")
     )
-    return {"vsh": vsh, "phie": phie, "sw": sw}
+    calibration = {
+        "rho_ma": {"value": rho_ma, "data_driven": ma_dd,
+                   "regional_default": _pv(state, "rho_ma")},
+        "phi_sh_d": {"value": phi_sh_d, "data_driven": sh_dd,
+                     "regional_default": _pv(state, "phi_sh_d")},
+        "phi_sh_n": {"value": phi_sh_n, "data_driven": sh_dd,
+                     "regional_default": _pv(state, "phi_sh_n")},
+    }
+    return {"vsh": vsh, "phie": phie, "sw": sw, "calibration": calibration}
 
 
 def validate(state: PipelineState) -> dict[str, Any]:
     """Run the fixed validator harness."""
+    rho_ma_used = state.get("calibration", {}).get("rho_ma", {}).get("value", _pv(state, "rho_ma"))
     objs = run_validators(
         state["vsh"], state["phie"], state["sw"], state["curves"],
-        phie_max=_pv(state, "phie_max"), rho_ma=_pv(state, "rho_ma"),
+        phie_max=_pv(state, "phie_max"), rho_ma=rho_ma_used,
         rt_floor=_pv(state, "rt_hydrocarbon_floor"),
         out_dir=state["out_dir"], uwi=state["uwi"],
     )
@@ -151,6 +176,19 @@ def _well_summary(
     }
 
 
+def _emit_parameters(state: PipelineState) -> dict[str, Any]:
+    """Build the ledger parameter block, reflecting data-driven calibration overrides."""
+    calibration = state.get("calibration", {})
+    params: dict[str, Any] = {}
+    for k, p in state["params"].items():
+        cal = calibration.get(k)
+        if cal and cal.get("data_driven"):
+            params[k] = {"value": cal["value"], "unit": p.unit, "provenance": "data_driven"}
+        else:
+            params[k] = {"value": p.value, "unit": p.unit, "provenance": p.provenance}
+    return params
+
+
 def emit(state: PipelineState) -> dict[str, Any]:
     """Assemble and write the ledger JSON (no prose report — that is Phase 5)."""
     ledger = {
@@ -161,13 +199,11 @@ def emit(state: PipelineState) -> dict[str, Any]:
             "variant": state["variant"],
             "variant_degraded": state.get("variant_degraded", False),
         },
-        "parameters": {
-            k: {"value": p.value, "unit": p.unit, "provenance": p.provenance}
-            for k, p in state["params"].items()
-        },
+        "parameters": _emit_parameters(state),
         "zones": state["zones"],
         "net_pay_total_m": state["net_pay_total_m"],
         "summary": state.get("summary", {}),
+        "calibration": state.get("calibration", {}),
         "objections": [
             {"validator_id": o.validator_id, "type": o.objection_type, "detail": o.detail}
             for o in state["objections"]

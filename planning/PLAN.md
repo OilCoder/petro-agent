@@ -221,7 +221,7 @@ each phase unblocks the next. The audit IDs (PHYS-/LAS-/FR-/VIZ-/BC-) are the tr
 Done when: `calc_phie` produces EFFECTIVE porosity (shale-corrected) with golden tests proving PHIE < PHIT on shaly samples and PHIE→0 as Vsh→1; `rho_ma` is derived from the data (not fixed at 2.71) and re-parameterized when `model_mismatch_nd` fires; a region-aware PHIE plausibility validator guards against regressions; the Vsh–PHIE Pearson correlation on the Schaben wells drops below 0.3.
 - [x] Add shale correction to `calc_phie`: accept `vsh`, subtract `vsh * phi_shale` from density/neutron porosity before averaging; clip to [0, phie_max] (`src/petrophysics/phie.py`) (2026-06-25)
 - [x] Golden tests: PHIE < PHIT on shaly fixtures, PHIE→0 as Vsh→1, clean-sand unchanged, NaN passthrough (`tests/test_phie.py`) (2026-06-25)
-- [ ] Derive `rho_ma` from the data (low-porosity RHOB mode or M-N classification) and wire the deterministic selector to re-parameterize on `model_mismatch_nd` instead of the dead `compute_agent` (`src/petrophysics/`, `src/orchestrator/stages.py`)
+- [x] Derive `rho_ma` from the data (low-porosity RHOB mode or M-N classification) and wire the deterministic selector to re-parameterize on `model_mismatch_nd` instead of the dead `compute_agent` (`src/petrophysics/lithology.py`, `src/orchestrator/stages.py`) (2026-06-25)
 - [ ] Add a region-aware PHIE plausibility validator (flag if net-reservoir median PHIE exceeds the carbonate band ~0.20 or Vsh–PHIE correlation is high) and lower `phie_max` for `paleozoic_kansas` (`src/validators/`, `src/params/regional_defaults.json`)
 
 ### Phase 11 — QC gate with teeth (Block 2)

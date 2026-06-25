@@ -28,6 +28,7 @@ class PipelineState(TypedDict, total=False):
     vsh: Any
     phie: Any
     sw: Any
+    calibration: dict[str, Any]
     objections: list[Any]
     correctable: int
     prev_correctable: int
