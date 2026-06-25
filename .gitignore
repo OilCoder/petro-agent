@@ -11,14 +11,23 @@ venv/
 .ruff_cache/
 .ipynb_checkpoints/
 
+# Claude coding assistant system files
+.claude/
+
 # Data & model artifacts (LAS files, weights — added per phase)
 data/
 models/
 outputs/
+
+# Project planning and design files, screenshots, etc.
 planning/diseno/
+screenshots/
 
 # Debug scaffolding (always gitignored)
 debug/
+
+# Editor (personal IDE settings, e.g. window theme)
+.vscode/
 
 # Common
 .env
