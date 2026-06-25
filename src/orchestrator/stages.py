@@ -46,6 +46,7 @@ def compute(state: PipelineState) -> dict[str, Any]:
     phie = calc_phie(
         curves.get("RHOB", nan), curves.get("NPHI", nan),
         _pv(state, "rho_ma"), _pv(state, "rho_fl"), _pv(state, "phie_max"),
+        vsh=vsh, phi_sh_d=_pv(state, "phi_sh_d"), phi_sh_n=_pv(state, "phi_sh_n"),
     )
     sw = calc_sw(
         curves["RT"], phie, _pv(state, "a"), _pv(state, "m"), _pv(state, "n"), _pv(state, "Rw")
