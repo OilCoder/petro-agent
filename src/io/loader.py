@@ -22,7 +22,7 @@ ALIASES: dict[str, list[str]] = {
     "GR": ["GR", "GRD", "GRGC", "GR_EDTC", "SGR", "CGR", "GAMMA"],
     "RHOB": ["RHOB", "RHOZ", "DEN", "RHOG", "DENS", "ZDEN", "RHOC"],
     "NPHI": ["NPHI", "NPOR", "TNPH", "CN", "PHIN", "CNLS", "CNPOR", "NPRL"],
-    "RT": ["RT", "ILD", "RDEEP", "AT90", "RD", "LLD", "RILD", "RES", "RESD"],
+    "RT": ["RT", "ILD", "LLD", "AT90", "RDEEP", "RILD", "RESD", "RD", "RES"],
     "CALI": ["CALI", "CAL", "C1", "CALP"],
     "DCAL": ["DCAL", "CALX", "CALY", "HDCAL"],
     "DT": ["DT", "AC", "SONIC", "DTC"],
@@ -50,13 +50,19 @@ class WellData:
     step_m: float
     curves: dict[str, np.ndarray]  # canonical name -> array
     raw_mnemonics: dict[str, str] = field(default_factory=dict)  # canonical -> raw
+    metadata: dict[str, str] = field(default_factory=dict)  # well/tool provenance
 
 
-def _canonical(mnemonic: str) -> str | None:
+def _match(mnemonic: str) -> tuple[str, int] | None:
+    """Map a raw mnemonic to ``(canonical, rank)`` where lower rank = preferred alias.
+
+    The alias-list order encodes preference — for RT the deepest-DOI mnemonics come
+    first — so resolution picks the best curve by rank, not by file order.
+    """
     upper = mnemonic.upper().split(":")[0].split("[")[0].strip()
     for canon, aliases in ALIASES.items():
         if upper in aliases:
-            return canon
+            return canon, aliases.index(upper)
     return None
 
 
@@ -99,20 +105,37 @@ def load_las(path: str) -> WellData:
     step = float(np.median(np.diff(depth)))
 
     # ----------------------------------------
-    # Step 2 — resolve canonical curves (first alias match wins)
+    # Step 2 — resolve canonical curves (best alias rank wins, not file order)
     # ----------------------------------------
+    # For RT the deepest-DOI mnemonic must win even if a shallow one appears first.
+    candidates: dict[str, list[tuple[int, str, np.ndarray]]] = {}
+    for curve in las.curves:
+        m = _match(curve.mnemonic)
+        if m:
+            canon, rank = m
+            candidates.setdefault(canon, []).append(
+                (rank, curve.mnemonic, np.asarray(curve.data, dtype=float))
+            )
     curves: dict[str, np.ndarray] = {}
     raw: dict[str, str] = {}
-    for curve in las.curves:
-        canon = _canonical(curve.mnemonic)
-        if canon and canon not in curves:
-            curves[canon] = np.asarray(curve.data, dtype=float)
-            raw[canon] = curve.mnemonic
+    for canon, cands in candidates.items():
+        cands.sort(key=lambda c: c[0])  # lowest rank = most-preferred alias
+        _, mnemonic, arr = cands[0]
+        curves[canon] = arr
+        raw[canon] = mnemonic
 
     # ----------------------------------------
-    # Step 3 — well metadata
+    # Step 3 — well + tool metadata (provenance)
     # ----------------------------------------
     prov = _header(las, "PROV", default="unknown") or "unknown"
+    metadata = {
+        "log_date": _header(las, "DATE"),
+        "service_company": _header(las, "SRVC"),
+        "company": _header(las, "COMP"),
+        "field": _header(las, "FLD"),
+        "depth_start_m": f"{float(depth[0]):.2f}",
+        "depth_stop_m": f"{float(depth[-1]):.2f}",
+    }
 
     return WellData(
         source_path=path,
@@ -123,4 +146,5 @@ def load_las(path: str) -> WellData:
         step_m=step,
         curves=curves,
         raw_mnemonics=raw,
+        metadata={k: v for k, v in metadata.items() if v},
     )

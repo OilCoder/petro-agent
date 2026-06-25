@@ -98,6 +98,35 @@ def bad_hole_mask(
     return mask, edits
 
 
+# Hard physical limits: values strictly outside are sentinel-like (e.g. RT 1e10 for
+# "infinite" resistivity) and are MASKED to NaN, not just warned — they corrupt Sw/net pay.
+_HARD_RANGES = {
+    "RT": (0.0, 40000.0),
+    "RHOB": (0.5, 5.0),
+    "NPHI": (-0.15, 1.5),
+}
+
+
+def hard_range_mask(
+    curves: dict[str, np.ndarray],
+) -> tuple[dict[str, np.ndarray], list[Edit]]:
+    """Mask physically impossible values (sentinel-like) to NaN, logging each edit."""
+    out: dict[str, np.ndarray] = {}
+    edits: list[Edit] = []
+    for name, arr in curves.items():
+        a = np.asarray(arr, dtype=float).copy()
+        if name in _HARD_RANGES:
+            lo, hi = _HARD_RANGES[name]
+            with np.errstate(invalid="ignore"):
+                bad = np.isfinite(a) & ((a <= lo) | (a > hi))
+            n = int(np.count_nonzero(bad))
+            if n:
+                a[bad] = np.nan
+                edits.append({"type": "hard_range_mask", "curve": name, "count": n})
+        out[name] = a
+    return out, edits
+
+
 _RANGES = {
     "GR": (0.0, 300.0),
     "RHOB": (1.0, 3.0),

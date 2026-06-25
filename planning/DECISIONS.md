@@ -205,3 +205,32 @@ COMPLETED requires re-checking the Done-when criterion and the files on disk, no
 
 **No invariant changed.** This strengthens the project's honesty contract; it does not alter
 any equation, architecture decision, or scope.
+
+---
+
+## D9 (2026-06-25, Block 3) — LAS traceability: RT by DOI, hard masking, provenance
+
+**Context.** The composite-log figure (Phase 13) exposed an RT spike to ~1e11 ohm-m around
+630 m. Investigation found two LAS-handling defects: (1) `range_flags` only WARNED on
+extreme RT, never masked it, so 174 sentinel-like RT values per well fed `calc_sw` → Sw→0 →
+spurious net pay; (2) RT resolved by file order, so any resistivity (incl. shallow/invaded)
+could feed Sw, the curve that decides net pay.
+
+**Decisions.**
+- **Hard physical mask** (`hard_range_mask`): RT outside (0, 40000], RHOB outside (0.5, 5.0),
+  NPHI outside (-0.15, 1.5) are MASKED to NaN (logged), not just warned — they are sentinel-
+  like and corrupt the quantitative path. Runs in the QC gate before spike removal.
+- **RT by depth of investigation**: alias resolution now picks the best-ranked alias, not the
+  first in file. The RT alias list is ordered deep-first (RT, ILD, LLD, AT90, RDEEP, RILD,
+  RESD, then generic RD, RES). The chosen raw mnemonic is recorded in `curve_provenance`.
+- **Provenance + metadata**: `raw_mnemonics` (canonical←raw) and well/tool metadata (log date,
+  service company, company, field, depth range) are threaded to the ledger and shown in the
+  report; an explicit `environmental_corrections=none_applied` flag is logged (none are applied
+  — honest disclosure rather than silent omission).
+
+**Why at my discretion.** The user authorized processing the pending blocks and taking the
+decisions myself. None of this changes an equation or the invariant — it removes a data
+corruption (the 1e10 RT) and restores the evidence chain the blueprint promised (LAS-01/02/04).
+
+**Deferred.** The `~Other`-before-`~Curve` reorder guard and wrapped-LAS fallback (the 7
+unparseable files) remain — they need field-level intake plumbing, better suited to Block 5.

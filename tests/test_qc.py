@@ -80,3 +80,14 @@ def test_qc_abort_threshold():
     curves["GR"][:] = np.nan  # everything excluded
     with pytest.raises(ValueError):
         qc_gate(_well(curves))
+
+
+def test_hard_range_mask_masks_infinite_rt():
+    from src.qc.masks import hard_range_mask
+
+    curves = {"RT": np.array([10.0, 1e10, 50.0, -5.0])}
+    out, edits = hard_range_mask(curves)
+    assert np.isnan(out["RT"][1])  # 1e10 sentinel-like -> masked
+    assert np.isnan(out["RT"][3])  # negative resistivity -> masked
+    assert out["RT"][0] == 10.0 and out["RT"][2] == 50.0  # valid kept
+    assert any(e["type"] == "hard_range_mask" and e["curve"] == "RT" for e in edits)

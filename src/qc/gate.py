@@ -11,7 +11,14 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from src.io.loader import WellData
-from src.qc.masks import Edit, bad_hole_mask, mask_nulls, range_flags, remove_spikes
+from src.qc.masks import (
+    Edit,
+    bad_hole_mask,
+    hard_range_mask,
+    mask_nulls,
+    range_flags,
+    remove_spikes,
+)
 
 VERSION = "0.1.0"
 
@@ -90,6 +97,8 @@ def qc_gate(well: WellData, bit_size: float = 8.5) -> QCResult:
     curves, e = detect_units(well.curves)
     edits += e
     curves, e = mask_nulls(curves)
+    edits += e
+    curves, e = hard_range_mask(curves)
     edits += e
 
     for name in SPIKE_CURVES:

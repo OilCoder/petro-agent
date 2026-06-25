@@ -235,10 +235,10 @@ Done when: a well with unresolved MECHANICAL objections cannot emit a confident 
 
 ### Phase 12 — LAS traceability and rigor (Block 3)
 Done when: RT alias resolution prefers the deepest-DOI curve and logs the chosen curve; per-curve provenance (`raw_mnemonics`) reaches the ledger; wrapped LAS and `~Other`-before-`~Curve` are handled with logged edits; excluded files and tool/vintage metadata are recorded.
-- [ ] Rank RT sub-aliases by depth of investigation (deep first) and log `rt_curve_selected`; degrade when only a generic resistivity exists (`src/params/mnemonic_aliases.json`, `src/io/loader.py`)
-- [ ] Thread `raw_mnemonics` into `PipelineState` and emit `ledger['run']['curve_provenance']` (`src/orchestrator/state.py`, `stages.py`)
+- [x] Rank RT sub-aliases by depth of investigation (deep first), resolve by alias rank not file order, and record the chosen curve in `curve_provenance` (`src/params/mnemonic_aliases.json`, `src/io/loader.py`) (2026-06-25)
+- [x] Thread `raw_mnemonics` into `PipelineState` and emit `ledger['run']['curve_provenance']`; mask sentinel-like RT (1e10) via a hard physical-range mask (`src/io/loader.py`, `src/qc/masks.py`, `src/orchestrator/state.py`, `stages.py`) (2026-06-25)
 - [ ] Implement the `~Other`-before-`~Curve` reorder guard + wrapped-LAS fallback; record excluded files (path + error) for an honest N_loaded/N_excluded (`src/io/loader.py`)
-- [ ] Capture well/tool metadata (well name, source path, depth range, log date, service company, DOI) into `ledger['run']['well_metadata']`; add minimal environmental-correction handling or an explicit `no_environmental_corrections_applied` flag (`src/io/loader.py`)
+- [x] Capture well/tool metadata (well name, source path, depth range, log date, service company, field) into `ledger['run']['well_metadata']` and flag `environmental_corrections=none_applied` (`src/io/loader.py`, `stages.py`) (2026-06-25)
 
 ### Phase 13 — Figures (Block 4)
 Done when: every report embeds its figures by reference; the N-D crossplot already produced is recovered and embedded; a composite log plot, a Pickett plot, and a per-depth data-quality track are generated per well; figure paths are recorded in the ledger.

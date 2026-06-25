@@ -2,7 +2,7 @@
   "GR":   ["GR", "GRD", "GRGC", "GR_EDTC", "SGR", "CGR", "GAMMA"],
   "RHOB": ["RHOB", "RHOZ", "DEN", "RHOG", "DENS", "ZDEN", "RHOC"],
   "NPHI": ["NPHI", "NPOR", "TNPH", "CN", "PHIN", "CNLS", "CNPOR", "NPRL"],
-  "RT":   ["RT", "ILD", "RDEEP", "AT90", "RD", "LLD", "RILD", "RES", "RESD"],
+  "RT":   ["RT", "ILD", "LLD", "AT90", "RDEEP", "RILD", "RESD", "RD", "RES"],
   "CALI": ["CALI", "CAL", "C1", "CALP"],
   "DCAL": ["DCAL", "CALX", "CALY", "HDCAL"],
   "DT":   ["DT", "AC", "SONIC", "DTC"],

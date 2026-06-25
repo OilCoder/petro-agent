@@ -85,6 +85,8 @@ def run_pipeline(
         "uwi": well.uwi or Path(las_path).stem,
         "out_dir": out_dir,
         "curves": qc.curves,
+        "raw_mnemonics": well.raw_mnemonics,
+        "well_metadata": well.metadata,
         "params": params,
         "variant": variant,
         "variant_degraded": degraded,

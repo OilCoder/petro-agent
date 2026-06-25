@@ -15,6 +15,8 @@ class PipelineState(TypedDict, total=False):
     uwi: str
     out_dir: str
     curves: dict[str, Any]
+    raw_mnemonics: dict[str, str]
+    well_metadata: dict[str, str]
     params: dict[str, Any]  # key -> ParamValue
     variant: str
     variant_degraded: bool

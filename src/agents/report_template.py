@@ -91,10 +91,17 @@ def _header(run: dict[str, Any]) -> str:
     engine = versions.get("engine_versions", {})
     engine_str = " · ".join(f"{k} {v}" for k, v in engine.items()) or "engine 0.1.0"
     config_hash = run.get("config_hash_sha256", "—")
+    meta = run.get("well_metadata", {})
+    meta_rows = ""
+    if meta.get("log_date"):
+        meta_rows += f"| **Log date** | {meta['log_date']} |\n"
+    if meta.get("service_company"):
+        meta_rows += f"| **Service company** | {meta['service_company']} |\n"
     return (
         f"# Petrophysical Interpretation Report — {run.get('uwi', 'UNKNOWN')}\n\n"
         "| | |\n|---|---|\n"
         f"| **Well (UWI)** | {run.get('uwi', '—')} |\n"
+        f"{meta_rows}"
         f"| **Larionov variant** | {run.get('variant', '—')}"
         f"{' (degraded)' if run.get('variant_degraded') else ''} |\n"
         f"| **Convergence status** | {run.get('convergence_status', '—')} |\n"
@@ -270,7 +277,10 @@ def _data_quality(ledger: dict[str, Any]) -> str:
     for e in edits:
         by_type[e.get("type", "?")] = by_type.get(e.get("type", "?"), 0) + 1
     edit_str = ", ".join(f"{k}: {v}" for k, v in sorted(by_type.items())) or "none"
+    prov = ledger.get("run", {}).get("curve_provenance", {})
+    prov_str = ", ".join(f"{c}←{m}" for c, m in sorted(prov.items())) or "—"
     rows = ["## 7. Data quality and validator objections\n",
+            f"Curve provenance (canonical ← raw mnemonic): {prov_str}.\n",
             f"QC edits applied before compute — {edit_str}.\n",
             "| Validator | Type | Detail |", "|---|---|---|"]
     for o in ledger.get("objections", []):

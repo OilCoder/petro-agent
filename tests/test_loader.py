@@ -54,3 +54,14 @@ def test_load_real_schaben_if_present():
             assert np.all(np.diff(well.depth_m) > 0)
             return
     pytest.skip("no full-suite Schaben well found in data/")
+
+
+def test_match_prefers_deep_resistivity_by_rank():
+    from src.io.loader import _match
+
+    canon_ild, rank_ild = _match("ILD")  # type: ignore[misc]
+    canon_rild, rank_rild = _match("RILD")  # type: ignore[misc]
+    canon_res, rank_res = _match("RES")  # type: ignore[misc]
+    assert canon_ild == canon_rild == canon_res == "RT"
+    # deep induction (ILD) outranks RILD outranks generic RES (lower rank = preferred)
+    assert rank_ild < rank_rild < rank_res
