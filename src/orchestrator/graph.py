@@ -9,6 +9,7 @@ from langgraph.graph import END, START, StateGraph
 
 from src.gating.rules import high_leverage_flag
 from src.io.loader import load_las
+from src.orchestrator.provenance import pin_versions
 from src.orchestrator.stages import (
     compute,
     correct_stub,
@@ -95,6 +96,7 @@ def run_pipeline(
     final = build_graph().invoke(initial)
     ledger = final["ledger"]
     ledger["run"]["config_hash_sha256"] = config_hash(config_path) if config_path else config_hash()
+    ledger["run"]["versions"] = pin_versions()
 
     if uncertainty:
         base = {k: params[k].value for k in ("a", "m", "n", "Rw")}
