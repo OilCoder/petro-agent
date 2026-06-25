@@ -7,6 +7,7 @@ from typing import Any
 
 from langgraph.graph import END, START, StateGraph
 
+from src.gating.rules import high_leverage_flag
 from src.io.loader import load_las
 from src.orchestrator.stages import (
     compute,
@@ -26,6 +27,8 @@ from src.params.config_loader import (
     resolve_all,
 )
 from src.qc.gate import qc_gate
+from src.uncertainty.montecarlo import propagate_net_pay
+from src.uncertainty.sensitivity import sensitivity_net_pay
 
 VERSION = "0.1.0"
 
@@ -62,6 +65,7 @@ def run_pipeline(
     region: str = "paleozoic_kansas",
     out_dir: str = "outputs",
     config_path: str | None = None,
+    uncertainty: bool = True,
 ) -> dict[str, Any]:
     """Run the full deterministic pipeline on a LAS file and return the ledger dict.
 
@@ -91,4 +95,17 @@ def run_pipeline(
     final = build_graph().invoke(initial)
     ledger = final["ledger"]
     ledger["run"]["config_hash_sha256"] = config_hash(config_path) if config_path else config_hash()
+
+    if uncertainty:
+        base = {k: params[k].value for k in ("a", "m", "n", "Rw")}
+        cutoffs = {k: params[k].value for k in ("vsh_cutoff", "phie_cutoff", "sw_cutoff")}
+        vsh, phie, rt = final["vsh"], final["phie"], final["curves"]["RT"]
+        step = float(well.step_m)
+        mc = propagate_net_pay(vsh, phie, rt, base, cutoffs, step)
+        sens = sensitivity_net_pay(vsh, phie, rt, base, cutoffs, step)
+        warn = high_leverage_flag(sens["dominant_parameter"], params)
+        ledger["uncertainty"] = {**mc, "sensitivity": sens, "high_leverage_warning": warn}
+        ledger["run"]["net_pay_p10_p50_p90"] = [
+            mc["net_pay_p10"], mc["net_pay_p50"], mc["net_pay_p90"]
+        ]
     return ledger

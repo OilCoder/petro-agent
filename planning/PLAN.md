@@ -182,16 +182,16 @@ Done when: a second adversarial agent reviews the draft before the claim verifie
 - [x] Log reviewer model tag and seed in `run.model_tags` (`src/agents/ollama_client.py`)
 - [x] Test: adversarial reviewer introduces a mechanical objection on a synthetic draft; the loop re-enters `compute` and resolves it before re-entering `write` (`tests/test_reviewer.py`)
 
-### Phase 7 — Uncertainty and confidence
+### Phase 7 — Uncertainty and confidence (COMPLETED 2026-06-25)
 Done when: the pipeline propagates parameter uncertainty through Vsh, PHIE, and Sw computations via Monte Carlo per-depth sampling and writes true-percentile P10/P50/P90 slots in the ledger; sensitivity analysis identifies the dominant parameter for net pay; the multi-seed robustness check passes; the ECE threshold is set, logged as a manifest decision, and the reliability diagram infrastructure is in place.
-- [ ] Resolve decision (c) — uncertainty propagation method: CLOSED as Monte Carlo per-depth sampling (true distributional outputs, not analytic ranges); record in `planning/blueprint/MANIFEST.md`; implement with seed management and `run.monte_carlo_seeds` (`src/uncertainty/propagation.py`)
-- [ ] Resolve decision (b) — hard abstention policy (refuse to emit when no high-leverage parameter is calibrated); record in `planning/blueprint/MANIFEST.md`; implement the gating-stage abstention path if chosen (`src/orchestrator/stages.py`)
-- [ ] Implement Monte Carlo uncertainty propagation: per-depth parameter sampling through Vsh, PHIE, Sw; P10/P50/P90 are true percentiles of the sampled distribution; written to `computations[].result_p10`, `result_p50`, and `result_p90`; sampling widths from config defaults (`src/uncertainty/propagation.py`)
-- [ ] Implement sensitivity analysis: identify which of a, m, n, Rw contributes most to net-pay uncertainty per zone; log as ledger metadata and require the writer to mention it in the zone Limitations sub-section (`src/uncertainty/sensitivity.py`)
-- [ ] Implement multi-seed robustness check: three fixed seed sets; P50 agreement within 1% relative, P10–P90 widths within 5%, consistent tier; failures logged as degradation with `confidence_impact = uncertainty_widening` (`src/evaluation/robustness.py`)
-- [ ] Implement ECE and reliability diagram infrastructure: `compute_mae`, `compute_net_pay_deviation`, `compute_ece`, `plot_reliability_diagram` (`src/evaluation/volve_metrics.py`)
-- [ ] Set and log ECE threshold: provisional ECE measurement on a non-benchmark VOLVE subset (raw LAS curves only); propose threshold; record as a manifest decision (`planning/blueprint/MANIFEST.md`)
-- [ ] Tests for propagation, sensitivity analysis, robustness check, and metric functions (`tests/test_uncertainty.py`, `tests/test_volve_metrics.py`)
+- [x] Resolve decision (c) — uncertainty propagation method: CLOSED as Monte Carlo per-depth sampling (true distributional outputs, not analytic ranges); record in `planning/blueprint/MANIFEST.md`; implement with seed management and `run.monte_carlo_seeds` (`src/uncertainty/propagation.py`)
+- [x] Resolve decision (b) — hard abstention policy (refuse to emit when no high-leverage parameter is calibrated); record in `planning/blueprint/MANIFEST.md`; implement the gating-stage abstention path if chosen (`src/orchestrator/stages.py`)
+- [x] Implement Monte Carlo uncertainty propagation: per-depth parameter sampling through Vsh, PHIE, Sw; P10/P50/P90 are true percentiles of the sampled distribution; written to `computations[].result_p10`, `result_p50`, and `result_p90`; sampling widths from config defaults (`src/uncertainty/propagation.py`)
+- [x] Implement sensitivity analysis: identify which of a, m, n, Rw contributes most to net-pay uncertainty per zone; log as ledger metadata and require the writer to mention it in the zone Limitations sub-section (`src/uncertainty/sensitivity.py`)
+- [x] Implement multi-seed robustness check: three fixed seed sets; P50 agreement within 1% relative, P10–P90 widths within 5%, consistent tier; failures logged as degradation with `confidence_impact = uncertainty_widening` (`src/evaluation/robustness.py`)
+- [x] Implement ECE and reliability diagram infrastructure: `compute_mae`, `compute_net_pay_deviation`, `compute_ece`, `plot_reliability_diagram` (`src/evaluation/volve_metrics.py`)
+- [x] Set and log ECE threshold: provisional ECE measurement on a non-benchmark VOLVE subset (raw LAS curves only); propose threshold; record as a manifest decision (`planning/blueprint/MANIFEST.md`)
+- [x] Tests for propagation, sensitivity analysis, robustness check, and metric functions (`tests/test_uncertainty.py`, `tests/test_volve_metrics.py`)
 
 ### Phase 8 — Traceability and evaluation
 Done when: the pipeline produces a complete JSON ledger in which every emitted number traces in O(1) to its source; a full unattended run on VOLVE benchmark wells satisfies all four regression thresholds (PHIE MAE < 0.03, Vsh MAE < 0.10, Sw MAE < 0.15, net pay within ±20% per well); and the reliability diagram and ECE measurement are emitted to `outputs/evaluation/`.
