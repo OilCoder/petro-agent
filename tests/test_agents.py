@@ -38,6 +38,18 @@ def test_claim_verifier_flags_hallucination():
     assert out["passed"] is False and 0.37 in out["flags"]
 
 
+def test_verify_tone_flags_overconfident_bracketed():
+    ledger = {"run": {"confidence_tier": "bracketed"}}
+    out = verify_report("Net pay is high and the reservoir is excellent.", ledger)
+    assert out["passed"] is False and out["tone_flags"]
+
+
+def test_verify_tone_passes_with_hedging():
+    ledger = {"run": {"confidence_tier": "bracketed"}}
+    out = verify_report("Net pay is uncertain; parameters are regional defaults.", ledger)
+    assert out["tone_flags"] == []
+
+
 def test_writer_returns_prose_slots():
     captured = {}
 

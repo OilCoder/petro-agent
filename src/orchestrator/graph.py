@@ -103,7 +103,10 @@ def run_pipeline(
     ledger["run"]["versions"] = pin_versions()
 
     if uncertainty:
+        cal = final.get("calibration", {})
         base = {k: params[k].value for k in ("a", "m", "n", "Rw")}
+        if cal.get("Rw", {}).get("data_driven"):
+            base["Rw"] = cal["Rw"]["value"]
         cutoffs = {k: params[k].value for k in ("vsh_cutoff", "phie_cutoff", "sw_cutoff")}
         vsh, phie, rt = final["vsh"], final["phie"], final["curves"]["RT"]
         step = float(well.step_m)

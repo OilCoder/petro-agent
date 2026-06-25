@@ -31,10 +31,34 @@ def _collect_numbers(obj: Any, out: set[float]) -> None:
             out.add(float(m))
 
 
+_HEDGE_TERMS = ("bracket", "uncertain", "range", "default", "not", "caution", "abstain",
+                "limit", "regional", "p10", "p90", "uncalibrated")
+
+
+def verify_tone(report: str, ledger: dict[str, Any]) -> list[str]:
+    """Flag tone violations: a bracketed or abstaining run must hedge (check 4).
+
+    A ``bracketed`` tier or an ``abstain`` run whose prose contains no hedging/limitation
+    language is over-confident — the report asserts more certainty than the ledger allows.
+    """
+    run = ledger.get("run", {})
+    bracketed = run.get("confidence_tier") == "bracketed" or run.get("abstain")
+    if not bracketed:
+        return []
+    low = report.lower()
+    if not any(term in low for term in _HEDGE_TERMS):
+        return ["bracketed/abstaining run but the prose states no range or limitation"]
+    return []
+
+
 def verify_report(
     report: str, ledger: dict[str, Any], rel_tol: float = 0.02, abs_tol: float = 0.01
 ) -> dict[str, Any]:
-    """Flag every decimal in the report that no ledger value supports (within tolerance)."""
+    """Reconcile report numbers and tone against the ledger.
+
+    Check (1): every decimal in the report must match a ledger value within tolerance.
+    Check (4): a bracketed/abstaining run must use hedging/limitation language.
+    """
     ledger_nums: set[float] = set()
     _collect_numbers(ledger, ledger_nums)
 
@@ -43,4 +67,5 @@ def verify_report(
         num = float(token)
         if not any(abs(num - ln) <= max(abs_tol, rel_tol * abs(ln)) for ln in ledger_nums):
             flags.append(num)
-    return {"passed": len(flags) == 0, "flags": flags}
+    tone_flags = verify_tone(report, ledger)
+    return {"passed": len(flags) == 0 and not tone_flags, "flags": flags, "tone_flags": tone_flags}

@@ -87,3 +87,47 @@ def estimate_shale_points(
     phi_sh_d = (rho_ma - rhob_sh) / (rho_ma - rho_fl)
     phi_sh_n = float(np.median(nphi_arr[shale_n]))
     return float(np.clip(phi_sh_d, 0.0, 1.0)), float(np.clip(phi_sh_n, 0.0, 1.0)), True
+
+
+# Plausible formation-water resistivity window (ohm-m) for the Rwa estimate.
+RW_FLOOR, RW_CEIL = 0.01, 0.5
+
+
+def estimate_rw(
+    rt: np.ndarray,
+    phie: np.ndarray,
+    vsh: np.ndarray,
+    a: float,
+    m: float,
+    default: float,
+) -> tuple[float, bool]:
+    """Estimate Rw from the apparent water resistivity in clean, porous, wet rock.
+
+    Archie at Sw=1 gives ``Rwa = RT * PHIE**m / a``. In a water zone Sw≈1 so Rwa≈Rw;
+    the low percentile of Rwa over clean porous rock approximates Rw (the wettest, most
+    conductive intervals). This replaces the flat regional default — the dominant net-pay
+    uncertainty — with a data-driven value.
+
+    Args:
+        rt: deep resistivity (ohm-m).
+        phie: effective porosity (v/v).
+        vsh: shale volume (v/v).
+        a: Archie tortuosity factor.
+        m: Archie cementation exponent.
+        default: regional fallback Rw when too few clean porous samples.
+
+    Returns:
+        ``(rw, data_driven)`` with rw clipped to the plausible window.
+    """
+    rt_arr = np.asarray(rt, dtype=float)
+    phie_arr = np.asarray(phie, dtype=float)
+    vsh_arr = np.asarray(vsh, dtype=float)
+    clean_porous = (
+        (vsh_arr < 0.3) & (phie_arr > 0.08)
+        & np.isfinite(rt_arr) & np.isfinite(phie_arr) & (rt_arr > 0)
+    )
+    if int(clean_porous.sum()) < MIN_SAMPLES:
+        return default, False
+    rwa = rt_arr[clean_porous] * phie_arr[clean_porous] ** m / a  # Archie Sw=1: Rwa
+    rw = float(np.percentile(rwa, 10))
+    return float(np.clip(rw, RW_FLOOR, RW_CEIL)), True

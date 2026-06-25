@@ -85,9 +85,11 @@ def test_run_pipeline_emits_ledger(tmp_path):
 
 def test_circuit_breaker_fires_on_persistent_objection(tmp_path):
     n = 20
-    # high porosity + low RT -> Sw<0.4 with RT<5 -> rt_sw mechanical objection the stub can't fix
+    # Dirty rock (GR 75 -> vsh > 0.3) so data-driven Rw falls back to the default 0.04;
+    # high porosity + low RT then gives Sw<0.4 with RT<5 -> a persistent rt_sw mechanical
+    # objection the stub cannot fix, so the circuit breaker fires.
     curves = {
-        "GR": np.full(n, 40.0),
+        "GR": np.full(n, 75.0),
         "RHOB": np.full(n, 1.7),
         "NPHI": np.full(n, 0.40),
         "RT": np.full(n, 2.0),

@@ -15,7 +15,11 @@ from typing import Any
 import numpy as np
 
 from src.orchestrator.state import CONVERGED, DID_NOT_CONVERGE, PipelineState
-from src.petrophysics.lithology import estimate_matrix_density, estimate_shale_points
+from src.petrophysics.lithology import (
+    estimate_matrix_density,
+    estimate_rw,
+    estimate_shale_points,
+)
 from src.petrophysics.netpay import apply_cutoffs
 from src.petrophysics.phie import calc_phie
 from src.petrophysics.sw import calc_sw
@@ -65,9 +69,9 @@ def compute(state: PipelineState) -> dict[str, Any]:
         rhob, nphi, rho_ma, rho_fl, _pv(state, "phie_max"),
         vsh=vsh, phi_sh_d=phi_sh_d, phi_sh_n=phi_sh_n,
     )
-    sw = calc_sw(
-        curves["RT"], phie, _pv(state, "a"), _pv(state, "m"), _pv(state, "n"), _pv(state, "Rw")
-    )
+    a, m, n = _pv(state, "a"), _pv(state, "m"), _pv(state, "n")
+    rw, rw_dd = estimate_rw(curves["RT"], phie, vsh, a, m, default=_pv(state, "Rw"))
+    sw = calc_sw(curves["RT"], phie, a, m, n, rw)
     calibration = {
         "rho_ma": {"value": rho_ma, "data_driven": ma_dd,
                    "regional_default": _pv(state, "rho_ma")},
@@ -75,6 +79,7 @@ def compute(state: PipelineState) -> dict[str, Any]:
                      "regional_default": _pv(state, "phi_sh_d")},
         "phi_sh_n": {"value": phi_sh_n, "data_driven": sh_dd,
                      "regional_default": _pv(state, "phi_sh_n")},
+        "Rw": {"value": rw, "data_driven": rw_dd, "regional_default": _pv(state, "Rw")},
     }
     return {"vsh": vsh, "phie": phie, "sw": sw, "calibration": calibration}
 

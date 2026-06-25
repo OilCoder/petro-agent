@@ -48,3 +48,22 @@ def test_shale_points_fall_back_without_shale():
     vsh = np.full(n, 0.2)  # no high-Vsh rock
     phi_sh_d, phi_sh_n, dd = estimate_shale_points(rhob, nphi, vsh, 2.65, RHO_FL, 0.10, 0.35)
     assert dd is False and (phi_sh_d, phi_sh_n) == (0.10, 0.35)
+
+
+def test_estimate_rw_from_clean_porous_wet_rock():
+    from src.petrophysics.lithology import estimate_rw
+
+    n = 50
+    rt, phie, vsh = np.full(n, 2.0), np.full(n, 0.2), np.full(n, 0.1)
+    rw, dd = estimate_rw(rt, phie, vsh, 1.0, 2.0, default=0.04)
+    assert dd is True
+    assert rw == np.float64(2.0 * 0.2**2 / 1.0)  # Rwa = RT*PHIE^m/a = 0.08
+
+
+def test_estimate_rw_falls_back_without_porous_rock():
+    from src.petrophysics.lithology import estimate_rw
+
+    n = 50
+    rt, phie, vsh = np.full(n, 2.0), np.full(n, 0.02), np.full(n, 0.1)  # PHIE<0.08
+    rw, dd = estimate_rw(rt, phie, vsh, 1.0, 2.0, default=0.04)
+    assert dd is False and rw == 0.04
