@@ -5,6 +5,20 @@ justification, so they are auditable on return. Newest first.
 
 ---
 
+## D3 (2026-06-25, Phase 1) — Consolidated QC modules into masks.py + gate.py
+
+The blueprint sketched separate `null_handler.py` / `spike.py` / `bad_hole.py` /
+`range_check.py` / `quality_map.py`. I merged the masking primitives into
+`src/qc/masks.py` and the orchestrator + quality map into `src/qc/gate.py`. **Why:**
+they are small, tightly-coupled functions sharing the `Edit`/edits pattern; two
+cohesive files read better than five one-function files and reduce import churn. No
+behavior change — every blueprint QC function exists (mask_nulls, remove_spikes,
+bad_hole_mask, range_flags, detect_units, _build_quality_map, qc_gate) and is tested
+(`tests/test_qc.py`). Purely an internal layout choice; the public `qc_gate` contract
+matches the Phase-1 done-when.
+
+---
+
 ## D1 (2026-06-25, Phase 0) — Corrected two inverted Archie monotonicity directions in blueprint 05
 
 **What the blueprint said (wrong).** `05_engine_and_validation.md` golden-test table for

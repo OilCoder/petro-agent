@@ -117,15 +117,15 @@ Done when: `pytest -q` exits 0 on `tests/test_vsh.py`, `tests/test_phie.py`, `te
 - [x] Golden tests for `net_sand` / `net_reservoir`: three-tier monotonic ordering (net pay ≤ net reservoir ≤ net sand), thickness summation, per-cutoff rejection, NaN exclusion (`tests/test_netpay.py`)
 - [x] Golden tests for `hcpv` / `bvw`: HCPV = net pay × PHIE × (1−Sw) analytic case, BVW = PHIE × Sw analytic case, NaN passthrough, net-pay-only integration, zero-thickness guard, physical bounds (`tests/test_volumetrics.py`)
 
-### Phase 1 — Data QC gate
+### Phase 1 — Data QC gate (COMPLETED 2026-06-25)
 Done when: a Kansas/Schaben LAS passes through `qc_gate` and produces a per-depth data-quality map (`GOOD | DEGRADED | EXCLUDED`) with all edits recorded in the ledger's `edits` array; no computation call is reachable without the map being produced first.
-- [ ] Implement intake unit detection and auto-conversion: NPHI percent→v/v when max > 2.0, RHOB kg/m³→g/cc when max > 10.0; ambiguous ranges abort with a diagnostic; each conversion logged as a `unit_conversion` edit (`src/io/loader.py`)
-- [ ] Implement null masking: apply lasio null sentinel (default −9999.25, tolerance 1e-3) across all curves simultaneously; log as `null_mask` edits (`src/qc/null_handler.py`)
-- [ ] Implement spike removal on GR, RHOB, NPHI, RT: ±10-sample window, 5×IQR threshold; spike depth set to NaN; original value logged as `spike_removal` edit (`src/qc/spike.py`)
-- [ ] Implement bad-hole masking: preferred DCAL > 2 inches; fallback CALI vs. `bit_size_config` when DCAL absent; RHOB and NPHI masked at bad-hole depths; fallback usage logged as degradation (`src/qc/bad_hole.py`)
-- [ ] Implement physical-range sanity flags (WARN, not mask) for RHOB, NPHI, GR, RT, CALI (`src/qc/range_check.py`)
-- [ ] Build per-depth data-quality map: GOOD / DEGRADED / EXCLUDED integer array; abort run if > 80% of depth range is EXCLUDED or DEGRADED (`src/qc/quality_map.py`)
-- [ ] Tests for null masking, spike removal, bad-hole masking, quality-map construction, and the 80% abort threshold (`tests/test_qc.py`)
+- [x] Implement intake unit detection and auto-conversion: NPHI percent→v/v when max > 2.0, RHOB kg/m³→g/cc when max > 10.0; ambiguous ranges abort with a diagnostic; each conversion logged as a `unit_conversion` edit (`src/io/loader.py`)
+- [x] Implement null masking: apply lasio null sentinel (default −9999.25, tolerance 1e-3) across all curves simultaneously; log as `null_mask` edits (`src/qc/null_handler.py`)
+- [x] Implement spike removal on GR, RHOB, NPHI, RT: ±10-sample window, 5×IQR threshold; spike depth set to NaN; original value logged as `spike_removal` edit (`src/qc/spike.py`)
+- [x] Implement bad-hole masking: preferred DCAL > 2 inches; fallback CALI vs. `bit_size_config` when DCAL absent; RHOB and NPHI masked at bad-hole depths; fallback usage logged as degradation (`src/qc/bad_hole.py`)
+- [x] Implement physical-range sanity flags (WARN, not mask) for RHOB, NPHI, GR, RT, CALI (`src/qc/range_check.py`)
+- [x] Build per-depth data-quality map: GOOD / DEGRADED / EXCLUDED integer array; abort run if > 80% of depth range is EXCLUDED or DEGRADED (`src/qc/quality_map.py`)
+- [x] Tests for null masking, spike removal, bad-hole masking, quality-map construction, and the 80% abort threshold (`tests/test_qc.py`)
 
 ### Phase 2 — Parameters with provenance
 Done when: a parameter config JSON loads and resolves every parameter for a Kansas well to a value, a provenance tier (`core | offset | default`), and a source description; the static citations table resolves every parameter to exactly one source (unknown parameter → hard fail) and joins into the ledger; the SHA-256 config hash is logged in the ledger `run` object.
