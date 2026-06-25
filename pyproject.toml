@@ -1,0 +1,33 @@
+[project]
+name = "petro-agent"
+version = "0.1.0"
+description = "Autonomous petrophysical report agent — deterministic engine + local-LLM orchestration"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "lasio>=0.31",
+    "matplotlib>=3.7",
+    "scipy>=1.11",
+    "langgraph>=0.2",
+    "ollama>=0.3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.5", "mypy>=1.8"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "C901", "W", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+warn_unused_ignores = true

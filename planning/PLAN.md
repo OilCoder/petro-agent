@@ -100,22 +100,22 @@ manifest decision and an explicit approval gate — never a silent change.
 
 ## Phases
 
-### Phase 0 — Deterministic engine (foundation)
+### Phase 0 — Deterministic engine (foundation) (COMPLETED 2026-06-25)
 Done when: `pytest -q` exits 0 on `tests/test_vsh.py`, `tests/test_phie.py`, `tests/test_sw.py`, `tests/test_netpay.py`, and `tests/test_volumetrics.py`; a Kansas/Schaben LAS loads successfully via `src/io/`; and `calc_vsh`, `calc_phie`, `calc_sw`, `apply_cutoffs`, `compute_net_pay`, `net_sand`, `net_reservoir`, `hcpv`, and `bvw` produce correct values for all analytic test fixtures with no skipped or xfail tests.
-- [ ] Set up WSL repo and Python environment (devcontainer / Docker target) — project root
-- [ ] Load a Kansas/Schaben LAS file with lasio, extracting curve arrays and well metadata into a typed internal structure (`src/io/loader.py`)
-- [ ] Implement `calc_vsh` — Larionov old-rocks variant, clips IGR and output to [0,1], NaN passthrough (`src/petrophysics/vsh.py`, version 0.1.0)
-- [ ] Implement `calc_phie` — density-neutron crossplot average, clips to [0, phie_max], density-only and neutron-only NaN fallback paths (`src/petrophysics/phie.py`, version 0.1.0)
-- [ ] Implement `calc_sw` — Archie equation, clips to [0,1], zero-PHIE guard returns NaN, NaN passthrough on rt and phie (`src/petrophysics/sw.py`, version 0.1.0)
-- [ ] Implement `apply_cutoffs` and `compute_net_pay` — per-depth net-pay flag, thickness summation, net-to-gross with zero-gross guard (`src/petrophysics/netpay.py`, version 0.1.0)
-- [ ] Implement `net_sand`, `net_reservoir` — deterministic cutoff/aggregation functions over the three core outputs (three-tier net sand/net reservoir/net pay hierarchy), not new petrophysical equations (`src/petrophysics/netpay.py`, version 0.1.0)
-- [ ] Implement `hcpv`, `bvw` — deterministic aggregation arithmetic over PHIE and Sw (hydrocarbon pore volume and bulk-volume-water), not new petrophysical equations (`src/petrophysics/volumetrics.py`, version 0.1.0)
-- [ ] Golden tests for `calc_vsh`: physical bounds, clean-sand, pure-shale, midpoint analytic, monotonicity, NaN passthrough, tertiary-vs-old-rocks separation, dimensional check (`tests/test_vsh.py`)
-- [ ] Golden tests for `calc_phie`: physical bounds, zero-porosity, known-sandstone analytic, monotonicity in rhob and nphi, density-only fallback, neutron-only fallback, both-NaN exclusion, units guard (`tests/test_phie.py`)
-- [ ] Golden tests for `calc_sw`: physical bounds, water-zone analytic, known numeric, monotonicity in rt and phie, zero-PHIE guard, NaN passthrough, m-sensitivity direction, dimensional check (`tests/test_sw.py`)
-- [ ] Golden tests for `apply_cutoffs` / `compute_net_pay`: all-pass, per-cutoff rejection, NaN exclusion, thickness summation, net-to-gross zero-gross guard, boundary-inclusive cutoff equality (`tests/test_netpay.py`)
-- [ ] Golden tests for `net_sand` / `net_reservoir`: three-tier monotonic ordering (net pay ≤ net reservoir ≤ net sand), thickness summation, per-cutoff rejection, NaN exclusion (`tests/test_netpay.py`)
-- [ ] Golden tests for `hcpv` / `bvw`: HCPV = net pay × PHIE × (1−Sw) analytic case, BVW = PHIE × Sw analytic case, NaN passthrough, net-pay-only integration, zero-thickness guard, physical bounds (`tests/test_volumetrics.py`)
+- [x] Set up WSL repo and Python environment (devcontainer / Docker target) — project root
+- [x] Load a Kansas/Schaben LAS file with lasio, extracting curve arrays and well metadata into a typed internal structure (`src/io/loader.py`)
+- [x] Implement `calc_vsh` — Larionov old-rocks variant, clips IGR and output to [0,1], NaN passthrough (`src/petrophysics/vsh.py`, version 0.1.0)
+- [x] Implement `calc_phie` — density-neutron crossplot average, clips to [0, phie_max], density-only and neutron-only NaN fallback paths (`src/petrophysics/phie.py`, version 0.1.0)
+- [x] Implement `calc_sw` — Archie equation, clips to [0,1], zero-PHIE guard returns NaN, NaN passthrough on rt and phie (`src/petrophysics/sw.py`, version 0.1.0)
+- [x] Implement `apply_cutoffs` and `compute_net_pay` — per-depth net-pay flag, thickness summation, net-to-gross with zero-gross guard (`src/petrophysics/netpay.py`, version 0.1.0)
+- [x] Implement `net_sand`, `net_reservoir` — deterministic cutoff/aggregation functions over the three core outputs (three-tier net sand/net reservoir/net pay hierarchy), not new petrophysical equations (`src/petrophysics/netpay.py`, version 0.1.0)
+- [x] Implement `hcpv`, `bvw` — deterministic aggregation arithmetic over PHIE and Sw (hydrocarbon pore volume and bulk-volume-water), not new petrophysical equations (`src/petrophysics/volumetrics.py`, version 0.1.0)
+- [x] Golden tests for `calc_vsh`: physical bounds, clean-sand, pure-shale, midpoint analytic, monotonicity, NaN passthrough, tertiary-vs-old-rocks separation, dimensional check (`tests/test_vsh.py`)
+- [x] Golden tests for `calc_phie`: physical bounds, zero-porosity, known-sandstone analytic, monotonicity in rhob and nphi, density-only fallback, neutron-only fallback, both-NaN exclusion, units guard (`tests/test_phie.py`)
+- [x] Golden tests for `calc_sw`: physical bounds, water-zone analytic, known numeric, monotonicity in rt and phie, zero-PHIE guard, NaN passthrough, m-sensitivity direction, dimensional check (`tests/test_sw.py`)
+- [x] Golden tests for `apply_cutoffs` / `compute_net_pay`: all-pass, per-cutoff rejection, NaN exclusion, thickness summation, net-to-gross zero-gross guard, boundary-inclusive cutoff equality (`tests/test_netpay.py`)
+- [x] Golden tests for `net_sand` / `net_reservoir`: three-tier monotonic ordering (net pay ≤ net reservoir ≤ net sand), thickness summation, per-cutoff rejection, NaN exclusion (`tests/test_netpay.py`)
+- [x] Golden tests for `hcpv` / `bvw`: HCPV = net pay × PHIE × (1−Sw) analytic case, BVW = PHIE × Sw analytic case, NaN passthrough, net-pay-only integration, zero-thickness guard, physical bounds (`tests/test_volumetrics.py`)
 
 ### Phase 1 — Data QC gate
 Done when: a Kansas/Schaben LAS passes through `qc_gate` and produces a per-depth data-quality map (`GOOD | DEGRADED | EXCLUDED`) with all edits recorded in the ledger's `edits` array; no computation call is reachable without the map being produced first.

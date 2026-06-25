@@ -203,10 +203,10 @@ def calc_sw(
 | `test_sw_water_zone` | rt = rw/PHIE^m (water-saturated Archie condition) → Sw = 1.0 | Analytic |
 | `test_sw_known_case` | rt = 10, PHIE = 0.20, a = 1.0, m = 2.0, n = 2.0, rw = 0.05 → Sw = sqrt(0.05*1/(10*0.04)) = sqrt(0.125) ≈ 0.354 | Analytic; atol=1e-4 |
 | `test_sw_monotonicity_rt` | Sw decreases as rt increases (all else constant) | Higher resistivity → lower water saturation |
-| `test_sw_monotonicity_phie` | Sw increases as PHIE increases (all else constant, fixed Rt and Rw) | More porosity for same resistivity → more water |
+| `test_sw_monotonicity_phie` | Sw **decreases** as PHIE increases (all else constant, fixed Rt and Rw) | Archie `Sw ∝ PHIE^(-m/n)`: more porosity for fixed Rt → lower Sw (corrected — see planning/DECISIONS.md D1) |
 | `test_sw_zero_phie` | PHIE = 0.0 → output NaN (not a crash, not zero) | Guard for division by zero |
 | `test_sw_nan_passthrough` | NaN rt or NaN phie → NaN output; non-NaN depths unchanged | NaN isolation |
-| `test_sw_archie_m_sensitivity` | Increasing m from 1.5 to 2.5 (all else fixed) monotonically lowers Sw estimate | Cementation exponent direction |
+| `test_sw_archie_m_sensitivity` | Increasing m from 1.5 to 2.5 (all else fixed) **raises** the Sw estimate (PHIE<1) | Archie `Sw ∝ PHIE^(-m/n)`: higher m → higher Sw (corrected — see planning/DECISIONS.md D1) |
 | `test_sw_dimensional` | Output is dimensionless (v/v fraction) for any physically valid input | Dimensionless check |
 
 ---
