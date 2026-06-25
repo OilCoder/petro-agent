@@ -5,6 +5,26 @@ justification, so they are auditable on return. Newest first.
 
 ---
 
+## D5 (2026-06-25, Phase 5) — Proof report used llama3.1:8b; qwen3:30b-a3b is canonical writer
+
+The writer agent is designed to run **qwen3:30b-a3b**, but qwen was still downloading
+(~30 min) when Phase 5 code was ready. To satisfy the Phase-5 done-when (a real prose
+report + ledger, claim-verifier PASS) without idling, I generated the proof report with
+**llama3.1:8b** (already downloaded). It worked end-to-end (report.md written, claim
+verifier PASS) but the **quality was poor** — the 8B model conflated petrophysical
+"convergence_status" with optimizer convergence. This empirically confirms qwen3:30b-a3b
+as the canonical writer (and is exactly the kind of thing the Topic-5 multi-model
+comparison surfaces).
+
+**Decisions:**
+1. Phase 5 marked complete on the functional done-when (the agent path works).
+2. Strengthened the writer system prompt with explicit petrophysics framing + a definition
+   of `convergence_status` (helps any model).
+3. **The canonical reports the user will review will be (re)generated with qwen3:30b-a3b**
+   in the Phase-8 field run, once the model finishes downloading. Tracked in AUTONOMOUS_RUN.md.
+
+---
+
 ## D4 (2026-06-25, Phase 4) — KGS "DCAL" is the caliper, not a differential; + over-mask guard
 
 **Problem found running the pipeline E2E on a real Schaben well:** QC aborted with
