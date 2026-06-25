@@ -71,15 +71,31 @@ def bad_hole_mask(
     degradation). Both absent: returns ``None`` (caller logs a tier downgrade).
     """
     edits: list[Edit] = []
+
+    # KGS "DCAL" is frequently the caliper (hole diameter, median ~8 in), NOT a
+    # true differential (which centers near 0). Reinterpret a large-median "DCAL"
+    # as a caliper so it does not flag the whole well as washed out.
     if dcal is not None:
-        mask = np.abs(np.asarray(dcal, dtype=float)) > threshold_in
-        return np.nan_to_num(mask, nan=False).astype(bool), edits
-    if cali is not None:
+        d = np.asarray(dcal, dtype=float)
+        if np.any(np.isfinite(d)) and float(np.nanmedian(np.abs(d))) > 4.0:
+            edits.append({"type": "degradation", "detail": "dcal_reinterpreted_as_caliper"})
+            cali, dcal = d, None
+
+    if dcal is not None:
+        mask = (np.abs(np.asarray(dcal, dtype=float)) > threshold_in).astype(bool)
+    elif cali is not None:
         edits.append({"type": "degradation", "detail": "bad_hole_cali_fallback"})
-        mask = np.asarray(cali, dtype=float) > (bit_size + threshold_in)
-        return np.nan_to_num(mask, nan=False).astype(bool), edits
-    edits.append({"type": "degradation", "detail": "bad_hole_unavailable"})
-    return None, edits
+        mask = (np.asarray(cali, dtype=float) > (bit_size + threshold_in)).astype(bool)
+    else:
+        edits.append({"type": "degradation", "detail": "bad_hole_unavailable"})
+        return None, edits
+
+    # Safety: if the indicator flags an implausible fraction (> 50%), it is likely
+    # miscalibrated — skip bad-hole masking and degrade rather than nuking the well.
+    if mask.size and np.count_nonzero(mask) / mask.size > 0.50:
+        edits.append({"type": "degradation", "detail": "bad_hole_indicator_implausible_skipped"})
+        return None, edits
+    return mask, edits
 
 
 _RANGES = {

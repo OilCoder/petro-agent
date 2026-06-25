@@ -5,6 +5,30 @@ justification, so they are auditable on return. Newest first.
 
 ---
 
+## D4 (2026-06-25, Phase 4) — KGS "DCAL" is the caliper, not a differential; + over-mask guard
+
+**Problem found running the pipeline E2E on a real Schaben well:** QC aborted with
+"100% of depths unusable". Cause: this well's `DCAL` curve has median 8.87 in (max 16.9),
+i.e. it is the **caliper (hole diameter)**, not a true differential caliper (which centers
+near 0). My bad-hole rule `|DCAL| > 2 in` therefore flagged ~100% of the well as washed
+out → RHOB/NPHI masked everywhere → QC abort.
+
+**Decision (two guards in `src/qc/masks.py:bad_hole_mask`):**
+1. If a provided `DCAL` has `median(|DCAL|) > 4 in`, reinterpret it as a **caliper** and
+   apply the caliper rule (`CALI > bit_size + 2`) instead, logging a degradation.
+2. If any bad-hole indicator flags **> 50%** of the well, treat it as miscalibrated:
+   skip bad-hole masking and log a degradation (honest degradation, not silently nuking
+   a whole well).
+
+**Why at my discretion:** a real data-convention gotcha (KGS mnemonic naming), only
+visible on real data. The fix is conservative and logged in the ledger. After it, the
+pipeline runs E2E on the real well (ledger.json + cross-plot emitted, circuit breaker
+fires as designed). **Watch item:** the run produced 225 fragmented zones / ~200 m net
+pay — zonation granularity + cutoff/Rw calibration will be refined; the `bracketed`
+confidence tier already flags these as low-confidence.
+
+---
+
 ## D3 (2026-06-25, Phase 1) — Consolidated QC modules into masks.py + gate.py
 
 The blueprint sketched separate `null_handler.py` / `spike.py` / `bad_hole.py` /
