@@ -60,6 +60,11 @@ def _facts(ledger: dict[str, Any]) -> str:
     ]
     if warn.get("warn"):
         lines.append(f"- High-leverage warning: {warn.get('message')}")
+    if run.get("abstain"):
+        lines.append(
+            "- ABSTENTION: this run is NOT a confident estimate — "
+            + "; ".join(run.get("abstain_reasons", []))
+        )
     return "\n".join(lines)
 
 

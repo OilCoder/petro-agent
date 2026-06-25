@@ -119,6 +119,20 @@ def _legend() -> str:
     )
 
 
+def _abstention_banner(run: dict[str, Any]) -> str:
+    """A prominent abstention notice when the run is not a confident estimate."""
+    if not run.get("abstain"):
+        return ""
+    reasons = run.get("abstain_reasons", [])
+    bullets = "\n".join(f"> - {r}" for r in reasons)
+    return (
+        "> ⚠️ **ABSTENTION — this is NOT a confident estimate.** The run did not converge "
+        "to a defensible result; the numbers below are an uncalibrated engineering estimate, "
+        "reported for transparency only:\n"
+        f"{bullets}\n"
+    )
+
+
 def _executive_summary(ledger: dict[str, Any], narrative: str) -> str:
     run = ledger.get("run", {})
     p = run.get("net_pay_p10_p50_p90")
@@ -130,7 +144,8 @@ def _executive_summary(ledger: dict[str, Any], narrative: str) -> str:
     warn = ledger.get("uncertainty", {}).get("high_leverage_warning", {})
     caveat = f"> {warn.get('message')}\n" if warn.get("warn") else ""
     body = narrative.strip() or "_(narrative pending)_"
-    return f"## 1. Executive summary\n\n{body}\n\n{headline}{caveat}"
+    banner = _abstention_banner(run)
+    return f"## 1. Executive summary\n\n{banner}\n{body}\n\n{headline}{caveat}"
 
 
 def _methodology() -> str:

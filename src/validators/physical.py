@@ -4,9 +4,50 @@ from __future__ import annotations
 
 import numpy as np
 
-from src.validators.objections import MECHANICAL, SUPPORT, Objection
+from src.validators.objections import IRREDUCIBLE, MECHANICAL, SUPPORT, Objection
 
 VERSION = "0.1.0"
+
+
+def net_pay_plausibility(
+    net_pay_m: float,
+    gross_m: float,
+    avg_phie: float,
+    ntg_max: float = 0.5,
+    phie_plausible_max: float = 0.25,
+) -> list[Objection]:
+    """Flag physically implausible net-pay results (terminal, data-limited check).
+
+    A net-to-gross above ``ntg_max`` or a net-pay average porosity above
+    ``phie_plausible_max`` is not credible for a tight Mississippian carbonate and
+    signals uncalibrated cutoffs/Rw. Typed ``irreducible`` — it cannot be resolved
+    without calibration data, so it degrades confidence rather than looping.
+
+    Args:
+        net_pay_m: total net-pay thickness (m).
+        gross_m: gross logged interval (m).
+        avg_phie: mean effective porosity over the net-pay interval (v/v).
+        ntg_max: maximum plausible net-to-gross.
+        phie_plausible_max: maximum plausible net-pay average porosity.
+
+    Returns:
+        A list of irreducible objections (empty if the result is plausible).
+    """
+    objs: list[Objection] = []
+    ntg = net_pay_m / gross_m if gross_m > 0 else 0.0
+    if ntg > ntg_max:
+        objs.append(Objection(
+            "net_pay_plausibility", IRREDUCIBLE,
+            f"NTG {ntg:.2f} > {ntg_max} — implausibly high for tight carbonate "
+            f"(uncalibrated cutoffs/Rw)",
+        ))
+    if np.isfinite(avg_phie) and avg_phie > phie_plausible_max:
+        objs.append(Objection(
+            "net_pay_plausibility", IRREDUCIBLE,
+            f"net-pay avg PHIE {avg_phie:.2f} > {phie_plausible_max} — implausibly high "
+            f"for carbonate",
+        ))
+    return objs
 
 
 def validate_bounds(

@@ -14,9 +14,9 @@
       "n":        {"value": 2.0,   "unit": "-",     "provenance": "default", "source_description": "Archie saturation exponent (Archie 1942)"},
       "Rw":       {"value": 0.04,  "unit": "ohm-m", "provenance": "default", "source_description": "KGS Schaben regional formation-water resistivity"},
       "rt_hydrocarbon_floor": {"value": 5.0, "unit": "ohm-m", "provenance": "default", "source_description": "RT-Sw cross-curve validator floor"},
-      "vsh_cutoff":  {"value": 0.40, "unit": "v/v", "provenance": "default", "source_description": "net-pay shale-volume cutoff"},
-      "phie_cutoff": {"value": 0.08, "unit": "v/v", "provenance": "default", "source_description": "net-pay porosity cutoff"},
-      "sw_cutoff":   {"value": 0.60, "unit": "v/v", "provenance": "default", "source_description": "net-pay water-saturation cutoff"},
+      "vsh_cutoff":  {"value": 0.35, "unit": "v/v", "provenance": "default", "source_description": "net-pay shale-volume cutoff (tight Mississippian carbonate)"},
+      "phie_cutoff": {"value": 0.10, "unit": "v/v", "provenance": "default", "source_description": "net-pay porosity cutoff (carbonate; vs shale-corrected PHIE)"},
+      "sw_cutoff":   {"value": 0.50, "unit": "v/v", "provenance": "default", "source_description": "net-pay water-saturation cutoff (carbonate; <0.60 generic)"},
       "bit_size_config":    {"value": 7.875, "unit": "in", "provenance": "default", "source_description": "typical bit size for bad-hole fallback"},
       "qc_abort_threshold": {"value": 0.80,  "unit": "-",  "provenance": "default", "source_description": "max DEGRADED/EXCLUDED fraction before abort"},
       "circuit_breaker_n":  {"value": 3.0,   "unit": "-",  "provenance": "default", "source_description": "max correctable-objection loop iterations"}

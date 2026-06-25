@@ -52,11 +52,12 @@ def build_graph() -> Any:
     g.add_edge("compute", "validate")
     g.add_edge("validate", "typify")
     g.add_conditional_edges(
-        "typify", route_after_typify, {"correct": "correct", "gating": "gating"}
+        "typify", route_after_typify, {"correct": "correct", "zonate": "zonate"}
     )
     g.add_edge("correct", "compute")
-    g.add_edge("gating", "zonate")
-    g.add_edge("zonate", "emit")
+    # zonate runs before gating so the gate can judge net-pay plausibility
+    g.add_edge("zonate", "gating")
+    g.add_edge("gating", "emit")
     g.add_edge("emit", END)
     return g.compile()
 

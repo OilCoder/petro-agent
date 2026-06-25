@@ -21,7 +21,8 @@ from src.petrophysics.phie import calc_phie
 from src.petrophysics.sw import calc_sw
 from src.petrophysics.vsh import calc_vsh
 from src.validators.harness import run_validators
-from src.validators.objections import IRREDUCIBLE
+from src.validators.objections import IRREDUCIBLE, MECHANICAL
+from src.validators.physical import net_pay_plausibility
 
 VERSION = "0.1.0"
 
@@ -105,24 +106,63 @@ def correct_stub(state: PipelineState) -> dict[str, Any]:
 
 
 def route_after_typify(state: PipelineState) -> str:
-    """Loop routing / circuit breaker. Returns 'correct' or 'gating'."""
+    """Loop routing / circuit breaker. Returns 'correct' or 'zonate'."""
     c = state["correctable"]
     if c == 0:
-        return "gating"  # converged: nothing correctable left
+        return "zonate"  # converged: nothing correctable left
     if state.get("iteration", 0) >= state["cb_n"]:
-        return "gating"  # circuit breaker: max iterations
+        return "zonate"  # circuit breaker: max iterations
     prev = state.get("prev_correctable")
     if prev is not None and c >= prev:
-        return "gating"  # circuit breaker: correctable count did not decrease
+        return "zonate"  # circuit breaker: correctable count did not decrease
     return "correct"
 
 
+_TIER_ORDER = ("bracketed", "qualified", "firm")
+
+
+def _downgrade(tier: str, levels: int) -> str:
+    """Lower a confidence tier by ``levels`` steps, floored at 'bracketed'."""
+    idx = max(0, _TIER_ORDER.index(tier) - levels)
+    return _TIER_ORDER[idx]
+
+
 def gating(state: PipelineState) -> dict[str, Any]:
-    """Set convergence status and a coarse confidence tier."""
+    """Set convergence status, confidence tier, and the emission/abstention gate.
+
+    Runs after ``zonate`` so it can judge net-pay plausibility. The tier is downgraded
+    one step per irreducible objection (floored at bracketed); the run abstains when
+    unresolved MECHANICAL objections remain or the net pay is physically implausible —
+    the report then states an explicit abstention rather than a confident estimate.
+    """
     status = CONVERGED if state["correctable"] == 0 else DID_NOT_CONVERGE
     provs = {p.provenance for p in state["params"].values()}
-    tier = "firm" if "core" in provs else ("qualified" if "offset" in provs else "bracketed")
-    return {"convergence_status": status, "confidence_tier": tier}
+    base_tier = "firm" if "core" in provs else ("qualified" if "offset" in provs else "bracketed")
+
+    summary = state.get("summary", {})
+    plausibility = net_pay_plausibility(
+        state.get("net_pay_total_m", 0.0),
+        float(summary.get("gross_m", 0.0)),
+        float(summary.get("avg_phie", float("nan"))),
+    )
+    objections = list(state.get("objections", [])) + plausibility
+
+    n_irreducible = sum(1 for o in objections if o.objection_type == IRREDUCIBLE)
+    tier = _downgrade(base_tier, n_irreducible)
+
+    n_mechanical = sum(1 for o in objections if o.objection_type == MECHANICAL)
+    abstain_reasons: list[str] = []
+    if status == DID_NOT_CONVERGE and n_mechanical > 0:
+        abstain_reasons.append(f"{n_mechanical} unresolved MECHANICAL objection(s)")
+    abstain_reasons += [o.detail for o in plausibility]
+
+    return {
+        "convergence_status": status,
+        "confidence_tier": tier,
+        "objections": objections,
+        "abstain": bool(abstain_reasons),
+        "abstain_reasons": abstain_reasons,
+    }
 
 
 def zonate(state: PipelineState) -> dict[str, Any]:
@@ -198,6 +238,8 @@ def emit(state: PipelineState) -> dict[str, Any]:
             "confidence_tier": state["confidence_tier"],
             "variant": state["variant"],
             "variant_degraded": state.get("variant_degraded", False),
+            "abstain": state.get("abstain", False),
+            "abstain_reasons": state.get("abstain_reasons", []),
         },
         "parameters": _emit_parameters(state),
         "zones": state["zones"],

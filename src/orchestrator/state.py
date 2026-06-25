@@ -35,6 +35,8 @@ class PipelineState(TypedDict, total=False):
     iteration: int
     convergence_status: str
     confidence_tier: str
+    abstain: bool
+    abstain_reasons: list[str]
     zones: list[dict[str, Any]]
     net_pay_total_m: float
     summary: dict[str, Any]

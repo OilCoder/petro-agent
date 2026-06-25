@@ -226,11 +226,12 @@ Done when: `calc_phie` produces EFFECTIVE porosity (shale-corrected) with golden
 
 ### Phase 11 — QC gate with teeth (Block 2)
 Done when: a well with unresolved MECHANICAL objections cannot emit a confident report — either the `correct` node really re-parameterizes, or `emit`/`gating` degrades it to an explicit abstention; a deterministic physical-plausibility validator flags impossible net pay/NTG/PHIE; the per-irreducible tier downgrade from the evaluation protocol is implemented.
-- [ ] Implement a real `correct` node (re-parameterize on MECHANICAL objections) OR gate `emit` so unresolved MECHANICAL → refusal/abstention, and re-mark Phases 4–6 honestly (`src/orchestrator/stages.py`, `graph.py`)
-- [ ] Deterministic physical-plausibility validator on net pay/NTG/avg-PHIE (NTG > 0.5 or carbonate PHIE > 0.20 → irreducible objection) (`src/validators/physical.py`)
-- [ ] Implement per-irreducible-objection tier downgrade in `gating()` (floored at BRACKETED) with a golden test (`src/orchestrator/stages.py`)
+- [x] Gate `emit` so unresolved MECHANICAL objections or implausible net pay → explicit abstention (`abstain`/`abstain_reasons` in the ledger, surfaced as a report banner); zonate reordered before gating so the gate sees net pay (`src/orchestrator/stages.py`, `graph.py`) (2026-06-25)
+- [x] Deterministic physical-plausibility validator on net pay/NTG/avg-PHIE (NTG > 0.5 or carbonate PHIE > 0.25 → irreducible objection) (`src/validators/physical.py`) (2026-06-25)
+- [x] Implement per-irreducible-objection tier downgrade in `gating()` (floored at BRACKETED) with a golden test (`src/orchestrator/stages.py`) (2026-06-25)
 - [ ] Extend `claim_verifier` with the tone/range/limitation checks (2)–(4) from `06_evaluation_protocol.md`, position-aware to the claimed field (`src/agents/claim_verifier.py`)
-- [ ] Re-tune carbonate cutoffs (sw ~0.45–0.50, vsh ~0.30–0.35, phie vs corrected PHIE) and pin Rw from a water zone — AFTER Phase 10 (`src/params/regional_defaults.json`)
+- [x] Re-tune carbonate cutoffs (sw 0.50, vsh 0.35, phie 0.10 vs corrected PHIE) (`src/params/regional_defaults.json`) (2026-06-25)
+- [ ] Pin Rw from a water zone (Pickett/SP) instead of the flat 0.04 regional default; have the correction respond to `rt_sw_consistency` (`src/petrophysics/`, `src/orchestrator/stages.py`)
 
 ### Phase 12 — LAS traceability and rigor (Block 3)
 Done when: RT alias resolution prefers the deepest-DOI curve and logs the chosen curve; per-curve provenance (`raw_mnemonics`) reaches the ledger; wrapped LAS and `~Other`-before-`~Curve` are handled with logged edits; excluded files and tool/vintage metadata are recorded.
