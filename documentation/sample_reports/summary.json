@@ -9,7 +9,7 @@
       "result": "PASS",
       "count": 0
     },
-    "report_bytes": 7599
+    "report_bytes": 7857
   },
   {
     "uwi": "15-135-24,974-00-00",
@@ -21,7 +21,7 @@
       "result": "PASS",
       "count": 0
     },
-    "report_bytes": 7686
+    "report_bytes": 7944
   },
   {
     "uwi": "15-135-24,938-00-00",
@@ -33,6 +33,6 @@
       "result": "PASS",
       "count": 0
     },
-    "report_bytes": 7616
+    "report_bytes": 7874
   }
 ]

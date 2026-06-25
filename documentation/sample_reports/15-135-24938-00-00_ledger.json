@@ -12,7 +12,7 @@
     ],
     "config_hash_sha256": "2a9cb78728e386ab31fda1fd3706f9945a450fc402005d70ab67b2faf1361525",
     "versions": {
-      "git_sha": "17bd61cce8ba91597f5a9284be7055ae94f172ff",
+      "git_sha": "26ac83a578c16d3b317fbbe85778913eab1dc8f2",
       "libraries": {
         "lasio": "0.32",
         "numpy": "2.5.0",
@@ -2382,5 +2382,19 @@
       "provenance": "default",
       "message": "Net pay is dominated by 'Rw', which is a regional DEFAULT (uncalibrated). This is the single largest uncertainty \u2014 the result is bracketed, not a confident point estimate."
     }
-  }
+  },
+  "figures": [
+    {
+      "title": "Composite log",
+      "file": "15-135-24938-00-00_composite.png"
+    },
+    {
+      "title": "Pickett plot",
+      "file": "15-135-24938-00-00_pickett.png"
+    },
+    {
+      "title": "Neutron-density crossplot",
+      "file": "15-135-24,938-00-00_crossplot_nd.png"
+    }
+  ]
 }
