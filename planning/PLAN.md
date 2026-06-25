@@ -22,11 +22,12 @@ auto-calibrated confidence — honest about how correct it is, and provably so.
 ## Structure
 ```
 src/io/            LAS loader, intake unit detection
-src/petrophysics/  vetted engine (vsh, phie, sw, netpay) — frozen + golden-tested
+src/petrophysics/  vetted engine (vsh, phie, sw, netpay, volumetrics) — frozen + golden-tested
 src/qc/            data-quality gate (null, spike, bad-hole, range, quality map)
 src/params/        config library, provenance, mnemonic aliases, config hash
 src/validators/    physical / cross-curve / model-mismatch / data-quality + crossplots
-src/orchestrator/  LangGraph graph + deterministic stages
+src/orchestrator/  LangGraph graph + deterministic stages (per-well + field rollup)
+src/field/         deterministic field aggregation (rollup, zone-correlation, net-pay/quality map)
 src/agents/        Ollama agents (compute, writer, claim verifier, reviewer)
 src/uncertainty/   propagation + sensitivity
 src/evaluation/    robustness, VOLVE metrics + runner
@@ -100,17 +101,21 @@ manifest decision and an explicit approval gate — never a silent change.
 ## Phases
 
 ### Phase 0 — Deterministic engine (foundation)
-Done when: `pytest -q` exits 0 on `tests/test_vsh.py`, `tests/test_phie.py`, `tests/test_sw.py`, and `tests/test_netpay.py`; a Kansas/Schaben LAS loads successfully via `src/io/`; and `calc_vsh`, `calc_phie`, `calc_sw`, `apply_cutoffs`, and `compute_net_pay` produce correct values for all analytic test fixtures with no skipped or xfail tests.
+Done when: `pytest -q` exits 0 on `tests/test_vsh.py`, `tests/test_phie.py`, `tests/test_sw.py`, `tests/test_netpay.py`, and `tests/test_volumetrics.py`; a Kansas/Schaben LAS loads successfully via `src/io/`; and `calc_vsh`, `calc_phie`, `calc_sw`, `apply_cutoffs`, `compute_net_pay`, `net_sand`, `net_reservoir`, `hcpv`, and `bvw` produce correct values for all analytic test fixtures with no skipped or xfail tests.
 - [ ] Set up WSL repo and Python environment (devcontainer / Docker target) — project root
 - [ ] Load a Kansas/Schaben LAS file with lasio, extracting curve arrays and well metadata into a typed internal structure (`src/io/loader.py`)
 - [ ] Implement `calc_vsh` — Larionov old-rocks variant, clips IGR and output to [0,1], NaN passthrough (`src/petrophysics/vsh.py`, version 0.1.0)
 - [ ] Implement `calc_phie` — density-neutron crossplot average, clips to [0, phie_max], density-only and neutron-only NaN fallback paths (`src/petrophysics/phie.py`, version 0.1.0)
 - [ ] Implement `calc_sw` — Archie equation, clips to [0,1], zero-PHIE guard returns NaN, NaN passthrough on rt and phie (`src/petrophysics/sw.py`, version 0.1.0)
 - [ ] Implement `apply_cutoffs` and `compute_net_pay` — per-depth net-pay flag, thickness summation, net-to-gross with zero-gross guard (`src/petrophysics/netpay.py`, version 0.1.0)
+- [ ] Implement `net_sand`, `net_reservoir` — deterministic cutoff/aggregation functions over the three core outputs (three-tier net sand/net reservoir/net pay hierarchy), not new petrophysical equations (`src/petrophysics/netpay.py`, version 0.1.0)
+- [ ] Implement `hcpv`, `bvw` — deterministic aggregation arithmetic over PHIE and Sw (hydrocarbon pore volume and bulk-volume-water), not new petrophysical equations (`src/petrophysics/volumetrics.py`, version 0.1.0)
 - [ ] Golden tests for `calc_vsh`: physical bounds, clean-sand, pure-shale, midpoint analytic, monotonicity, NaN passthrough, tertiary-vs-old-rocks separation, dimensional check (`tests/test_vsh.py`)
 - [ ] Golden tests for `calc_phie`: physical bounds, zero-porosity, known-sandstone analytic, monotonicity in rhob and nphi, density-only fallback, neutron-only fallback, both-NaN exclusion, units guard (`tests/test_phie.py`)
 - [ ] Golden tests for `calc_sw`: physical bounds, water-zone analytic, known numeric, monotonicity in rt and phie, zero-PHIE guard, NaN passthrough, m-sensitivity direction, dimensional check (`tests/test_sw.py`)
 - [ ] Golden tests for `apply_cutoffs` / `compute_net_pay`: all-pass, per-cutoff rejection, NaN exclusion, thickness summation, net-to-gross zero-gross guard, boundary-inclusive cutoff equality (`tests/test_netpay.py`)
+- [ ] Golden tests for `net_sand` / `net_reservoir`: three-tier monotonic ordering (net pay ≤ net reservoir ≤ net sand), thickness summation, per-cutoff rejection, NaN exclusion (`tests/test_netpay.py`)
+- [ ] Golden tests for `hcpv` / `bvw`: HCPV = net pay × PHIE × (1−Sw) analytic case, BVW = PHIE × Sw analytic case, NaN passthrough, net-pay-only integration, zero-thickness guard, physical bounds (`tests/test_volumetrics.py`)
 
 ### Phase 1 — Data QC gate
 Done when: a Kansas/Schaben LAS passes through `qc_gate` and produces a per-depth data-quality map (`GOOD | DEGRADED | EXCLUDED`) with all edits recorded in the ledger's `edits` array; no computation call is reachable without the map being produced first.
@@ -123,7 +128,7 @@ Done when: a Kansas/Schaben LAS passes through `qc_gate` and produces a per-dept
 - [ ] Tests for null masking, spike removal, bad-hole masking, quality-map construction, and the 80% abort threshold (`tests/test_qc.py`)
 
 ### Phase 2 — Parameters with provenance
-Done when: a parameter config JSON loads and resolves every parameter for a Kansas well to a value, a provenance tier (`core | offset | default`), and a source description; the SHA-256 config hash is logged in the ledger `run` object.
+Done when: a parameter config JSON loads and resolves every parameter for a Kansas well to a value, a provenance tier (`core | offset | default`), and a source description; the static citations table resolves every parameter to exactly one source (unknown parameter → hard fail) and joins into the ledger; the SHA-256 config hash is logged in the ledger `run` object.
 - [ ] Define and implement the config JSON schema: top-level `version`, `regional_defaults`, `well_overrides`; each parameter carries `value`, `unit`, `provenance`, `source_description` (`src/params/schema.py`)
 - [ ] Populate `regional_defaults.paleozoic_kansas`: gr_min/gr_max, variant=old_rocks, rho_ma, rho_fl, phie_max, a, m, n, Rw, rt_hydrocarbon_floor, vsh/phie/sw cutoffs, bit_size_config, qc_abort_threshold, circuit_breaker_n (`src/params/regional_defaults.json`)
 - [ ] Populate `regional_defaults.north_sea_jurassic` with VOLVE-compatible defaults for Rw, a, m, n, matrix density (variant set for Jurassic) (`src/params/regional_defaults.json`)
@@ -131,20 +136,21 @@ Done when: a parameter config JSON loads and resolves every parameter for a Kans
 - [ ] Implement PROV-tag-driven Larionov variant selection: `paleozoic`→old_rocks, `tertiary`→tertiary, absent/unrecognised→old_rocks + degradation entry (`src/params/config_loader.py`)
 - [ ] Implement mnemonic alias table covering GR, RHOB (RHOZ, DEN), NPHI (NPOR, TNPH), RT (ILD, RDEEP, AT90), CALI (CAL, C1), DCAL (CALX, CALY) (`src/params/mnemonic_aliases.json`)
 - [ ] Implement config hash computation (SHA-256 of the JSON file) and log into ledger `run.config_hash_sha256` at pipeline start (`src/params/config_loader.py`)
-- [ ] Tests for provenance lookup, PROV-tag routing, alias resolution, hash computation, and well-override precedence (`tests/test_params.py`)
+- [ ] Define and implement the static citations-table schema (per parameter: value/default, valid range, source author/year, locator page/DOI, applicability scope) seeded with Archie 1942, Larionov 1969 old-rocks, and KGS/USGS Schaben values; wire it to the ledger so each parameter selection emits a frozen citation (no RAG) (`src/params/citations.py`, `src/params/citations.json`)
+- [ ] Tests for provenance lookup, PROV-tag routing, alias resolution, hash computation, well-override precedence, and citations resolution (every parameter resolves to exactly one source; unknown parameter hard-fails) (`tests/test_params.py`)
 
 ### Phase 3 — Independent validators
-Done when: the validator harness in `src/validators/` runs to completion on computed Vsh/PHIE/Sw arrays and returns a typed objection list; the model-mismatch validator produces neutron-density and M-N crossplot PNGs in `outputs/`; all validator modules have golden tests that pass.
+Done when: the validator harness in `src/validators/` runs to completion on computed Vsh/PHIE/Sw arrays and returns a typed objection list; the model-mismatch validator produces a neutron-density crossplot PNG and a Pickett-plot PNG in `outputs/` (the M-N crossplot is deferred for v1, gated on DT/PEF presence, with the existing `mn_skipped_no_dt` degradation path retained); all validator modules have golden tests that pass.
 - [ ] Implement physical-bounds validator: Vsh, PHIE, Sw against [0,1] and [0, phie_max]; violations typed `mechanical`; version logged (`src/validators/physical.py`, version 0.1.0)
 - [ ] Implement cross-curve consistency validator: Vsh–PHIE anti-correlation (Pearson ≤ +0.3, ±20-sample window); RT–Sw directional consistency; violations typed `support` (`src/validators/cross_curve.py`, version 0.1.0)
-- [ ] Implement model-mismatch validator: neutron-density crossplot vs. sandstone/limestone/dolomite reference lines (flag if > 30% outside mineral triangle); M-N crossplot (skipped with degradation if DT absent); violations typed `irreducible` (`src/validators/model_mismatch.py`, version 0.1.0)
+- [ ] Implement model-mismatch validator: neutron-density crossplot vs. sandstone/limestone/dolomite reference lines (flag if > 30% outside mineral triangle); M-N crossplot deferred for v1 (gated on DT/PEF presence — skipped with `mn_skipped_no_dt` degradation when DT/PEF absent, which is the v1 default); violations typed `irreducible` (`src/validators/model_mismatch.py`, version 0.1.0)
 - [ ] Implement data-quality propagation validator: enforce tier downgrade for any FIRM computation at a DEGRADED depth; flag missing degradation records as internal consistency errors (`src/validators/data_quality.py`, version 0.1.0)
-- [ ] Implement crossplot PNG generation: neutron-density (1200×900 px, 300 dpi, viridis depth colormap, lithology reference lines) and M-N (Schlumberger 1989 reference points) to `outputs/<UWI>_<YYYY-MM-DD>_crossplot_nd.png` and `_crossplot_mn.png` (`src/validators/crossplot.py`)
+- [ ] Implement crossplot PNG generation: neutron-density (1200×900 px, 300 dpi, viridis depth colormap, lithology reference lines) to `outputs/<UWI>_<YYYY-MM-DD>_crossplot_nd.png`, and a Pickett plot (log-log RT vs. PHIE with Sw/Rw/m reference lines, an Archie transform) to `_pickett.png`; the M-N crossplot (Schlumberger 1989 reference points → `_crossplot_mn.png`) is deferred for v1, emitted only when DT/PEF is present (`src/validators/crossplot.py`)
 - [ ] Implement `typify_objections` stage: deterministic Python; splits into `correctable_objections` (mechanical + support) and `irreducible_objections`; computes `correctable_count` (`src/orchestrator/stages.py`)
 - [ ] Tests for each validator module and the typing stage (`tests/test_validators.py`, `tests/test_typify.py`)
 
 ### Phase 4 — Orchestrator and loop
-Done when: a single LangGraph call on a Kansas/Schaben LAS runs the deterministic stages from `load` through `emit` without human intervention, emitting `ledger.json` plus the Phase 3 crossplot PNGs but not `report.md`; the `zonate` stage delineates cutoff-delimited net-pay zones and writes per-zone net-pay computations to the ledger; the circuit breaker fires correctly via a deterministic stub `correct` node on a synthetic non-converging input; `convergence_status` is written to the ledger.
+Done when: a single LangGraph call on a Kansas/Schaben LAS runs the deterministic stages from `load` through `emit` without human intervention, emitting `ledger.json` plus the Phase 3 crossplot PNGs but not `report.md`; the `zonate` stage delineates cutoff-delimited net-pay zones and writes per-zone net-pay computations to the ledger; a deterministic field-aggregation pass over multiple per-well ledgers produces a field rollup (aggregate net pay/NTG/HCPV + per-well summary table) and writes it to a field ledger; the circuit breaker fires correctly via a deterministic stub `correct` node on a synthetic non-converging input; `convergence_status` is written to the ledger.
 - [ ] Implement the LangGraph `StateGraph` with state fields (`las_path`, `config_path`, `curves`, `quality_map`, `vsh`, `phie`, `sw`, `ledger`, `objections`, `correctable_count`, `iteration`, `prev_correctable`, `confidence_tiers`, `convergence_status`, `draft_report`) (`src/orchestrator/graph.py`)
 - [ ] Wire pipeline stages as deterministic LangGraph nodes: `load`, `qc_gate`, `compute`, `validate`, `typify_objections`, `gating`, `zonate`, `emit` (`src/orchestrator/stages.py`)
 - [ ] Implement loop edges: route to `correct` when `correctable_count > 0` and breaker not triggered, else to `gating`; `correct`→`compute`→`validate`; `correct` is a deterministic no-op stub this phase (`src/orchestrator/graph.py`)
@@ -153,18 +159,20 @@ Done when: a single LangGraph call on a Kansas/Schaben LAS runs the deterministi
 - [ ] Implement `zonate` stage: read cutoffs from config, call `apply_cutoffs`, delineate contiguous net-pay runs into zones, call `compute_net_pay` per zone, assign each zone the lowest contributing tier, append per-zone `net_pay` entries and expose `pipeline_net_pay_m` (`src/orchestrator/stages.py`)
 - [ ] Implement `emit` stage: ledger completeness gate (all computation_ids and validator_ids resolve); prepend DID_NOT_CONVERGE warning block when applicable; write ledger.json and crossplot PNGs to `outputs/` (`src/orchestrator/stages.py`)
 - [ ] Implement version-pinning check at `load`: verify installed lasio, numpy, langgraph versions match `pyproject.toml` pins; abort on mismatch; log versions in `run` object (`src/orchestrator/stages.py`)
-- [ ] Integration test: end-to-end run writes ledger.json (with per-zone `net_pay` entries) plus crossplot PNGs; circuit-breaker test drives the `correct` stub on synthetic non-converging input and produces a `DID_NOT_CONVERGE` entry (`tests/test_pipeline.py`)
+- [ ] Implement deterministic field-aggregation pass: roll up per-well ledgers across the Schaben field into aggregate net pay/NTG/HCPV plus a per-well summary table; emit a field ledger (no LLM; arithmetic over per-well outputs) (`src/field/rollup.py`)
+- [ ] Integration test: end-to-end run writes ledger.json (with per-zone `net_pay` entries) plus crossplot PNGs; the field-aggregation pass over multiple per-well ledgers writes a field rollup with aggregate net pay/NTG/HCPV; circuit-breaker test drives the `correct` stub on synthetic non-converging input and produces a `DID_NOT_CONVERGE` entry (`tests/test_pipeline.py`)
 
 ### Phase 5 — Local LLM agents (Ollama)
-Done when: a single end-to-end pipeline run on a Kansas/Schaben well produces a Markdown prose report and a complete JSON ledger; the claim verifier finds zero residual flags; the `claim_verifier` ledger entry carries `result = PASS`.
+Done when: a single end-to-end pipeline run on a Kansas/Schaben well produces a Markdown prose report and a complete JSON ledger; a field-summary writer pass produces the whole-field report (per-well blocks plus the field rollup, a cross-well zone-correlation panel, and a field net-pay/quality map); the claim verifier finds zero residual flags; the `claim_verifier` ledger entry carries `result = PASS`.
 - [ ] Implement compute agent: receives correctable objections and current parameters, selects revised parameters from the config library via Qwen3:30b-a3b (Ollama), never authors equations; flags data-limited objections for reclassification when no valid parameter exists (`src/agents/compute_agent.py`)
 - [ ] Implement writer agent: receives read-only ledger and per-block confidence tiers; generates prose per the report schema, tone bound to each block's tier (FIRM→declarative, QUALIFIED→qualified, BRACKETED→bounded); Qwen3:30b-a3b via Ollama (`src/agents/writer.py`)
 - [ ] Implement claim verifier: audits draft sentence by sentence on four conditions (value traces to ledger, BRACKETED no point estimates, QUALIFIED hedges, Limitations names default-provenance params); returns flags for one correction pass; removes unresolvable sentences as degradation entries (`src/agents/claim_verifier.py`)
 - [ ] Wire compute agent as the `correct` LangGraph node (`src/orchestrator/graph.py`)
 - [ ] Wire writer and claim verifier as `write` and `claim_verify` LangGraph nodes (`src/orchestrator/graph.py`)
 - [ ] Pin LLM seed (`run.llm_seed`) at invocation; log model tags in `run.model_tags`; verify Ollama determinism on the target build; log degradation if seed non-determinism is confirmed (`src/agents/ollama_client.py`)
-- [ ] Resolve decision (d) — RAG vs. system-prompt knowledge for parameter justification; implement chosen path (`src/retrieval/` if RAG, else document the knowledge boundary in `src/agents/compute_agent.py`)
-- [ ] End-to-end test: pipeline on a Kansas LAS produces report.md, a ledger.json with `claim_verifier result = PASS`, and no unresolved flags (`tests/test_e2e.py`)
+- [ ] Resolve decision (d) — RAG vs. system-prompt knowledge for parameter justification: RESOLVED as no RAG for v1 (the Phase-2 static citations table supplies provenance); document the knowledge boundary so the writer only renders the citation it is handed (`src/agents/compute_agent.py`)
+- [ ] Implement field-summary writer pass: generate the whole-field report from the field ledger (per-well prose blocks plus the field rollup narrative), tone bound to each block's tier; render the cross-well zone-correlation panel and the field net-pay/quality map figures (`src/field/field_writer.py`, `src/field/field_figures.py`)
+- [ ] End-to-end test: pipeline on a Kansas LAS produces report.md, a ledger.json with `claim_verifier result = PASS`, and no unresolved flags; a multi-well run produces the field report with the rollup, zone-correlation panel, and field net-pay/quality map (`tests/test_e2e.py`)
 
 ### Phase 6 — Adversarial reviewer
 Done when: a second adversarial agent reviews the draft before the claim verifier; objections from the adversarial reviewer route through `typify_objections` and feed the loop; generator and critic use decorrelated models or prompts; design decision (a) is resolved and recorded in the manifest.
@@ -175,10 +183,10 @@ Done when: a second adversarial agent reviews the draft before the claim verifie
 - [ ] Test: adversarial reviewer introduces a mechanical objection on a synthetic draft; the loop re-enters `compute` and resolves it before re-entering `write` (`tests/test_reviewer.py`)
 
 ### Phase 7 — Uncertainty and confidence
-Done when: the pipeline propagates parameter uncertainty through Vsh, PHIE, and Sw computations and writes P10/P50/P90 slots in the ledger; sensitivity analysis identifies the dominant parameter for net pay; the multi-seed robustness check passes; the ECE threshold is set, logged as a manifest decision, and the reliability diagram infrastructure is in place.
-- [ ] Resolve decision (c) — uncertainty propagation method (Monte Carlo vs. analytic ranges); record in `planning/blueprint/MANIFEST.md`; implement chosen method, with seed management and `run.monte_carlo_seeds` if Monte Carlo (`src/uncertainty/propagation.py`)
+Done when: the pipeline propagates parameter uncertainty through Vsh, PHIE, and Sw computations via Monte Carlo per-depth sampling and writes true-percentile P10/P50/P90 slots in the ledger; sensitivity analysis identifies the dominant parameter for net pay; the multi-seed robustness check passes; the ECE threshold is set, logged as a manifest decision, and the reliability diagram infrastructure is in place.
+- [ ] Resolve decision (c) — uncertainty propagation method: CLOSED as Monte Carlo per-depth sampling (true distributional outputs, not analytic ranges); record in `planning/blueprint/MANIFEST.md`; implement with seed management and `run.monte_carlo_seeds` (`src/uncertainty/propagation.py`)
 - [ ] Resolve decision (b) — hard abstention policy (refuse to emit when no high-leverage parameter is calibrated); record in `planning/blueprint/MANIFEST.md`; implement the gating-stage abstention path if chosen (`src/orchestrator/stages.py`)
-- [ ] Implement uncertainty propagation: P10/P50/P90 for Vsh, PHIE, Sw per depth range; written to `computations[].result_p10` and `result_p90`; widths from config defaults (`src/uncertainty/propagation.py`)
+- [ ] Implement Monte Carlo uncertainty propagation: per-depth parameter sampling through Vsh, PHIE, Sw; P10/P50/P90 are true percentiles of the sampled distribution; written to `computations[].result_p10`, `result_p50`, and `result_p90`; sampling widths from config defaults (`src/uncertainty/propagation.py`)
 - [ ] Implement sensitivity analysis: identify which of a, m, n, Rw contributes most to net-pay uncertainty per zone; log as ledger metadata and require the writer to mention it in the zone Limitations sub-section (`src/uncertainty/sensitivity.py`)
 - [ ] Implement multi-seed robustness check: three fixed seed sets; P50 agreement within 1% relative, P10–P90 widths within 5%, consistent tier; failures logged as degradation with `confidence_impact = uncertainty_widening` (`src/evaluation/robustness.py`)
 - [ ] Implement ECE and reliability diagram infrastructure: `compute_mae`, `compute_net_pay_deviation`, `compute_ece`, `plot_reliability_diagram` (`src/evaluation/volve_metrics.py`)

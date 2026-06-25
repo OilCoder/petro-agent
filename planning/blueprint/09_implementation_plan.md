@@ -16,10 +16,11 @@ how correct it is, and provably so."
 ### Phase 0 — Deterministic engine (foundation)
 
 Done when: `pytest -q` exits 0 on `tests/test_vsh.py`, `tests/test_phie.py`,
-`tests/test_sw.py`, and `tests/test_netpay.py`; a Kansas/Schaben LAS loads successfully
-via `src/io/`; and `calc_vsh`, `calc_phie`, `calc_sw`, `apply_cutoffs`, and
-`compute_net_pay` produce correct values for all analytic test fixtures with no skipped
-or xfail tests.
+`tests/test_sw.py`, `tests/test_netpay.py`, and `tests/test_volumetrics.py`; a
+Kansas/Schaben LAS loads successfully via `src/io/`; and `calc_vsh`, `calc_phie`,
+`calc_sw`, `apply_cutoffs`, `compute_net_pay`, `net_sand`,
+`net_reservoir`, `hcpv`, and `bvw` produce correct values for
+all analytic test fixtures with no skipped or xfail tests.
 
 - [ ] Set up WSL repo and Python environment (devcontainer / Docker target) — project root
 - [ ] Load a Kansas/Schaben LAS file using lasio, extracting curve arrays and well
@@ -34,6 +35,16 @@ or xfail tests.
   (`Vsh ≤ vsh_cutoff AND PHIE ≥ phie_cutoff AND Sw ≤ sw_cutoff`, NaN/EXCLUDED → False);
   net-pay thickness summation and net-to-gross ratio with zero-gross guard
   (`src/petrophysics/netpay.py`, version 0.1.0)
+- [ ] Implement `net_sand` and `net_reservoir` — deterministic
+  cutoff/aggregation functions (not new petrophysical equations) surfacing the three-tier
+  net-sand / net-reservoir / net-pay hierarchy over the three core outputs: net sand
+  (`Vsh ≤ vsh_cutoff`) and net reservoir (`Vsh ≤ vsh_cutoff AND PHIE ≥ phie_cutoff`),
+  each as thickness summation with NaN/EXCLUDED → False (`src/petrophysics/netpay.py`,
+  version 0.1.0)
+- [ ] Implement `hcpv` and `bvw` — deterministic aggregation arithmetic
+  over PHIE and Sw on net-pay depths: hydrocarbon pore volume `PHIE × (1 − Sw)` and
+  bulk-volume water `PHIE × Sw`, summed/averaged per interval with zero-thickness guard;
+  NaN/EXCLUDED → excluded (`src/petrophysics/volumetrics.py`, version 0.1.0)
 - [ ] Golden tests for `calc_vsh`: physical bounds, clean-sand = 0, pure-shale = 0.99
   (Larionov old-rocks at IGR=1; not clipped to 1.0), midpoint analytic value,
   monotonicity, NaN passthrough, tertiary-vs-old-rocks separation, dimensional check
@@ -47,6 +58,12 @@ or xfail tests.
 - [ ] Golden tests for `apply_cutoffs` / `compute_net_pay`: all-pass, per-cutoff rejection
   (Vsh, PHIE, Sw), NaN exclusion, thickness summation, net-to-gross with zero-gross guard,
   boundary-inclusive cutoff equality (`tests/test_netpay.py`)
+- [ ] Golden tests for `net_sand` / `net_reservoir`: three-tier monotonicity
+  (net sand ≥ net reservoir ≥ net pay), thickness summation, per-cutoff rejection,
+  NaN/EXCLUDED exclusion (`tests/test_netpay.py`)
+- [ ] Golden tests for `hcpv` / `bvw`: HCPV = PHIE × (1 − Sw) known analytic case,
+  BVW = PHIE × Sw known analytic case, NaN passthrough, net-pay-only integration,
+  zero-thickness guard, physical bounds (`tests/test_volumetrics.py`)
 
 ---
 
@@ -80,7 +97,10 @@ data-quality map (`GOOD | DEGRADED | EXCLUDED`) with all edits recorded in the l
 
 Done when: a parameter config JSON loads and resolves every parameter for a Kansas
 well to a value, a provenance tier (`core | offset | default`), and a source
-description; the SHA-256 config hash is logged in the ledger `run` object.
+description; the SHA-256 config hash is logged in the ledger `run` object; and the
+static curated citations table resolves every parameter (a, m, n, Rw, matrix density,
+Vsh method, net-pay cutoffs) to exactly one source, with an unknown parameter hard-failing
+rather than guessing.
 
 - [ ] Define and implement the config JSON schema: top-level keys `version`,
   `regional_defaults`, `well_overrides`; each parameter entry carries `value`, `unit`,
@@ -104,8 +124,16 @@ description; the SHA-256 config hash is logged in the ledger `run` object.
   DCAL (CALX, CALY)
 - [ ] Implement config hash computation (SHA-256 of the JSON file) and log into ledger
   `run.config_hash_sha256` at pipeline start (`src/params/config_loader.py`)
+- [ ] Define the static curated citations-table schema (no RAG): one row per parameter
+  with columns `value`/`default`, `valid_range`, `source` (author, year), `locator`
+  (page/DOI), and `applicability_scope` (formation age / lithology); seed Archie 1942
+  (m, n = 2.0; `a` from Winsauer 1952 / Wyllie & Gregory 1953), Larionov 1969 older-rocks,
+  and KGS/USGS Schaben values (Rw = 0.04, m = n = 2); wire it into the JSON ledger so every
+  parameter selection emits a frozen citation (`src/params/citations.py`,
+  `src/params/citations_table.json`)
 - [ ] Tests for provenance lookup, PROV-tag routing, alias resolution, hash computation,
-  and well-override precedence (`tests/test_params.py`)
+  well-override precedence, and the citations table (every parameter resolves to exactly
+  one source; unknown parameter → hard fail, never a guess) (`tests/test_params.py`)
 
 ---
 
@@ -150,7 +178,10 @@ deterministic stages from `load` through `emit` without human intervention, emit
 is a Phase 5 node); the `zonate` stage delineates cutoff-delimited net-pay zones and
 writes per-zone net-pay computations to the ledger; the circuit breaker fires correctly
 when driven through a deterministic stub `correct` node on a synthetic non-converging
-input; `convergence_status` is written to the ledger.
+input; `convergence_status` is written to the ledger; and a field run over the multi-well
+Schaben set produces, after the per-well runs, a deterministic field-rollup ledger object
+(aggregate net pay / NTG / HCPV plus a per-well summary table), a field net-pay/quality
+map PNG, and a cross-well zone-correlation panel PNG in `outputs/`.
 
 - [ ] Implement the LangGraph `StateGraph` in `src/orchestrator/graph.py` with state
   fields: `las_path`, `config_path`, `curves`, `quality_map`, `vsh`, `phie`, `sw`,
@@ -182,11 +213,27 @@ input; `convergence_status` is written to the ledger.
 - [ ] Implement version-pinning check at `load`: verify installed lasio, numpy, langgraph
   versions match `pyproject.toml` pins; abort on mismatch; log versions in `run` object
   (`src/orchestrator/stages.py`)
+- [ ] Implement the deterministic `field_aggregate` stage (field-scale): run after all
+  per-well pipelines complete; deterministic Python, no LLM; reads each well's ledger and
+  rolls up aggregate net pay / NTG / HCPV across the Schaben field, builds a per-well
+  summary table, and aligns cutoff-delimited zones across wells into correlated field
+  zones; writes a field-rollup object to the field ledger (`src/orchestrator/field.py`)
+- [ ] Implement the field net-pay/quality map PNG: per-well net-pay (and quality-tier)
+  values rendered at well locations across the field; output to
+  `outputs/field_<YYYY-MM-DD>_netpay_map.png` (`src/orchestrator/field_plots.py`)
+- [ ] Implement the cross-well zone-correlation panel PNG: aligned zone tops/net-pay
+  flags across wells in a single correlation panel; output to
+  `outputs/field_<YYYY-MM-DD>_zone_correlation.png` (`src/orchestrator/field_plots.py`)
 - [ ] Integration test: single end-to-end run on a Kansas/Schaben LAS exits without error
   and writes ledger.json (including per-zone `net_pay` computation entries from `zonate`)
   plus the Phase 3 crossplot PNGs (report.md is added in Phase 5); circuit-breaker test
   drives the `correct` stub on synthetic non-converging input and produces a
   `DID_NOT_CONVERGE` ledger entry (`tests/test_pipeline.py`)
+- [ ] Field integration test: a multi-well run produces per-well ledgers, then a
+  deterministic field-rollup object (aggregate net pay / NTG / HCPV + per-well summary
+  table), the field net-pay/quality map PNG, and the cross-well zone-correlation panel
+  PNG; field aggregation runs only after every per-well run completes
+  (`tests/test_field.py`)
 
 ---
 
@@ -194,7 +241,10 @@ input; `convergence_status` is written to the ledger.
 
 Done when: a single end-to-end pipeline run on a Kansas/Schaben well produces a
 Markdown prose report and a complete JSON ledger; the claim verifier finds zero residual
-flags; `claim_verifier` entry in the ledger carries `result = PASS`.
+flags; `claim_verifier` entry in the ledger carries `result = PASS`; and a field run
+produces a field-summary prose report rolling up the per-well report blocks plus the
+aggregate net pay / NTG / HCPV, the field net-pay/quality map, and the zone-correlation
+panel, with every field-level number traced to the deterministic field-rollup ledger.
 
 - [ ] Implement compute agent (`src/agents/compute_agent.py`): receives correctable
   objection list and current parameters; selects revised parameters from the config
@@ -213,6 +263,12 @@ flags; `claim_verifier` entry in the ledger carries `result = PASS`.
   returns flags to the writer for a single correction pass; unresolvable sentences are
   removed and logged as degradation entries with `confidence_impact = exclusion`
 - [ ] Wire compute agent as the `correct` LangGraph node (`src/orchestrator/graph.py`)
+- [ ] Implement field-summary writer (`src/agents/field_writer.py`): receives the
+  read-only deterministic field-rollup ledger and per-well report blocks; generates the
+  field-scale prose report (aggregate net pay / NTG / HCPV, per-well summary table,
+  references to the field net-pay/quality map and zone-correlation panel); every
+  field-level number traces to the field-rollup ledger, none computed by the LLM; tone
+  bound to each block's confidence tier; calls Qwen3:30b-a3b via Ollama API
 - [ ] Wire writer and claim verifier as `write` and `claim_verify` LangGraph nodes
   (`src/orchestrator/graph.py`)
 - [ ] Pin LLM seed (`run.llm_seed`) at invocation; log model tags in `run.model_tags`;
@@ -545,24 +601,25 @@ work proceeds.
 
 ## Open questions
 
-- **(a) Adversarial reviewer — model family decision.** Whether Llama3.1:8b (second
-  family, stronger decorrelation guarantee) or an adversarial-role prompt on Qwen3:30b-a3b
-  (lower operational complexity) is more appropriate for the reviewer role. Resolve at
+- **(a) Adversarial reviewer — model family decision.** PROVISIONAL → second model
+  family (Llama3.1:8b) for genuine cross-family decorrelation, vs. an adversarial-role
+  prompt on Qwen3:30b-a3b (lower operational complexity). Recommendation recorded as
+  provisional pending the user's unstated reviewer requirement; not closed. Resolve at
   Phase 6 entry.
 
 - **(b) Hard abstention policy.** Whether the system should refuse to emit any prose
   report when no high-leverage Archie parameter is constrained by calibration. Resolve at
   Phase 7 entry. Engineering can implement either policy; the choice is a product decision.
 
-- **(c) Uncertainty propagation method.** Monte Carlo per-depth sampling (full
-  distributional outputs, enables ECE measurement natively, higher compute cost) vs.
-  analytic ranges (simpler, faster, less expressive). Resolve at Phase 7 entry; affects
-  whether P10/P90 ledger fields represent true percentiles or bounding intervals.
+- **(c) Uncertainty propagation method.** CLOSED → **Monte Carlo** per-depth sampling
+  (full distributional outputs, true P10/P50/P90 percentiles, enables ECE measurement
+  natively). Compute cost is numpy/CPU, not VRAM. Analytic ranges are not used.
 
-- **(d) RAG vs. system-prompt knowledge for parameter justification.** Whether the
-  compute agent retrieves parameter rationale from a curated paper store or relies on
-  model knowledge plus the config library. Resolve at Phase 5 entry; affects scope and
-  the provenance chain for parameter selection rationale.
+- **(d) RAG vs. system-prompt knowledge for parameter justification.** RESOLVED →
+  **no RAG for v1**; instead a lightweight static **curated citations table** (each
+  parameter → exactly one source) wired to the JSON ledger so every selection emits a
+  frozen citation. Not paper curation, not search. Revisit only if a large unstructured
+  regional corpus appears post-Phase 8.
 
 - **(e) ECE numeric threshold.** Cannot be set before Phase 7 implements the calibration
   infrastructure and takes a provisional measurement on a non-benchmark VOLVE subset. Must

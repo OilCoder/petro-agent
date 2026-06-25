@@ -557,37 +557,37 @@ Phase 5 completion (matches its existing open question).
 
 ## Blueprint updates needed
 
-- [ ] `03_source_sink_contracts.md` — add `net_sand_m`, `net_reservoir_m`, and
+- [x] `03_source_sink_contracts.md` — add `net_sand_m`, `net_reservoir_m`, and
   `hcpv`/`bvw` to the zone block / by-zone summary (Topic 1).
-- [ ] `03_source_sink_contracts.md` — add composite triple-combo interpretation PNG
+- [x] `03_source_sink_contracts.md` — add composite triple-combo interpretation PNG
   and Pickett-plot PNG to Output artifacts; keep ND cross-plot, defer M-N — also
   drop/optionalize `crossplot_mn.png` and the M-N schema (Topic 1).
-- [ ] `04_pipeline_architecture.md` — make the M-N validator check + PNG emission
+- [x] `04_pipeline_architecture.md` — make the M-N validator check + PNG emission
   (lines ~161–164, 442) optional/deferred; the model-mismatch validator relies on the
   ND cross-plot for v1, M-N branch gated on DT/PEF presence (Topic 1).
-- [ ] `05_engine_and_validation.md` — mark the M-N validator spec (lines ~543–564)
+- [x] `05_engine_and_validation.md` — mark the M-N validator spec (lines ~543–564)
   deferred and drop/optionalize the `crossplot_mn.png` output; the existing
   `mn_skipped_no_dt` skip path already lets the model-mismatch validator degrade
   without M-N, so this is a cleanup (M-N defaults off in v1), not a contradiction
   fix (Topic 1).
-- [ ] `07_site_style_guide.md` — **no M-N edit needed**: the architecture diagram (the
+- [x] `07_site_style_guide.md` — **no M-N edit needed**: the architecture diagram (the
   stage-flow string at line ~201) names no cross-plot artifact, so there is nothing to
   drop there. The M-N artifact lives in `03` Output-3 (lines ~387–402) and the `04`/`05`
   validator specs; `07` only references cross-plots generically (line ~161, line ~230
   traceability showcase) and needs no M-N-specific change (Topic 1).
-- [ ] `03_source_sink_contracts.md` — set P10/P50/P90 as true percentiles (Monte
+- [x] `03_source_sink_contracts.md` — set P10/P50/P90 as true percentiles (Monte
   Carlo), drop `lower_bound`/`upper_bound` fallback wording (Topic 7).
-- [ ] `03_source_sink_contracts.md` — add explicit "no curve fabrication: reject or
+- [x] `03_source_sink_contracts.md` — add explicit "no curve fabrication: reject or
   degrade + log" to the intake contract (Topic 9).
-- [ ] `05_engine_and_validation.md` — amend the "three functions are the complete v1
+- [x] `05_engine_and_validation.md` — amend the "three functions are the complete v1
   path" statement (lines 24–25) before adding any new function: either scope
   net-sand/net-reservoir/HCPV/BVW as deterministic cutoff/aggregation functions (not
   new equations) via a logged amendment, or defer them and keep 05 verbatim
   (Topic 1). If amended, add golden-tested `net_sand`/`net_reservoir`/`hcpv`/`bvw`
   functions; add the curated citations-table schema + ledger join (Topics 1, 8).
-- [ ] `05_engine_and_validation.md` — resolve RT-masking, GR min/max, Ollama-seed
+- [x] `05_engine_and_validation.md` — resolve RT-masking, GR min/max, Ollama-seed
   open questions per the resolutions above.
-- [ ] `06_evaluation_protocol.md` — set uncertainty method = Monte Carlo; allow
+- [x] `06_evaluation_protocol.md` — set uncertainty method = Monte Carlo; allow
   finer reliability-diagram bins; add cross-family prose/selection/honesty comparison
   **via the Phase-6 adversarial reviewer** (single writer + cross-family critic, not a
   parallel second writer) and the engine-reproducibility regression check — **same LAS +
@@ -596,25 +596,25 @@ Phase 5 completion (matches its existing open question).
   cross-model `correct`-loop selection divergence is a ledger-tracked numeric-difference
   source, not a failure) (Topics 5, 6, 7). No write-stage / `model_tags` change —
   single-writer design stands.
-- [ ] `02_problem_data.md` — add KGS Magellan access URL, KID join, anchor wells
+- [x] `02_problem_data.md` — add KGS Magellan access URL, KID join, anchor wells
   (Schaben #4 + 3 cored), core calibration source, North Sea default param set
   reminder for Phase 2 (Topic 2).
-- [ ] `00_charter.md` / `09_implementation_plan.md` — mark (c) CLOSED = Monte Carlo;
+- [x] `00_charter.md` / `09_implementation_plan.md` — mark (c) CLOSED = Monte Carlo;
   record (d) = no RAG/curated table; record (a) provisional = second model family
   pending the user's requirement (Topics 6, 7, 8).
-- [ ] `09_implementation_plan.md` — add a citations-table-schema task to Phase 2 and
+- [x] `09_implementation_plan.md` — add a citations-table-schema task to Phase 2 and
   extend the Phase-2 Done-when to cover it; `05_engine_and_validation.md` — extend the
   config JSON structure (lines ~357–373) with the citations join + version pinning
   (Topic 8).
-- [ ] `04_pipeline_architecture.md` — confirm Ollama as v1 serving behind a thin
+- [x] `04_pipeline_architecture.md` — confirm Ollama as v1 serving behind a thin
   swappable interface; note vLLM as Phase-8+ batch path (Topic 10).
-- [ ] `00_charter.md` (lines 144–145) / `09_implementation_plan.md` R3 (lines 488–490) —
+- [x] `00_charter.md` (lines 144–145) / `09_implementation_plan.md` R3 (lines 488–490) —
   **pending hands-on quant verification**: if the IQ3/Q3 finding holds (Q4_K_M does not
   fit with usable KV-cache headroom on the real 16 GB GPU), log an amendment changing the
   Charter's "Q4_K_M … to fit" example and R3's "Q4_K_M expected to fit" assumption to the
   verified quant. Do not apply until hands-on data confirms; if Q4 fits, no change
   (Topic 10).
-- [ ] `07_site_style_guide.md` — trim to a strategy doc; point to a future `docs/`
+- [x] `07_site_style_guide.md` — trim to a strategy doc; point to a future `docs/`
   HTML living style guide; fill the Kansas data URL (Topics 11, 2).
 
 ---

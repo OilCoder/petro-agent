@@ -129,6 +129,13 @@ Calibration Error (ECE).
 
 #### Reliability diagram (calibration curve)
 
+Because uncertainty is propagated by **Monte Carlo** (per-depth sampling — the
+resolved method, not analytic ranges), the P10/P50/P90 fields are true distributional
+percentiles. The reliability diagram is therefore **not limited to the three-tier
+shape**: it may use finer equal-width bins across all stated half-ranges where the
+VOLVE well count permits each bin to be populated reliably; otherwise it falls back to
+the per-tier (FIRM/QUALIFIED/BRACKETED) binning below.
+
 For each confidence tier, compute the mean stated uncertainty bound and the mean
 observed absolute error across all benchmark wells in that tier:
 
@@ -212,6 +219,14 @@ Benchmark set (Phase 8 only): VOLVE wells with accepted interpretation
 A "pipeline-level LOWO" has exactly one fold: the entire VOLVE benchmark is the
 withheld well set. There is no internal cross-validation within VOLVE.
 
+**Field-scale and the regression gate**: although v1 is a whole-field report (per-well
+results plus a field rollup — aggregate net pay/NTG/HCPV, a cross-well zone-correlation
+panel, and a field net-pay/quality map), the **VOLVE regression gate stays per-well**.
+Calibration is per-well: the four pass/fail metrics (PHIE/Vsh/Sw MAE, net-pay deviation)
+are computed and judged against each benchmark well's accepted interpretation
+individually. The **field-aggregation metrics are descriptive** — they summarise the
+per-well outputs for the report and are not part of the Phase 8 pass/fail gate.
+
 **VOLVE well subset for evaluation**: the full set of VOLVE wells with a complete
 accepted interpretation is used. Exact well count is confirmed in Phase 8 setup.
 A minimum of three wells must carry complete reference Vsh/PHIE/Sw curves; if fewer
@@ -236,6 +251,44 @@ on Kansas during development uses the following proxies:
 
 None of these proxies constitute ground-truth evaluation; they are internal
 consistency checks. Ground-truth evaluation occurs only on VOLVE in Phase 8.
+
+---
+
+### Cross-family evaluation (prose, selection, honesty)
+
+Cross-family comparison is **not** a second parallel writer. The architecture keeps a
+**single Qwen3:30b-a3b writer**; model diversity comes from the **Phase-6 adversarial
+reviewer (Llama3.1:8b, the second model family)**, which critiques the single Qwen
+draft. The cross-family comparison of **prose quality, method/parameter-selection
+rationale, and claim honesty** is therefore performed by that reviewer at Phase 6 — not
+by diffing two independent drafts. The diversity benefit (reduced correlated blind
+spots) is a reviewer-decorrelation gain; the deterministic validators still carry the
+reliability weight. There is no parallel-draft comparison in the evaluation protocol.
+
+### Engine-reproducibility regression check
+
+The deterministic engine is **byte-reproducible given a fixed input set**: the same LAS
+file, the same config, **and the same recorded set of parameter selections** must
+produce **byte-identical engine outputs**. This is the regression guarantee that backs
+the cross-family work above.
+
+Scope of the guarantee:
+
+- The engine is deterministic **given a fixed selection set** — it is **not** invariant
+  to *which model* performs the selection. The compute agent's `correct` loop (an LLM
+  node) selects revised parameters from the config library to resolve correctable
+  objections; that is the "selects" clause of the invariant, not computation.
+- Two different model families (or the same model under best-effort, non-bit-exact
+  seeding) may make **different** parameter selections in that loop, yielding different
+  — but each fully deterministic-given-the-selection — numbers. That cross-model
+  selection divergence is a **ledger-tracked numeric-difference source**, not a
+  regression failure: every selection and degradation is recorded, so the difference is
+  auditable.
+- The regression check therefore compares engine outputs **holding the recorded
+  selections fixed**: replay the same LAS + config + recorded selection set and assert
+  byte-identical outputs. The ledger surfaces any cross-model selection divergence for
+  audit separately, aligned with the best-effort (non-bit-exact) LLM reproducibility
+  policy under Reproducibility below.
 
 ---
 
@@ -409,12 +462,12 @@ tolerated; any numerical field difference in the ledger is a reproducibility fai
   this count. If fewer than three wells carry complete reference curves, Phase 8 is
   blocked pending a foundation gap report.
 
-- **Reliability diagram binning strategy**: the diagram above uses three bins
-  (one per confidence tier). An alternative is to discretise stated half-ranges into
-  N equal-width bins across all tiers and plot observed MAE per bin. This would
-  give a more granular calibration picture but requires more benchmark wells to
-  populate each bin reliably. The choice depends on the VOLVE well count and is
-  deferred to Phase 7.
+- **Reliability diagram binning strategy**: RESOLVED. With Monte Carlo uncertainty
+  propagation the stated half-ranges are true percentiles, so the diagram is no longer
+  limited to three per-tier bins. Use finer equal-width bins across all tiers where the
+  VOLVE well count populates each bin reliably; otherwise fall back to the three-tier
+  (FIRM/QUALIFIED/BRACKETED) binning. The bin count is chosen at Phase 7 once the VOLVE
+  well count is confirmed.
 
 - **Ollama seed determinism**: Ollama's `seed` parameter is documented but its
   determinism guarantee is version-dependent. If the Ollama version in use does not

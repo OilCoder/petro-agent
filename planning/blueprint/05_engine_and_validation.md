@@ -21,8 +21,21 @@ Every function on the quantitative path must be:
 3. Covered by a golden test suite that must exit 0 before any code reaches
    `src/petrophysics/`.
 
-The three functions below are the complete quantitative path for v1. No other
-petrophysical equation is introduced before the Phase 8 regression benchmark.
+The quantitative path for v1 is the **three core equations (Vsh/PHIE/Sw)** plus a
+set of **deterministic cutoff/aggregation functions**
+(`net_sand`/`net_reservoir`/`net_pay`/NTG/`hcpv`/`bvw`) that operate *on top of* the
+three core outputs. No other *petrophysical equation* is introduced before the
+Phase 8 regression benchmark — the cutoff/aggregation functions are non-equation
+arithmetic (cutoff masking, thickness summation, ratios, volumetrics) over the three
+core results, not new petrophysical models, so the invariant is preserved: the LLM
+still never computes and never authors math.
+
+> **Logged amendment (Topic 1, stated openly).** This widens the original "the three
+> functions below are the complete quantitative path for v1" statement to include the
+> deterministic cutoff/aggregation tier (`net_sand`/`net_reservoir`/`hcpv`/`bvw`).
+> These are scoped as cutoff-driven aggregations over the three core outputs, **not**
+> new petrophysical equations; each is its own frozen, golden-tested function. This is
+> an open design amendment, not a silent widening.
 
 ---
 
@@ -265,6 +278,119 @@ analytically and embedded as toleranced assertions.
 
 ---
 
+### `net_sand` / `net_reservoir` — three-tier cutoff thickness (deterministic aggregation)
+
+**Module**: `src/petrophysics/netpay.py`
+**Version**: starts at `0.1.0`; incremented on any change to a cutoff rule or summation behaviour.
+
+These two functions surface the upper two tiers of the standard net-sand →
+net-reservoir → net-pay hierarchy (Topic 1). They are **deterministic
+cutoff/aggregation functions, not new petrophysical equations** — each applies a
+single cutoff mask to a core output and sums sample thickness, exactly like
+`compute_net_pay` one tier below. They consume the Vsh/PHIE/Sw curves the engine
+already produced; they introduce no new physics.
+
+**Cutoff rules**:
+
+```
+net_sand     = (Vsh <= vsh_cutoff)
+net_reservoir = (Vsh <= vsh_cutoff) AND (PHIE >= phie_cutoff)
+```
+
+`net_sand` is the lithology (shaliness) tier; `net_reservoir` adds the porosity tier;
+`net_pay` (above) adds the saturation tier. A depth that is NaN in any input it tests,
+or tagged `EXCLUDED` in the quality map, never counts (flag `False`).
+
+**Signatures**:
+
+```python
+def net_sand(
+    depth: np.ndarray,      # depth array, metres
+    vsh: np.ndarray,        # shale volume, v/v
+    vsh_cutoff: float,      # max Vsh for net sand (from config)
+    depth_step_m: float,    # depth increment, metres
+) -> dict:                  # {"net_sand_m": float}
+
+def net_reservoir(
+    depth: np.ndarray,      # depth array, metres
+    vsh: np.ndarray,        # shale volume, v/v
+    phie: np.ndarray,       # effective porosity, v/v
+    vsh_cutoff: float,      # max Vsh (from config)
+    phie_cutoff: float,     # min PHIE (from config)
+    depth_step_m: float,    # depth increment, metres
+) -> dict:                  # {"net_reservoir_m": float}
+```
+
+- Each returns a thickness summed over the depth range handed by the `zonate` stage:
+  `tier_m = count(True) * depth_step_m`. The functions do not find zone boundaries.
+- NaN inputs in any tested curve map to `False` at that depth (never counted).
+
+**Golden tests** (`tests/test_netpay.py`):
+
+| Test name | What it checks | Analytic expectation |
+|---|---|---|
+| `test_net_sand_summation` | Vsh array with k samples ≤ vsh_cutoff at step s → net_sand_m = k·s | Thickness summation |
+| `test_net_reservoir_subset` | net_reservoir_m ≤ net_sand_m for the same array (porosity cutoff only removes samples) | Tier monotonicity |
+| `test_net_reservoir_phie_rejects` | A sample passing Vsh but with PHIE < phie_cutoff is not net reservoir | Each cutoff is necessary |
+| `test_tier_hierarchy` | net_pay_m ≤ net_reservoir_m ≤ net_sand_m on a shared fixture | Three-tier ordering |
+| `test_net_sand_nan_excluded` | NaN Vsh → not counted at that depth | Exclusion of undefined samples |
+
+---
+
+### `hcpv` / `bvw` — hydrocarbon pore volume and bulk-volume water (deterministic volumetrics)
+
+**Module**: `src/petrophysics/volumetrics.py`
+**Version**: starts at `0.1.0`; incremented on any change to the volumetric arithmetic.
+
+`hcpv` (hydrocarbon pore volume per unit area) and `bvw` (bulk-volume water) are
+**deterministic arithmetic over the three core outputs**, not petrophysical equations:
+they multiply already-computed PHIE/Sw by net-pay thickness. No new physics enters.
+
+**Formulas** (per net-pay sample, summed over the interval):
+
+```
+BVW   = PHIE * Sw                        (per depth, dimensionless v/v)
+HCPV  = sum( PHIE * (1 - Sw) * depth_step_m )   over net-pay depths   (m, pore-volume-feet/metres equivalent)
+```
+
+`hcpv` is the net hydrocarbon column (PHIE·(1−Sw) integrated over net pay);
+`bvw` is the per-depth bulk-volume water, averaged or summed per zone as the by-zone
+summary requires. Both consume the engine's PHIE/Sw and the net-pay flag from
+`apply_cutoffs`; neither recomputes PHIE or Sw.
+
+**Signatures**:
+
+```python
+def bvw(
+    phie: np.ndarray,       # effective porosity, v/v
+    sw: np.ndarray,         # water saturation, v/v
+) -> np.ndarray:            # bulk-volume water per depth, v/v
+
+def hcpv(
+    phie: np.ndarray,       # effective porosity, v/v
+    sw: np.ndarray,         # water saturation, v/v
+    net_pay_flag: np.ndarray,  # boolean per-depth flag from apply_cutoffs
+    depth_step_m: float,    # depth increment, metres
+) -> dict:                  # {"hcpv_m": float}
+```
+
+- `bvw` returns a per-depth array; NaN PHIE/Sw propagate as NaN.
+- `hcpv` sums `PHIE * (1 - Sw) * depth_step_m` only over depths where `net_pay_flag`
+  is `True`; non-net-pay and NaN depths contribute zero.
+
+**Golden tests** (`tests/test_volumetrics.py`):
+
+| Test name | What it checks | Analytic expectation |
+|---|---|---|
+| `test_bvw_known_case` | PHIE = 0.20, Sw = 0.30 → BVW = 0.06 | Analytic: 0.20·0.30 |
+| `test_bvw_water_zone` | Sw = 1.0 → BVW = PHIE (all pore volume is water) | Analytic |
+| `test_bvw_nan_passthrough` | NaN PHIE or Sw → NaN BVW | NaN isolation |
+| `test_hcpv_known_case` | k net-pay samples, PHIE = 0.20, Sw = 0.30, step s → hcpv_m = k·0.20·0.70·s | Analytic volumetric sum |
+| `test_hcpv_excludes_non_net_pay` | Samples with net_pay_flag False contribute zero | Net-pay-only integration |
+| `test_hcpv_full_water_zero` | Sw = 1.0 over all net pay → hcpv_m = 0 | No hydrocarbon |
+
+---
+
 ### Shared test infrastructure
 
 All golden tests live in `tests/` and run via `pytest -q`. No test may be skipped or
@@ -357,20 +483,64 @@ hash is logged at run start. The schema has three top-level keys:
 ```json
 {
   "version": "<semver>",
+  "config_sha256": "<hash logged at run start>",
   "regional_defaults": {
     "paleozoic_kansas": { ... },
     "north_sea_jurassic": { ... }
   },
   "well_overrides": {
     "<UWI>": { ... }
+  },
+  "citations": {
+    "<citation_id>": {
+      "parameter": "m",
+      "default_value": 2.0,
+      "valid_range": [1.3, 3.0],
+      "source": "Archie 1942",
+      "locator": "Trans. AIME 146, p.54 / DOI:10.2118/942054-G",
+      "applicability": "clean formations; m,n=2.0 defaults"
+    }
   }
 }
 ```
 
 Each parameter entry includes `value`, `unit`, `provenance` (`core`/`offset`/`default`),
-and `source_description` (a human-authored string). The `well_overrides` block allows
-per-well core or offset values to override the regional defaults without modifying the
-defaults block. The exact field names are finalised in Phase 2 (see Open questions).
+`source_description` (a human-authored string), and a **`citation_id`** that joins it
+to the `citations` block. The `well_overrides` block allows per-well core or offset
+values to override the regional defaults without modifying the defaults block. The
+exact field names are finalised in Phase 2 (see Open questions).
+
+### Citations table (Topic 8 — static, no RAG)
+
+The `citations` block above is the project's **static curated citations table** — a
+deterministic lookup, **not** RAG / not paper curation. It maps each parameter (a, m,
+n, Rw, matrix density, Vsh method) to exactly one source, wired into the JSON ledger so
+every parameter selection emits a frozen citation.
+
+**Schema** (one row per `citation_id`):
+
+| Field | Type | Purpose |
+|---|---|---|
+| `parameter` | string | The parameter symbol the row certifies (`a`, `m`, `n`, `Rw`, `rho_ma`, `variant`) |
+| `default_value` | number/string | The value/default this source backs |
+| `valid_range` | `[min, max]` | Physical range the source supports |
+| `source` | string | Author, year (e.g., `Archie 1942`, `Larionov 1969`) |
+| `locator` | string | Page / DOI for traceability |
+| `applicability` | string | Formation age / lithology scope |
+
+**Seed rows**: Archie 1942 (`m`, `n` = 2.0 defaults; note `a` originates from
+Winsauer 1952 / Wyllie & Gregory 1953, not Archie's original), Larionov 1969
+**older-rocks** branch (Paleozoic Kansas), and the KGS/USGS Schaben values
+(`Rw = 0.04`, `m = n = 2`) plus the regional Glick Field `m` range (2.10–2.75).
+
+**Ledger join + version pinning**: every parameter the engine reads carries its
+`citation_id`; the ledger records the resolved citation alongside the value, the
+config `version` (semver), and the `config_sha256` pinned at run start, so each number
+traces to one frozen source at one frozen config revision.
+
+**Golden tests** (`tests/test_citations.py`): every parameter resolves to exactly one
+citation; an unknown parameter is a **hard fail, never a guess**; every `citation_id`
+referenced by a parameter exists in the `citations` block.
 
 ### Provenance assignment rules
 
@@ -529,7 +699,9 @@ the objection as `irreducible` on the next typing pass).
 Detects when the assumed lithology model (sandstone, limestone, or dolomite) is
 inconsistent with what the crossplot data indicates. A model mismatch cannot be
 corrected by parameter revision — it signals that the wrong equation family was
-chosen. All model-mismatch objections are typed `irreducible`.
+chosen. All model-mismatch objections are typed `irreducible`. For v1 the
+model-mismatch validator runs on the **neutron-density crossplot check only**; the M-N
+crossplot check is deferred (see below).
 
 **Neutron-density crossplot check**:
 - For each non-excluded depth sample, compute its position on the neutron-density
@@ -540,10 +712,20 @@ chosen. All model-mismatch objections are typed `irreducible`.
 - The crossplot PNG (`outputs/<UWI>_..._crossplot_nd.png`) is generated and saved as
   evidence. The validator entry references the PNG file path.
 
-**M-N crossplot check**:
+**M-N crossplot check** — **DEFERRED for v1 (Topic 1)**. The M-N check is **off by
+default in v1**: it is gated behind DT/PEF presence and emits no Phase-3 artifact. v1
+relies on the **neutron-density crossplot** (above) plus the Pickett-plot QC for the
+model-mismatch validator; the M-N branch is reactivated only in a later phase when
+DT/PEF curves are available. The model-mismatch validator already degrades gracefully
+without DT (it does not strictly require M-N), so this is a cleanup, not a
+contradiction fix. The spec below is retained for that later phase, not implemented in
+v1, and the `crossplot_mn.png` output is dropped from the v1 artifact set.
+
 - M index: `M = (Δt_fl - Δt) / (ρb - ρfl) × 0.01` where Δt is compressional
   slowness (DT). If DT is absent, the M-N check is skipped and a degradation entry
-  is logged (`validator_id: mn_skipped_no_dt`).
+  is logged (`validator_id: mn_skipped_no_dt`). In v1, with M-N off by default,
+  `mn_skipped_no_dt` is the standing degradation record whenever a DT-bearing well
+  would otherwise have triggered the (deferred) check.
 - N index: `N = (Φnfl - Φn) / (ρb - ρfl)` where Φnfl and Φn are neutron porosity
   of fluid and formation, and ρb and ρfl are bulk and fluid density (same density
   denominator as the M index). Formula to be confirmed against the reference before
@@ -551,9 +733,11 @@ chosen. All model-mismatch objections are typed `irreducible`.
 - Positions compared against Schlumberger (1989) reference mineral points. Deviations
   beyond 0.1 index units (provisional tolerance — to be confirmed against the
   reference) from the nearest mineral point are flagged.
-- The crossplot PNG (`outputs/<UWI>_..._crossplot_mn.png`) is generated as evidence.
+- No `crossplot_mn.png` is generated in v1 (the M-N artifact is dropped); when the
+  deferred check is reactivated post-v1, the PNG (`outputs/<UWI>_..._crossplot_mn.png`)
+  is emitted as evidence.
 
-**Crossplot output specifications** (both PNGs):
+**Crossplot output specifications** (neutron-density PNG; the M-N PNG is deferred):
 - Format: PNG, 300 dpi, white background, 1200 × 900 pixels.
 - Sandstone reference line: ρma = 2.65 g/cc, φN-matrix = −0.02 v/v.
 - Limestone reference line: ρma = 2.71 g/cc, φN-matrix = 0.00 v/v.
@@ -664,21 +848,18 @@ the Goodhart failure mode.
   produce false positives on correct results. These values must be confirmed before
   Phase 3 implements the crossplot validator.
 
-- **RT masking in bad-hole zones**: the current bad-hole masking policy masks RHOB and
-  NPHI at washed-out depths but not RT. True resistivity tools are laterolog or
-  induction tools that read into the formation rather than the borehole fluid, so their
-  response in washout is less severe than density/neutron. However, tool eccentralization
-  in large boreholes can affect RT. Whether to add a conditional RT mask for extreme
-  washout (CALI > bit_size + N inches, with N configurable) is an open engineering
-  decision for Phase 1.
+- **RT masking in bad-hole zones — RESOLVED (Topic 1).** v1 **does not mask RT**:
+  laterolog/induction tools read into the formation, so RT is left unmasked at
+  washed-out depths. A **configurable extreme-washout RT mask** (`CALI > bit_size + N`
+  inches, `N` configurable) is offered as a **Phase-1 option only**, enabled only if
+  the data shows the need; off by default.
 
-- **GR min/max estimation strategy**: `gr_min` and `gr_max` are currently expert-set
-  scalars in the config library. An alternative is to estimate them automatically from
-  the GR distribution (e.g., P5 and P95 of the observed GR) on a per-well or per-zone
-  basis. Automatic estimation would be deterministic and logged, but would make the
-  values data-dependent (a form of data-driven parameter selection). This is deferred
-  to Phase 2 parameter provenance design; it would be tagged `provenance = default`
-  (derived from the log itself, not from an external calibration source).
+- **GR min/max estimation strategy — RESOLVED (Topic 1).** v1 keeps **expert-set
+  scalars by default** for `gr_min` / `gr_max`. An **optional auto P5/P95 estimation**
+  from the per-well GR distribution is offered, tagged `provenance = default`
+  (data-derived from the log itself, not an external calibration source). The per-dataset
+  choice between scalar and auto is NEEDS-HANDSON-DATA, deferred to Phase 2 parameter
+  provenance design.
 
 - **PHIE upper-bound value for Kansas carbonate zones**: the default `phie_max = 0.45`
   is conservative for clastics but may be too low for vuggy or fractured carbonate
@@ -692,3 +873,11 @@ the Goodhart failure mode.
   appropriateness for the depth-sampling interval of the Kansas/Schaben LAS files (step
   size varies by well vintage) has not been tested. These parameters will be revisited
   during Phase 1 implementation when the first Schaben LAS file is processed.
+
+- **Ollama seed determinism — RESOLVED (Topic 10).** LLM reproducibility is
+  **best-effort, not bit-exact**: greedy decode with a pinned seed and context window,
+  and the Ollama build + model/engine digests recorded in the ledger. Bit-exact LLM
+  prose is **not** required for correctness — the invariant keeps every number in
+  deterministic Python, so best-effort seed pinning suffices. Ollama is the v1 serving
+  layer behind a thin swappable interface (vLLM reserved for a Phase-8+ field-wide
+  batch mode); actual VRAM fit at the chosen quant is NEEDS-HANDSON-DATA.

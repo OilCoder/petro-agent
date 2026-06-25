@@ -37,6 +37,13 @@
 - Tone is controlled by the confidence tier of each block (firm / qualified / explicitly-bracketed); the writer agent has no discretion to override the tier.
 - Language: English.
 
+### Field-scale rollup (whole-field scope)
+
+- v1 is **field-scale**: the pipeline emits per-well report blocks PLUS a field-rollup layer over all Schaben wells.
+- **Field rollup summary**: aggregate net pay / NTG / HCPV across the field plus a per-well summary table, produced by a deterministic aggregation pass over the per-well ledger entries (no LLM computation; schema in `03_source_sink_contracts.md`).
+- **Field net-pay / quality map**: a matplotlib map of net pay / reservoir quality across well locations, saved to `outputs/` (gitignored).
+- **Cross-well zone-correlation panel**: a multi-well panel aligning zonation across wells, saved to `outputs/` (gitignored).
+
 ### JSON ledger
 
 - One ledger file per run, emitted to `outputs/` (gitignored).

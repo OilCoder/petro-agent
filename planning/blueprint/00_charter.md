@@ -28,6 +28,15 @@ All criteria must be met for v1 to be declared done.
 An unattended run (no human interaction from LAS load to report emit) produces a
 readable prose report and a complete, traceable ledger for a Kansas/Schaben well.
 
+**Scope (2026-06-24): v1 is FIELD-SCALE** — per-well results plus a deterministic
+field rollup (aggregate net pay / NTG / HCPV, cross-well zone-correlation panel,
+field net-pay / quality map). Wells are still processed one-by-one by the engine.
+
+**On the listed outputs (PHIE / Vsh / Sw / net pay):** net sand, net reservoir, HCPV,
+and BVW are **derived deterministic cutoff-aggregation outputs** — arithmetic over the
+three core engine results (Vsh / PHIE / Sw), not new petrophysical equations. They are
+still frozen, version-pinned, and golden-tested; the LLM never computes them.
+
 ### 2. Quantitative correctness — VOLVE regression (Phase 8 pass/fail)
 The pipeline's output on the VOLVE benchmark dataset must satisfy all four thresholds
 against the accepted interpretation:
@@ -178,6 +187,10 @@ No external services budget. Stack is entirely open-source and local.
   value over a role-only adversarial prompt on Qwen to justify the operational
   complexity. The deterministic validators carry most of the reliability weight; this
   is a marginal decorrelation question.
+  **Provisional (2026-06-24): use the second model family (Llama3.1:8b)** as the
+  adversarial reviewer — genuine cross-family decorrelation at acceptable cost (the
+  model is already in the stack). Recorded provisional, **not closed**: the user's
+  specific requirement for the reviewer is still pending (unstated need).
 
 - **(b) Hard abstention as a product decision.**
   Decision deferred to Phase 7. Can the system refuse to emit a report when no
@@ -187,16 +200,19 @@ No external services budget. Stack is entirely open-source and local.
   the gating rules are finalized.
 
 - **(c) Uncertainty propagation method — Monte Carlo vs. analytic ranges.**
-  Decision deferred to Phase 7. Monte Carlo (full per-depth sampling) gives
-  distributional outputs and enables a reliability diagram natively; analytic ranges
-  are simpler and faster but less expressive. The choice affects the ECE measurement
-  infrastructure and the P10/P50/P90 output format.
+  **CLOSED (2026-06-24) → Monte Carlo.** Full per-depth sampling gives distributional
+  outputs and enables a reliability diagram / ECE natively; P10/P50/P90 ledger fields
+  are therefore true percentiles, not analytic-range bounds. Compute cost is
+  numpy/CPU, so it does not compete with the LLM for the ~16 GB VRAM budget.
 
 - **(d) RAG over petrophysical papers vs. system-prompt knowledge.**
-  Decision deferred to Phase 5. Whether the compute agent retrieves parameter
-  justifications from a curated paper store (RAG) or relies on model knowledge plus
-  the config library determines the scope of Phase 5 and the provenance chain for
-  parameter selection rationale.
+  **RESOLVED (2026-06-24) → no RAG for v1.** Ship a static curated **citations table**
+  (each parameter → exactly one source: value/range, author/year, locator, scope)
+  wired to the JSON ledger so every parameter selection emits a frozen citation,
+  covered by golden tests. The justification surface is small, closed, and stable — a
+  lookup-table problem, not a search one — and a curated table gives deterministic,
+  auditable provenance without RAG's hallucinated-citation failure mode. Revisit only
+  if a large unstructured regional corpus appears post-Phase 8.
 
 - **(e) ECE calibration threshold for statistical confidence criterion.**
   The specific ECE target (Success criterion 4) cannot be set before Phase 7

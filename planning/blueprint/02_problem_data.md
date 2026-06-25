@@ -40,14 +40,18 @@ parameters, not from any learned model.
 | Attribute | Value |
 |---|---|
 | Source | U.S. Geological Survey (USGS) open data — Kansas Geological Survey (KGS) well log repository, public domain |
+| Raw-LAS access | KGS Magellan portal (`https://www.kgs.ku.edu/Magellan/Logs/`), searchable by Ness County / API / lease, or via the bulk `ks_las_files.zip`. Wells are joined to logs via the KGS KID identifier. |
 | Formation | Paleozoic (mixed carbonate and clastic section, Schaben oil field, Ness County, Kansas) |
+| Scope (v1) | **Field-scale**: the v1 dataset is the **full Schaben well set**, not a single well. The pipeline processes wells one-by-one and a deterministic field-rollup stage aggregates them (per-well results plus field net pay / NTG / HCPV, cross-well zone correlation, and a field net-pay/quality map). |
+| Anchor wells | Type-log well **Schaben #4 (API 15-135-21452)** plus the **three cored wells** — used to anchor zonation and as candidate calibration controls (see core note below). |
 | Number of wells | Approximately 7–15 wells available in the Schaben area; exact count not yet confirmed — see Open questions |
 | Curve availability | GR, RHOB, NPHI, RT present in most wells; CALI / DCAL availability varies by well and vintage |
 | Depth range (typical) | Roughly 1 600–2 000 m MD depending on well; exact depths well-specific |
 | File format | LAS 2.0 |
 | Acquisition friction | Zero — already in use; quality is known from prior work |
 | Known characteristics | Old rocks → Larionov old-rocks formula required (not Tertiary). Carbonate intervals present alongside clastics — model-mismatch detection (Phase 3) is relevant here. |
-| No core data | Kansas/Schaben wells available for this project carry no core measurements; all parameters (a, m, n, Rw, matrix density) come from regional defaults or offset calibration. This is the primary source of parameter uncertainty for the dev dataset. |
+| No core data | Kansas/Schaben wells available for this project carry no core measurements; all parameters (a, m, n, Rw, matrix density) come from regional defaults or offset calibration. This is the primary source of parameter uncertainty for the dev dataset. **This remains the governing assumption — all Kansas outputs are BRACKETED.** |
+| Published core (PENDING — do not flip) | KGS has published Schaben core values (Rw = 0.04, m = n = 2, core m ≈ 1.97 intergranular to 2.5 vuggy). These are **published starting points, not confirmed inputs**: treating them as authoritative calibration would lift some Kansas outputs above BRACKETED and amend the confidence architecture. This is a **PENDING logged decision, gated on hands-on verification** that the core is downloadable and depth-registerable to our specific wells. Until verified, the "no core data → BRACKETED" assumption above governs; do **not** flip to a calibrated Kansas path. |
 
 ### VOLVE — regression / benchmark dataset
 
@@ -211,7 +215,12 @@ parameters. Any "overfitting to Kansas" is geological, not statistical (see risk
   on VOLVE would introduce a systematic Vsh bias that could cause a regression failure.
 
 - **Regional default parameters for North Sea / VOLVE**: the parameter library (Phase 2)
-  must include a North Sea / Jurassic set of defaults (Rw, a, m, n, matrix density)
-  distinct from the Kansas Paleozoic defaults, or the VOLVE run will use geologically
-  inappropriate defaults. This must be addressed in Phase 2 even though VOLVE is a
-  Phase 8 concern.
+  must include a **separate North Sea / Jurassic set of defaults** (Rw, a, m, n, matrix
+  density) distinct from the Kansas Paleozoic defaults, or the VOLVE run will use
+  geologically inappropriate defaults. This is a **Phase 2 action** (not an open question)
+  even though VOLVE is a Phase 8 concern.
+
+- **Schaben default-parameter rows for the citations table**: the Schaben Paleozoic
+  default parameters (Archie a, m, n, Rw, matrix density, Larionov old-rocks branch) supply
+  the default-parameter rows for the Phase-2 curated citations table (each parameter → one
+  source). These rows must be authored in Phase 2 alongside the North Sea / Jurassic set.

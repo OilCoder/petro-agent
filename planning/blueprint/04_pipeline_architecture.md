@@ -157,11 +157,18 @@ collect all objections.
    - Neutron-density cross-plot: compute position relative to the sandstone,
      limestone, and dolomite reference lines using the matrix density values from the
      config. If more than 30% of non-excluded depths fall outside the mineral triangle,
-     raise a `model_mismatch` flag.
-   - M-N cross-plot: compute M and N indices; compare against Schlumberger (1989)
-     reference points; flag deviations beyond 0.1 index units as `model_mismatch`.
+     raise a `model_mismatch` flag. For v1 the model-mismatch validator relies on this
+     neutron-density cross-plot alone.
+   - M-N cross-plot (OPTIONAL — DEFERRED for v1): gated on DT/PEF presence; compute M
+     and N indices; compare against Schlumberger (1989) reference points; flag
+     deviations beyond 0.1 index units as `model_mismatch`. When DT (and PEF) are
+     absent the M-N check is skipped and a degradation entry (`validator_id:
+     mn_skipped_no_dt`) is logged — see `05_engine_and_validation.md`. For v1 this
+     branch defaults off (no M-N artifact emitted); it activates only when DT/PEF are
+     present.
    - These are the only validators that generate PNG cross-plot outputs (see
-     `03_source_sink_contracts.md`).
+     `03_source_sink_contracts.md`). For v1 only the neutron-density cross-plot PNG is
+     emitted; the M-N PNG is deferred behind the DT/PEF gate above.
    - Violation → `objection_type = irreducible` (model mismatch cannot be corrected
      by the agents; it is recorded and propagates to a tier downgrade).
 
@@ -438,11 +445,72 @@ list if any claims were removed.
    `result: WARN`.
 3. Write `outputs/<UWI>_<YYYY-MM-DD>_report.md`.
 4. Write `outputs/<UWI>_<YYYY-MM-DD>_ledger.json`.
-5. Write cross-plot PNGs (active from Phase 3):
-   `outputs/<UWI>_<YYYY-MM-DD>_crossplot_nd.png` and `_crossplot_mn.png`.
+5. Write cross-plot PNGs (active from Phase 3): for v1, the neutron-density
+   cross-plot `outputs/<UWI>_<YYYY-MM-DD>_crossplot_nd.png` only. The M-N cross-plot
+   `_crossplot_mn.png` is OPTIONAL/DEFERRED — emitted only when DT/PEF are present
+   (see Stage 4 model-mismatch detection); when DT is absent it is not written and the
+   `mn_skipped_no_dt` degradation is recorded.
 
 **Outputs**: three artifact files on disk; nothing returned to the orchestrator
-(the run is complete).
+(the per-well run is complete).
+
+---
+
+## Field-scale aggregation (whole-field scope)
+
+v1 scope is **whole-field**: the pipeline above runs **per well** (one LAS → one
+ledger → one report block), unchanged, for every well in the Schaben field. After
+all per-well runs complete, two deterministic field-scale passes run on top of the
+per-well ledgers. The per-well deterministic path and the LLM-never-computes
+invariant are untouched — these passes are **deterministic aggregation over outputs
+the engine already produced**, not new petrophysical computation.
+
+### Stage 11 — `field_aggregate`
+
+**Purpose**: roll up the per-well results into field-level totals and a cross-well
+zonation, from the per-well ledgers only.
+
+**Inputs**: the set of per-well ledgers and zone lists produced by the per-well runs
+(`outputs/<UWI>_<YYYY-MM-DD>_ledger.json` for every well in the field).
+
+**Actor**: deterministic (`src.orchestrator.stages.field_aggregate`). No LLM
+participates; field totals and zone correlation are computed, never authored at
+runtime.
+
+**Actions**:
+1. Aggregate net pay / NTG / HCPV across wells: sum per-well net pay, compute the
+   field net-to-gross, and aggregate per-zone HCPV/BVW into field totals. Each
+   aggregate is a deterministic arithmetic rollup over per-well `computation` entries
+   the engine already produced.
+2. Cross-well zonation: align the per-well delineated zones into field-level zone
+   groups (a cross-well zone-correlation panel), keyed by formation/zone identity.
+3. Carry confidence tiers up: each field aggregate inherits the lowest confidence
+   tier of any per-well block contributing to it (field tier = min over contributing
+   wells).
+4. Append a `field_aggregation` block to a field ledger recording each aggregate, the
+   contributing well/zone `computation_id`s, and the aggregate confidence tier, so
+   every field number resolves back to per-well ledger entries.
+
+**Outputs**: field rollup struct (aggregate net pay/NTG/HCPV, per-well summary
+table), cross-well zone-correlation groups, field ledger `field_aggregation` block.
+
+**Exit condition**: every field aggregate resolves to the per-well ledger entries it
+was computed from.
+
+### Stage 12 — `field_write`
+
+**Purpose**: generate the field-summary report (per-well summary table, field
+totals, cross-well zone-correlation panel, field net-pay/quality map) from the field
+aggregation block.
+
+**Actor**: field-summary writer (Qwen3:30b-a3b via Ollama). The writer receives the
+field aggregation block and per-well confidence tiers (read-only); it has no access
+to raw curves or the validator harness, and follows the same tier-bound tone policy
+as Stage 8. The field net-pay/quality map is rendered deterministically from the
+per-well/field aggregates; the writer only redacts prose around it.
+
+**Outputs**: field-summary report (Markdown), field net-pay/quality map and
+cross-well zone-correlation panel PNGs, written to `outputs/`.
 
 ---
 
@@ -453,6 +521,14 @@ list if any claims were removed.
 The orchestrator is implemented in `src/orchestrator/` as a LangGraph `StateGraph`.
 Every node is a deterministic Python function or a bounded LLM agent call; every
 edge condition is a deterministic Python predicate. No LLM selects the next node.
+
+**LLM serving layer (v1 = Ollama).** All LLM-bounded nodes (`correct`, `write`,
+`review`, `claim_verify`, `field_write`) reach the model through a thin swappable
+serving interface; v1 uses **Ollama** behind that interface, so an Ollama→vLLM swap
+is a config change, not a rewrite. **vLLM is reserved for a future Phase-8+
+field-wide batch mode** on a larger GPU (24 GB+/multi-GPU), where continuous batching
+across many wells pays off; it is out of scope for v1, which serves the per-well
+prose sequentially on the 16 GB target.
 
 ```
 State fields:

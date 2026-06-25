@@ -26,3 +26,13 @@ Started: 2026-06-24
   schema) + 06_evaluation_protocol (tone-by-confidence gating); no dedicated doc.
 - 2026-06-24: planning/diseno/ (Obsidian vault notes) kept gitignored; the blueprinter
   reads them as context, the versioned design lives here in planning/blueprint/.
+- 2026-06-24: Topic 1 v1-path widening — the deterministic cutoff/aggregation tier
+  (`net_sand`/`net_reservoir`/`hcpv`/`bvw`) is added to the v1 quantitative path as
+  frozen, golden-tested non-equation functions over the three core outputs (Vsh/PHIE/Sw).
+  Widens Charter Success criterion 1; the invariant holds (the LLM never computes or
+  authors math). Logged amendment, not a silent widening (see 05 lines 33-39).
+- 2026-06-24: decision (c) CLOSED = Monte Carlo for uncertainty propagation.
+- 2026-06-24: decision (d) = no RAG for v1; KEEP a static curated citations table
+  (each parameter -> exactly one source), wired to the JSON ledger and golden-tested.
+- 2026-06-24: decision (a) provisional = second model family (adversarial reviewer,
+  Fase 6) pending the user's unstated requirement; revisit before Phase 6.
