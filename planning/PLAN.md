@@ -174,13 +174,13 @@ Done when: a single end-to-end pipeline run on a Kansas/Schaben well produces a 
 - [x] Implement field-summary writer pass: generate the whole-field report from the field ledger (per-well prose blocks plus the field rollup narrative), tone bound to each block's tier; render the cross-well zone-correlation panel and the field net-pay/quality map figures (`src/field/field_writer.py`, `src/field/field_figures.py`)
 - [x] End-to-end test: pipeline on a Kansas LAS produces report.md, a ledger.json with `claim_verifier result = PASS`, and no unresolved flags; a multi-well run produces the field report with the rollup, zone-correlation panel, and field net-pay/quality map (`tests/test_e2e.py`)
 
-### Phase 6 — Adversarial reviewer
+### Phase 6 — Adversarial reviewer (COMPLETED 2026-06-25)
 Done when: a second adversarial agent reviews the draft before the claim verifier; objections from the adversarial reviewer route through `typify_objections` and feed the loop; generator and critic use decorrelated models or prompts; design decision (a) is resolved and recorded in the manifest.
 - [x] Decision (a) — RESOLVED (2026-06-25): adversarial reviewer uses the second model family Llama3.1:8b; recorded in `planning/blueprint/MANIFEST.md`
-- [ ] Implement adversarial reviewer: receives draft report and ledger; produces a typed objection list (mechanical / support / irreducible) rewarded for finding faults; uses the chosen model (`src/agents/reviewer.py`)
-- [ ] Wire adversarial reviewer before `claim_verify`; reviewer objections route back through `typify_objections` so correctable ones re-enter the compute→validate loop (`src/orchestrator/graph.py`)
-- [ ] Log reviewer model tag and seed in `run.model_tags` (`src/agents/ollama_client.py`)
-- [ ] Test: adversarial reviewer introduces a mechanical objection on a synthetic draft; the loop re-enters `compute` and resolves it before re-entering `write` (`tests/test_reviewer.py`)
+- [x] Implement adversarial reviewer: receives draft report and ledger; produces a typed objection list (mechanical / support / irreducible) rewarded for finding faults; uses the chosen model (`src/agents/reviewer.py`)
+- [x] Wire adversarial reviewer before `claim_verify`; reviewer objections route back through `typify_objections` so correctable ones re-enter the compute→validate loop (`src/orchestrator/graph.py`)
+- [x] Log reviewer model tag and seed in `run.model_tags` (`src/agents/ollama_client.py`)
+- [x] Test: adversarial reviewer introduces a mechanical objection on a synthetic draft; the loop re-enters `compute` and resolves it before re-entering `write` (`tests/test_reviewer.py`)
 
 ### Phase 7 — Uncertainty and confidence
 Done when: the pipeline propagates parameter uncertainty through Vsh, PHIE, and Sw computations via Monte Carlo per-depth sampling and writes true-percentile P10/P50/P90 slots in the ledger; sensitivity analysis identifies the dominant parameter for net pay; the multi-seed robustness check passes; the ECE threshold is set, logged as a manifest decision, and the reliability diagram infrastructure is in place.

@@ -40,14 +40,24 @@ Output a Markdown report with these sections:
 """
 
 
-def write_report(ledger: dict[str, Any], chat: ChatFn) -> str:
-    """Generate the Markdown prose report from the ledger using the writer LLM."""
+def write_report(ledger: dict[str, Any], chat: ChatFn, feedback: str = "") -> str:
+    """Generate the Markdown prose report from the ledger using the writer LLM.
+
+    If ``feedback`` is provided (from the adversarial reviewer), the writer revises the
+    report to address each objection while keeping every number tied to the ledger.
+    """
     run = ledger.get("run", {})
+    fb = (
+        f"\n\nA reviewer raised these objections; revise to address EACH while keeping "
+        f"every number tied to the ledger:\n{feedback}"
+        if feedback
+        else ""
+    )
     user = (
         f"Ledger JSON (the ONLY source of numbers):\n```json\n"
         f"{json.dumps(ledger, indent=2)[:12000]}\n```\n\n"
         f"Confidence tier for this run: {run.get('confidence_tier', 'bracketed')}. "
         f"Convergence: {run.get('convergence_status', 'unknown')}. "
-        f"Write the report now, binding tone to the confidence tier."
+        f"Write the report now, binding tone to the confidence tier.{fb}"
     )
     return chat(_SYSTEM, user)
