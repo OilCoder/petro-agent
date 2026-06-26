@@ -28,7 +28,7 @@ CTX = {
 
 def test_validate_plan_rejects_unknown_tool():
     issues = validate_plan({"tool_calls": [{"tool": "sw_made_up", "args": {}}]})
-    assert any("not in whitelist" in i for i in issues)
+    assert any("not a whitelisted id" in i for i in issues)
 
 
 def test_validate_plan_rejects_bad_preset():
@@ -36,6 +36,12 @@ def test_validate_plan_rejects_bad_preset():
         {"tool_calls": [{"tool": "sw_simandoux", "args": {"electrical_preset": "ghost"}}]}
     )
     assert any("unknown electrical_preset" in i for i in issues)
+
+
+def test_validate_plan_handles_malformed_tool_without_crashing():
+    # a real model returned tool as a dict -> must not raise "unhashable type: dict"
+    issues = validate_plan({"tool_calls": [{"tool": {"name": "sw"}, "args": {}}, "notadict"]})
+    assert len(issues) == 2 and all("not a" in i or "not an" in i for i in issues)
 
 
 def test_validate_plan_accepts_good_plan():

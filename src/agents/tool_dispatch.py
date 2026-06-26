@@ -48,11 +48,15 @@ def validate_plan(plan: dict[str, Any]) -> list[str]:
     if not isinstance(calls, list):
         return ["plan.tool_calls must be a list"]
     for i, call in enumerate(calls):
-        tool = call.get("tool")
-        if tool not in ALLOWED_TOOLS:
-            issues.append(f"call {i}: tool {tool!r} not in whitelist")
+        if not isinstance(call, dict):
+            issues.append(f"call {i}: not an object")
             continue
-        preset = call.get("args", {}).get("electrical_preset")
+        tool = call.get("tool")
+        if not isinstance(tool, str) or tool not in ALLOWED_TOOLS:
+            issues.append(f"call {i}: tool {tool!r} not a whitelisted id")
+            continue
+        args = call.get("args", {})
+        preset = args.get("electrical_preset") if isinstance(args, dict) else None
         if tool in METHOD_REGISTRY and METHOD_REGISTRY[tool].property == "sw":
             if preset is not None and preset not in ELECTRICAL_PRESETS:
                 issues.append(f"call {i}: unknown electrical_preset {preset!r}")
