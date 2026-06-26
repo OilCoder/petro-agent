@@ -61,3 +61,14 @@ add/to_json/to_mermaid/validate). `validate()` es gate determinista: acíclico, 
 de ledger resuelven, y **rechaza literales decimales en prosa de nodos decision/observation** (el LLM
 referencia claves, no embebe números) — el guard del invariante. 173 tests verdes. Coherencia con
 specs 01/03 verificada.
+
+## DV2-7 (2026-06-26) — Fase V2-C COMPLETA (dispatcher + guardrails, sin LLM)
+**Resultado:** `src/agents/tool_dispatch.py` (validate_plan contra whitelist `METHOD_REGISTRY` +
+EDA tools; dispatch ejecuta la fn determinista, escribe `ledger['tool_results'][key]` con
+result_hash, añade nodo tool_call al grafo). `verify_keyed` en claim_verifier (tolerancia 0.5%,
+atrapa números que derivan de su result de tool). `cross_tool_consistency` en validators/physical
+(MECHANICAL si un mean_sw de tool contradice el avg_sw del núcleo). 183 tests verdes, todo sin modelo.
+**Scope:** el dispatch ejecuta métodos Sw + tools EDA como camino demostrado; las otras familias de
+método (Vsh, porosidad, litología) se cablean idénticamente — pendiente mecánico para V2-D/E, no
+bloqueante. Done-when de V2-C cumplido (plan fabricado valida/ejecuta/escribe; keyed flaggea 1.9%-off;
+consistencia levanta MECHANICAL). Coherencia con spec 09 V2-C verificada.

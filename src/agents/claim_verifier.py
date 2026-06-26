@@ -69,3 +69,28 @@ def verify_report(
             flags.append(num)
     tone_flags = verify_tone(report, ledger)
     return {"passed": len(flags) == 0 and not tone_flags, "flags": flags, "tone_flags": tone_flags}
+
+
+# Rounding-only epsilon for the keyed reconciliation (the DV2-2 tolerance). Tighter than the
+# flat verifier's 2% so a value that drifts from its tool result (e.g. 1.9% off) is caught.
+KEYED_REL_TOL = 0.005
+
+
+def verify_keyed(
+    report: str, ledger: dict[str, Any], rel_tol: float = KEYED_REL_TOL
+) -> dict[str, Any]:
+    """Reconcile report numbers against tool-derived ledger values with a TIGHT tolerance.
+
+    v2 adds optional sections whose numbers come from named tool results
+    (``ledger['tool_results'][key]['value']``). The flat verifier's 2% band weakens as the
+    number set grows; this keyed check uses a rounding-only epsilon, so a value that drifts
+    from its tool result is flagged as authored (not from a tool).
+    """
+    nums: set[float] = set()
+    _collect_numbers(ledger, nums)
+    flags: list[float] = []
+    for token in _DECIMAL.findall(report):
+        num = float(token)
+        if not any(abs(num - ln) <= max(1e-6, rel_tol * abs(ln)) for ln in nums):
+            flags.append(num)
+    return {"passed": len(flags) == 0, "flags": flags}

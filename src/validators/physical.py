@@ -2,11 +2,46 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 from src.validators.objections import IRREDUCIBLE, MECHANICAL, SUPPORT, Objection
 
 VERSION = "0.1.0"
+
+
+def cross_tool_consistency(
+    ledger: dict[str, Any], rel_tol: float = 0.20
+) -> list[Objection]:
+    """Flag analyst tool-results that contradict the deterministic core calibration.
+
+    The closed menu restricts WHICH tools run, not whether their outputs agree with
+    ``compute()``. If the analyst's tool produced a value that conflicts with the core
+    (e.g. a mean Sw far from the core Sw, or an Rw off the calibrated Rw), raise a
+    MECHANICAL objection so a contradiction becomes a deterministic convergence problem
+    (feeds gating) rather than a silent dual number.
+
+    Args:
+        ledger: the run ledger (reads ``tool_results`` and ``calibration``/``summary``).
+        rel_tol: relative tolerance before a discrepancy is flagged.
+
+    Returns:
+        Mechanical objections for each contradicting tool result.
+    """
+    objs: list[Objection] = []
+    results = ledger.get("tool_results", {})
+    core_sw = ledger.get("summary", {}).get("avg_sw")
+    for key, entry in results.items():
+        value = entry.get("value", {}) if isinstance(entry, dict) else {}
+        tool_sw = value.get("mean_sw") if isinstance(value, dict) else None
+        if tool_sw is not None and core_sw not in (None, 0) and np.isfinite(tool_sw):
+            if abs(tool_sw - core_sw) > rel_tol * abs(core_sw):
+                objs.append(Objection(
+                    "cross_tool_consistency", MECHANICAL,
+                    f"{key} mean_sw {tool_sw:.3f} contradicts core avg_sw {core_sw:.3f}",
+                ))
+    return objs
 
 
 def net_pay_plausibility(

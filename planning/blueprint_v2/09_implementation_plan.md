@@ -32,7 +32,7 @@ persiste un grafo trivial (solo-obligatorias) en el ledger.
 - Toolset EDA read-only golden-tested (`src/eda/explore.py`).
 - Schema + persistencia del grafo de metodología (`src/agents/methodology_graph.py`); render mermaid/texto.
 
-### Fase V2-C — Dispatcher + contrato + reconciliación por clave + consistencia cross-tool (sin LLM)
+### Fase V2-C — Dispatcher + contrato + reconciliación por clave + consistencia cross-tool (sin LLM)  — DONE 2026-06-26
 Done when: un plan JSON fabricado se valida, ejecuta tools de la whitelist, escribe número+hash al ledger
 y nodos al grafo; el claim_verifier de campo flaggea un número 1.9%-off; la consistencia cross-tool levanta
 MECHANICAL ante outputs contradictorios. Todo testeado sin modelo.

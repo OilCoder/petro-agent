@@ -1,0 +1,107 @@
+"""Tests for the V2-C tool dispatcher, keyed claim verifier, and cross-tool consistency.
+
+All deterministic — no model in the loop.
+"""
+
+import numpy as np
+
+from src.agents.claim_verifier import verify_keyed
+from src.agents.methodology_graph import MethodologyGraph
+from src.agents.tool_dispatch import dispatch, validate_plan
+from src.validators.physical import cross_tool_consistency
+
+N = 50
+CTX = {
+    "curves": {
+        "GR": np.full(N, 50.0),
+        "RT": np.full(N, 10.0),
+        "RHOB": np.full(N, 2.5),
+        "NPHI": np.full(N, 0.2),
+    },
+    "phie": np.full(N, 0.2),
+    "vsh": np.full(N, 0.3),
+    "depth_m": np.arange(N, dtype=float) * 0.5,
+    "step_m": 0.5,
+    "quality_map": np.array(["GOOD"] * N, dtype=object),
+}
+
+
+def test_validate_plan_rejects_unknown_tool():
+    issues = validate_plan({"tool_calls": [{"tool": "sw_made_up", "args": {}}]})
+    assert any("not in whitelist" in i for i in issues)
+
+
+def test_validate_plan_rejects_bad_preset():
+    issues = validate_plan(
+        {"tool_calls": [{"tool": "sw_simandoux", "args": {"electrical_preset": "ghost"}}]}
+    )
+    assert any("unknown electrical_preset" in i for i in issues)
+
+
+def test_validate_plan_accepts_good_plan():
+    plan = {
+        "tool_calls": [{"tool": "sw_simandoux", "args": {"electrical_preset": "carbonate_default"}}]
+    }
+    assert validate_plan(plan) == []
+
+
+def test_dispatch_writes_number_hash_and_graph_node():
+    plan = {
+        "tool_calls": [{"tool": "sw_simandoux", "args": {"electrical_preset": "carbonate_default"}}]
+    }
+    ledger: dict = {}
+    graph = MethodologyGraph(mode="free", model="m")
+    written = dispatch(plan, CTX, ledger, graph)
+    assert written == ["sw_simandoux"]
+    entry = ledger["tool_results"]["sw_simandoux"]
+    assert "mean_sw" in entry["value"] and len(entry["result_hash"]) == 16
+    # the graph recorded a tool_call node pointing at the ledger key
+    act = [n for n in graph.nodes if n.type == "tool_call"][0]
+    assert act.payload["result_ledger_key"] == "ledger:sw_simandoux"
+
+
+def test_dispatch_runs_eda_tool():
+    plan = {"tool_calls": [{"tool": "low_resistivity_scan", "args": {}}]}
+    ledger: dict = {}
+    dispatch(plan, CTX, ledger, MethodologyGraph(mode="free", model="m"))
+    assert "low_resistivity_scan" in ledger["tool_results"]
+
+
+def test_dispatch_invalid_plan_writes_nothing():
+    ledger: dict = {}
+    written = dispatch(
+        {"tool_calls": [{"tool": "bad", "args": {}}]},
+        CTX,
+        ledger,
+        MethodologyGraph(mode="free", model="m"),
+    )
+    assert written == [] and "tool_results" not in ledger
+
+
+def test_verify_keyed_flags_19pct_off_number():
+    # flat verifier (2%) passes a 1.9%-off number; the keyed (0.5%) flags it
+    ledger = {"tool_results": {"sw_simandoux": {"value": {"mean_sw": 0.300}, "result_hash": "x"}}}
+    report = "Average Sw is 0.306."  # 2.0% above 0.300
+    assert verify_keyed(report, ledger)["passed"] is False
+
+
+def test_verify_keyed_passes_exact():
+    ledger = {"tool_results": {"sw_simandoux": {"value": {"mean_sw": 0.300}, "result_hash": "x"}}}
+    assert verify_keyed("Average Sw is 0.300.", ledger)["passed"] is True
+
+
+def test_cross_tool_consistency_flags_contradiction():
+    ledger = {
+        "summary": {"avg_sw": 0.30},
+        "tool_results": {"sw_indonesia": {"value": {"mean_sw": 0.80}, "result_hash": "x"}},
+    }
+    objs = cross_tool_consistency(ledger)
+    assert len(objs) == 1 and objs[0].objection_type == "mechanical"
+
+
+def test_cross_tool_consistency_passes_when_consistent():
+    ledger = {
+        "summary": {"avg_sw": 0.30},
+        "tool_results": {"sw_simandoux": {"value": {"mean_sw": 0.31}, "result_hash": "x"}},
+    }
+    assert cross_tool_consistency(ledger) == []
