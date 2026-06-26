@@ -26,7 +26,7 @@ Done when: existen ≥2 métodos golden-tested por propiedad (Vsh, porosidad, Sw
   ya existentes o nuevos, M-N crossplot — todos como funciones puras con golden tests (`src/petrophysics/`).
 - `available_methods(curves)` determinista (`src/petrophysics/registry.py`).
 
-### Fase V2-B — Toolset EDA + grafo de metodología (esqueleto)
+### Fase V2-B — Toolset EDA + grafo de metodología (esqueleto) — DONE 2026-06-26
 Done when: `src/eda/` produce observaciones deterministas; existe el schema del grafo de metodología y se
 persiste un grafo trivial (solo-obligatorias) en el ledger.
 - Toolset EDA read-only golden-tested (`src/eda/explore.py`).

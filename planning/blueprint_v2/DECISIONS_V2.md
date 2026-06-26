@@ -52,3 +52,12 @@ Coherente con la política de "diferidos fuera del registry" (DV2-2). Reevaluabl
 `registry.py` (METHOD_REGISTRY, available_methods, ELECTRICAL_PRESETS, CUTOFF_PRESETS), todo
 golden-tested. 158 tests verdes, ruff+mypy limpios. Coherencia con `02` verificada (única deriva:
 litho_mn diferido, DV2-4). Done-when de V2-A cumplido (≥2 métodos/propiedad + available_methods).
+
+## DV2-6 (2026-06-26) — Fase V2-B COMPLETA (EDA + grafo de metodología)
+**Resultado:** `src/eda/explore.py` (curve_inventory, depth_coverage, histogram_stats,
+crossplot_density_neutron, low_resistivity_scan, gr_baseline_check, badhole_summary — read-only,
+dicts serializables). `src/agents/methodology_graph.py` (GraphNode + MethodologyGraph con
+add/to_json/to_mermaid/validate). `validate()` es gate determinista: acíclico, deps existen, claves
+de ledger resuelven, y **rechaza literales decimales en prosa de nodos decision/observation** (el LLM
+referencia claves, no embebe números) — el guard del invariante. 173 tests verdes. Coherencia con
+specs 01/03 verificada.
