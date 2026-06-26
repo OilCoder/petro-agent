@@ -1,0 +1,137 @@
+"""Plan-driven report composition + the two modes (v2).
+
+Builds the report from a ``section_plan`` instead of a fixed template: mandatory sections
+always appear; optional sections appear only when the plan (agent or heuristic) selects
+them and the data supports them. Reuses the FROZEN v1 section renderers (v1 stays intact;
+this composer re-numbers by plan order). The mode is set by the invoker, never the LLM:
+guided = mandatory gates + ABSTENTION_SAFE restriction; free = advisory gates + mandatory
+methodology-graph section. ``graph.validate()`` is a MECHANICAL gate (blocks guided, warns free).
+"""
+
+from __future__ import annotations
+
+import re
+from typing import Any
+
+from src.agents import report_template as v1
+from src.agents.methodology_graph import MethodologyGraph
+
+VERSION = "0.1.0"
+
+GUIDED, FREE = "guided", "free"
+
+# Mandatory body sections (numbered, in order). Header/legend are preamble; appendices trail.
+_MANDATORY_BODY = [
+    "executive_summary",
+    "methodology",
+    "parameters",
+    "zonation",
+    "results",
+    "uncertainty",
+    "data_quality",
+    "conclusions",
+]
+# Optional sections the plan may insert (after results). Vetted, closed set.
+OPTIONAL_SECTIONS = ("shaly_sand_saturation", "sonic_porosity")
+# Optional sections allowed when the run abstains (diagnostic only — never confident analysis).
+ABSTENTION_SAFE: tuple[str, ...] = ()
+
+
+def _strip_number(block: str) -> str:
+    return re.sub(r"^(#+ )\d+\.\s*", r"\1", block, flags=re.MULTILINE)
+
+
+def _shaly_sand(ledger: dict[str, Any]) -> str:
+    sw = ledger.get("tool_results", {}).get("sw_simandoux", {}).get("value", {})
+    return f"## Shaly-sand saturation\n\nMean Sw (Simandoux): {sw.get('mean_sw', '—')}.\n"
+
+
+def _render_known(section_id: str, ledger: dict[str, Any], narrative: dict[str, str]) -> str:
+    """Render a v1 section (number-stripped) or a v2 optional section."""
+    renderers = {
+        "executive_summary": lambda: v1._executive_summary(
+            ledger, narrative.get("executive_summary", "")),
+        "methodology": v1._methodology,
+        "parameters": lambda: v1._parameters(ledger),
+        "zonation": lambda: v1._zonation(ledger),
+        "results": lambda: v1._results(ledger),
+        "uncertainty": lambda: v1._uncertainty(ledger),
+        "data_quality": lambda: v1._data_quality(ledger),
+        "conclusions": lambda: v1._conclusions(narrative.get("conclusions", "")),
+        "shaly_sand_saturation": lambda: _shaly_sand(ledger),
+        "sonic_porosity": lambda: "## Sonic porosity\n\nSonic-derived porosity (DT present).\n",
+    }
+    if section_id not in renderers:
+        raise KeyError(section_id)
+    return _strip_number(renderers[section_id]())
+
+
+def _methodology_section(graph: MethodologyGraph) -> str:
+    return f"## Methodology (decision graph)\n\n{graph.to_mermaid()}\n"
+
+
+def heuristic_section_plan(ledger: dict[str, Any]) -> dict[str, Any]:
+    """Deterministic section plan (the V2-D stand-in for the LLM agent).
+
+    Picks optional sections from what the data shows: shaly-sand saturation when a
+    Simandoux tool result exists; sonic porosity when DT is present.
+    """
+    optional: list[str] = []
+    if "sw_simandoux" in ledger.get("tool_results", {}):
+        optional.append("shaly_sand_saturation")
+    if "DT" in ledger.get("run", {}).get("curve_provenance", {}):
+        optional.append("sonic_porosity")
+    return {"optional_sections": optional}
+
+
+def _ordered_body(section_plan: dict[str, Any], mode: str, ledger: dict[str, Any]) -> list[str]:
+    abstain = bool(ledger.get("run", {}).get("abstain"))
+    requested = [s for s in section_plan.get("optional_sections", []) if s in OPTIONAL_SECTIONS]
+    if abstain:
+        # in guided, only abstention-safe optionals survive; confident analysis is dropped
+        requested = [s for s in requested if s in ABSTENTION_SAFE] if mode == GUIDED else requested
+    ids: list[str] = []
+    for sid in _MANDATORY_BODY:
+        ids.append(sid)
+        if sid == "results":
+            ids.extend(requested)
+        if sid == "data_quality" and mode == FREE:
+            ids.append("__methodology_graph__")  # mandatory in free
+    return ids
+
+
+def compose_report(
+    ledger: dict[str, Any],
+    section_plan: dict[str, Any],
+    mode: str,
+    graph: MethodologyGraph,
+    narrative: dict[str, str] | None = None,
+) -> str:
+    """Assemble the plan-driven report. ``mode`` is GUIDED or FREE (set by the invoker)."""
+    narrative = narrative or {"executive_summary": "", "conclusions": ""}
+    graph_issues = graph.validate(ledger)
+
+    preamble = [v1._header(ledger.get("run", {})), v1._legend()]
+    if mode == GUIDED and graph_issues:
+        preamble.append(
+            "> ⚠️ **BLOCKED (guided): methodology graph invalid** — " + "; ".join(graph_issues[:3])
+        )
+    elif graph_issues:  # free mode: advisory
+        preamble.append("> ⚠️ methodology graph warnings: " + "; ".join(graph_issues[:3]))
+
+    body_blocks: list[str] = []
+    n = 0
+    for sid in _ordered_body(section_plan, mode, ledger):
+        n += 1
+        block = (
+            _methodology_section(graph)
+            if sid == "__methodology_graph__"
+            else _render_known(sid, ledger, narrative)
+        )
+        body_blocks.append(re.sub(r"^## ", f"## {n}. ", block, count=1))
+
+    appendix = [
+        _strip_number(v1._appendix_ledger(ledger)),
+        _strip_number(v1._appendix_checklist(ledger)),
+    ]
+    return "\n\n---\n\n".join(preamble + body_blocks + appendix) + "\n"

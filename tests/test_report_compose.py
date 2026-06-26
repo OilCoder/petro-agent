@@ -1,0 +1,96 @@
+"""Tests for the plan-driven composer and the two modes (V2-D)."""
+
+from src.agents.methodology_graph import MethodologyGraph
+from src.agents.report_compose import (
+    FREE,
+    GUIDED,
+    compose_report,
+    heuristic_section_plan,
+)
+
+LEDGER = {
+    "run": {"uwi": "TEST-1", "confidence_tier": "bracketed", "convergence_status": "CONVERGED"},
+    "parameters": {"m": {"value": 2.0, "unit": "-", "provenance": "default"}},
+    "zones": [
+        {
+            "top_m": 100.0,
+            "base_m": 101.0,
+            "net_pay_m": 1.0,
+            "avg_phie": 0.12,
+            "avg_sw": 0.4,
+            "avg_vsh": 0.1,
+        }
+    ],
+    "summary": {
+        "gross_m": 80.0,
+        "net_pay_m": 1.0,
+        "ntg": 0.0125,
+        "avg_phie": 0.12,
+        "avg_sw": 0.4,
+        "avg_vsh": 0.1,
+        "n_zones_raw": 1,
+    },
+    "net_pay_total_m": 1.0,
+    "objections": [],
+    "edits": [],
+    "tool_results": {"sw_simandoux": {"value": {"mean_sw": 0.35}, "result_hash": "x"}},
+}
+
+
+def _valid_graph(mode: str = FREE) -> MethodologyGraph:
+    g = MethodologyGraph(mode=mode, model="m")
+    g.add("decision", {"rationale": "dirty rock so Simandoux", "chosen": "sw_simandoux"})
+    return g
+
+
+def test_guided_includes_all_mandatory_sections():
+    md = compose_report(LEDGER, {"optional_sections": []}, GUIDED, _valid_graph(GUIDED))
+    for title in ("Executive summary", "Methodology", "Zonation", "Results", "Conclusions"):
+        assert title in md
+
+
+def test_free_has_mandatory_methodology_graph_section():
+    md = compose_report(LEDGER, {"optional_sections": []}, FREE, _valid_graph())
+    assert "Methodology (decision graph)" in md and "flowchart TD" in md
+
+
+def test_guided_omits_methodology_graph_section():
+    md = compose_report(LEDGER, {"optional_sections": []}, GUIDED, _valid_graph(GUIDED))
+    assert "decision graph" not in md
+
+
+def test_heuristic_plan_adds_shaly_sand():
+    plan = heuristic_section_plan(LEDGER)
+    assert "shaly_sand_saturation" in plan["optional_sections"]
+    md = compose_report(LEDGER, plan, FREE, _valid_graph())
+    assert "Shaly-sand saturation" in md and "0.35" in md
+
+
+def test_optional_inserted_after_results():
+    md = compose_report(
+        LEDGER, {"optional_sections": ["shaly_sand_saturation"]}, FREE, _valid_graph()
+    )
+    assert (
+        md.index("## 5. Results")
+        < md.index("Shaly-sand saturation")
+        < md.index("Uncertainty and sensitivity")
+    )
+
+
+def test_numbering_is_sequential():
+    md = compose_report(LEDGER, {"optional_sections": []}, GUIDED, _valid_graph(GUIDED))
+    assert "## 1. Executive summary" in md and "## 2. Methodology" in md
+
+
+def test_invalid_graph_blocks_in_guided():
+    g = MethodologyGraph(mode=GUIDED, model="m")
+    g.add("decision", {"rationale": "Sw is 0.33 here"})  # numeric literal -> invalid
+    md = compose_report(LEDGER, {"optional_sections": []}, GUIDED, g)
+    assert "BLOCKED (guided): methodology graph invalid" in md
+
+
+def test_invalid_graph_only_warns_in_free():
+    g = MethodologyGraph(mode=FREE, model="m")
+    g.add("decision", {"rationale": "Sw is 0.33 here"})  # numeric literal -> invalid
+    md = compose_report(LEDGER, {"optional_sections": []}, FREE, g)
+    assert "methodology graph warnings" in md and "BLOCKED" not in md

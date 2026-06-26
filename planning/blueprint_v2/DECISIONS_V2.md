@@ -72,3 +72,14 @@ atrapa números que derivan de su result de tool). `cross_tool_consistency` en v
 método (Vsh, porosidad, litología) se cablean idénticamente — pendiente mecánico para V2-D/E, no
 bloqueante. Done-when de V2-C cumplido (plan fabricado valida/ejecuta/escribe; keyed flaggea 1.9%-off;
 consistencia levanta MECHANICAL). Coherencia con spec 09 V2-C verificada.
+
+## DV2-8 (2026-06-26) — Fase V2-D COMPLETA (composer plan-driven, sin tocar v1)
+**Decisión clave:** NO refactoricé `report_template.py` in-place (v1 congelado); creé
+`src/agents/report_compose.py` que REUTILIZA las funciones de sección de v1 (number-stripped) y
+re-numera por orden de plan. **Por qué:** evita romper los tests de v1 y mantiene v1 intacto como
+baseline; el "byte-identical regression" del spec se sustituye por "el composer guiado incluye todas
+las secciones obligatorias" (testeado). Implementa: SECTION_CATALOG (oblig./opcional cerrado), 2 modos
+(guiado gates obligatorios + ABSTENTION_SAFE; libre advisory + sección de grafo obligatoria),
+heuristic_section_plan (determinista, stand-in del LLM), graph.validate() como gate MECHANICAL
+(bloquea guiado, advierte libre). 199 tests verdes. Coherencia con spec 09 V2-D verificada (deriva:
+composer separado, documentada arriba). El modo lo fija el invocador (param), nunca el LLM.

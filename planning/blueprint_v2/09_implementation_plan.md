@@ -38,7 +38,7 @@ y nodos al grafo; el claim_verifier de campo flaggea un número 1.9%-off; la con
 MECHANICAL ante outputs contradictorios. Todo testeado sin modelo.
 - `src/agents/tool_dispatch.py`; claim_verifier por clave de ledger; validador de consistencia en el harness.
 
-### Fase V2-D — Pre-forma plan-driven + catálogo de secciones + los dos modos (heurística, sin LLM)
+### Fase V2-D — Pre-forma plan-driven + catálogo de secciones + los dos modos (heurística, sin LLM)  — DONE 2026-06-26
 Done when: el render es plan-driven (numeración por orden de plan); el catálogo de secciones obligatorias/
 opcionales existe; el pipeline corre en modo guiado (gates obligatorios) y libre (gates advisory) con un
 `section_plan` producido por heurística determinista.
