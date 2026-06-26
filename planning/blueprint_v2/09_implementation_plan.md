@@ -57,7 +57,7 @@ con banner visible si falla; `analyst_trace`/grafo reproducibles mientras el mod
 - **Entregable**: sobre el mismo pozo Schaben, un informe **guiado** y uno **libre** con el mismo modelo,
   cada uno con su grafo de metodología (los 2 informes finales DV2-0 usan ambos modelos × este patrón).
 
-### Fase V2-F — Reviewer same-model + scoring por modelo
+### Fase V2-F — Reviewer same-model + scoring por modelo  — DONE 2026-06-26
 Done when: un reviewer del mismo modelo califica el informe (score estructurado + objeciones) y el score se
 persiste de forma comparable entre modelos; existe un comando para correr el mismo pozo con N modelos y
 tabular sus scores.

@@ -95,3 +95,13 @@ fallback por vacío, fallback determinista por todo-falla, rechazo de tool fuera
 max_steps=2 del plan; la terminación la impone el código (loop de cascada acotado), no el LLM —
 cumple el invariante "orquestador determinista dueño de la terminación". La cascada real con Ollama
 se ejercita al generar los 2 informes. Coherencia con spec 09 V2-E verificada.
+
+## DV2-10 (2026-06-26) — Fase V2-F COMPLETA (evaluación por modelo)
+**Resultado:** `src/evaluation/report_score.py` (objective_score determinista: exploration_coverage,
+methods_selected, optional_sections, reasoning_depth, decisions_justified, honesty_ok, invariant_clean
+— claves canónicas de spec 04; honesty_ok se computa en AMBOS modos: False si un núcleo que se
+abstiene se rodea de secciones confiadas). `score_report` same-model en reviewer.py (advisory, scores
+1-5 = metadata del modelo, fuera del claim_verifier; default mid en output ilegible, no premia al que
+no se autoevalúa). `src/evaluation/leaderboard.py` (objetivo y cualitativo en columnas SEPARADAS, sin
+composite opaco; ranking por honesty→decisions_justified→coverage). Mejoré el analista para añadir un
+nodo de observación por hallazgo EDA (hace medible la cobertura). 213 verdes. Coherencia con spec 04 OK.

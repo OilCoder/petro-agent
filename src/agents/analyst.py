@@ -52,6 +52,21 @@ def build_eda_digest(ctx: dict[str, Any]) -> dict[str, Any]:
     return digest
 
 
+def _eda_findings(digest: dict[str, Any]) -> list[tuple[str, str]]:
+    """The actionable EDA findings (one observation node each). Deterministic."""
+    out: list[tuple[str, str]] = []
+    lr = digest.get("low_resistivity", {})
+    if lr.get("n_flagged", 0) > 0:
+        out.append(("low_resistivity_scan", "low-resistivity intervals present"))
+    lit = digest.get("lithology", {})
+    if lit.get("nearest"):
+        out.append(("crossplot_density_neutron", f"lithology nearest {lit['nearest']}"))
+    bh = digest.get("badhole", {})
+    if bh.get("DEGRADED", 0) + bh.get("EXCLUDED", 0) > 0:
+        out.append(("badhole_summary", "degraded/excluded intervals present"))
+    return out or [("eda_digest", "exploration complete")]
+
+
 def _digest_text(digest: dict[str, Any]) -> str:
     """Compact (<~800 token) text of the digest for the LLM — never the raw curve blob."""
     return "FACTS:\n" + json.dumps(digest, indent=1)[:3000]
@@ -97,15 +112,12 @@ def run_analyst(
     """
     graph = MethodologyGraph(mode=mode, model=model)
     digest = build_eda_digest(ctx)
-    graph.add(
-        "observation",
-        {
-            "tool": "eda_digest",
-            "finding": "exploration complete",
-            "source_ledger_key": "ledger:eda",
-        },
-    )
     ledger.setdefault("run", {})["eda"] = digest
+    # one observation node per surfaced EDA finding (makes exploration_coverage meaningful)
+    for tool, finding in _eda_findings(digest):
+        graph.add(
+            "observation", {"tool": tool, "finding": finding, "source_ledger_key": "ledger:eda"}
+        )
 
     plan: dict[str, Any] | None = None
     used = ""
@@ -142,6 +154,8 @@ def run_analyst(
         "model_used": used,
         "empty_returns": empty_returns,
         "fell_back_to_deterministic": fell_back,
+        "optional_sections": list(plan.get("optional_sections", [])),
+        "n_observations_available": len(_eda_findings(digest)),
     }
     ledger["run"]["methodology_graph"] = graph.to_json()
     return {
