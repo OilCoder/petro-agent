@@ -1,8 +1,14 @@
 # Estado del proyecto — petro-agent
 
-Informe único de estado: **qué se hizo** y **qué falta**. Para el detalle granular ver
+> **⚠️ v1 CONGELADO · v2 en diseño (2026-06-26).** Lo descrito en este documento es **v1**: el
+> pipeline determinista honesto, completo y verde (143 tests), que queda **congelado como baseline
+> comparativa**. El proyecto se reorientó a un **sandbox de analista** (el agente analiza, decide y
+> compone el informe con libertad, seleccionando de una librería de fórmulas vetada). El diseño v2
+> vive en `planning/blueprint_v2/` (ancla: `00_charter.md`). v1 NO se modifica más.
+
+Informe único de estado de **v1**: **qué se hizo** y **qué falta**. Para el detalle granular ver
 `PLAN.md` (plan por fases), `DECISIONS.md` (bitácora de decisiones D1–D10) y `blueprint/`
-(diseño fundacional). Última actualización: 2026-06-25.
+(diseño fundacional v1). Para el rumbo v2: `blueprint_v2/` + `VISION_AGENTE_ANALISTA.md`.
 
 ## Qué es
 

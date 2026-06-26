@@ -8,7 +8,15 @@ promete "honesto sobre cuánto acierta, y demostrable".
 
 ## ⛔ Invariante no-negociable
 
-**Cada número sale de código determinista probado. El LLM solo orquesta,
+> **v2 reframe (2026-06-26).** El proyecto evoluciona a un **sandbox de analista** (ver
+> `planning/blueprint_v2/`). **v1 — lo descrito abajo — queda CONGELADO** como baseline
+> comparativa (estado en `planning/ESTADO.md`). En **v2** el invariante evoluciona: el agente
+> tiene libertad total sobre QUÉ método usar y CÓMO componer el informe, **seleccionando de una
+> librería de fórmulas vetada** (golden tests) — pero sigue **sin calcular ni escribir matemática
+> en runtime**. Gates obligatorios en modo guiado, advisory en modo libre. El ancla de v2 es
+> `planning/blueprint_v2/00_charter.md`.
+
+**[v1, congelado] Cada número sale de código determinista probado. El LLM solo orquesta,
 selecciona y redacta — nunca calcula, y nunca escribe la ecuación en runtime.**
 
 - Todo número del camino cuantitativo viene del motor determinista versionado

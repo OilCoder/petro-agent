@@ -1,5 +1,10 @@
 # petro-agent — Agente petrofísico autónomo
 
+> **⚠️ Este es el plan de v1, CONGELADO (2026-06-26).** v1 está completo (143 tests verdes) y
+> queda como baseline comparativa. El proyecto se reorientó a un sandbox de analista; el plan v2
+> vive en `planning/blueprint_v2/09_implementation_plan.md` (fases V2-A..G). No se añaden fases
+> nuevas a este plan v1.
+
 ## Goal
 Build, phase by phase, an autonomous multi-agent system that turns well logs (LAS)
 into a defensible petrophysical report (Vsh, PHIE, Sw, cutoffs, net pay, zones,
