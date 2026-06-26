@@ -114,3 +114,11 @@ v2 con fake chats); Tier 2 model-in-the-loop (`test_v2_g.py`, skip si Ollama no 
 version-sensitive, fuera del gate). 215 tests verdes, ruff+mypy limpios. Coherencia con spec 09 V2-G OK.
 **Próximo (no es fase):** generar los 2 informes (qwen3+llama3.1) por el sandbox v2 + leaderboard, luego
 apagar el PC.
+
+## DV2-12 (2026-06-26) — `return_ctx` en run_pipeline (enablement v2, backward-compatible)
+**Decisión:** añadí un parámetro opcional `return_ctx=False` a `run_pipeline`. Con False (default) el
+comportamiento es IDÉNTICO a v1 (devuelve el ledger); con True devuelve `(ledger, ctx)` con los arrays
+finales (curves/vsh/phie/sw/depth) que el analista v2 necesita. **Por qué:** generar los 2 informes por
+el sandbox exige el ctx, y duplicar la lógica del pipeline sería frágil. Un param opcional default-False
+no cambia el comportamiento ni los tests de v1 (verificado: 215 verdes) — es la habilitación mínima y
+honesta, no un cambio de v1. "v1 congelado" se refiere a su comportamiento/salida, que se preserva exacto.

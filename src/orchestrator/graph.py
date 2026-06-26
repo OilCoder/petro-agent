@@ -69,11 +69,15 @@ def run_pipeline(
     out_dir: str = "outputs",
     config_path: str | None = None,
     uncertainty: bool = True,
-) -> dict[str, Any]:
+    return_ctx: bool = False,
+) -> Any:
     """Run the full deterministic pipeline on a LAS file and return the ledger dict.
 
     Load → QC gate → (LangGraph: compute→validate→correct-loop→gating→zonate→emit).
     Emits ``outputs/<uwi>_ledger.json`` and the Phase-3 cross-plot PNG; no prose report.
+
+    With ``return_ctx=True`` returns ``(ledger, ctx)`` where ctx carries the final arrays
+    (curves/vsh/phie/sw/depth) for the v2 analyst (backward-compatible; default unchanged).
     """
     well = load_las(las_path)
     qc = qc_gate(well)
@@ -122,4 +126,11 @@ def run_pipeline(
         ledger["run"]["uwi"], well.depth_m, final["curves"],
         final["vsh"], final["phie"], final["sw"], params, out_dir,
     )
+    if return_ctx:
+        ctx = {
+            "curves": final["curves"], "vsh": final["vsh"], "phie": final["phie"],
+            "sw": final["sw"], "depth_m": well.depth_m, "step_m": float(well.step_m),
+            "quality_map": qc.quality_map,
+        }
+        return ledger, ctx
     return ledger
