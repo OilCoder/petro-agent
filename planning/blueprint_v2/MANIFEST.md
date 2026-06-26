@@ -13,9 +13,9 @@ sobre `planning/VISION_AGENTE_ANALISTA.md`.
 - [x] 00_charter.md (goal · 2 modos · invariante v2 · success criteria · non-goals · invariants) — drafted 2026-06-26
 - [x] 01_sandbox_architecture.md (capas · librería · loop del agente · grafo de metodología · gates por modo · eval) — drafted 2026-06-26
 - [x] 09_implementation_plan.md (fases V2-A..G, de v1 congelado al sandbox) — drafted 2026-06-26
-- [ ] 02_formula_library.md (catálogo completo de métodos vetados por propiedad + firmas + citas)
-- [ ] 03_methodology_graph.md (schema detallado, persistencia, render, uso comparativo entre modelos)
-- [ ] 04_evaluation_per_model.md (protocolo de scoring del reviewer same-model + leaderboard por modelo)
+- [x] 02_formula_library.md (catálogo de métodos vetados por propiedad + registry + firmas) — drafted 2026-06-26
+- [x] 03_methodology_graph.md (schema, persistencia, render, métricas comparativas) — drafted 2026-06-26
+- [x] 04_evaluation_per_model.md (reviewer same-model + score objetivo/cualitativo + leaderboard) — drafted 2026-06-26
 
 ## Decisions (usuario, 2026-06-26)
 - 2026-06-26: **Invariante v2** = librería vetada; el agente elige/parametriza pero NO escribe matemática
