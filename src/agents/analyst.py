@@ -93,6 +93,10 @@ def _parse_plan(raw: str) -> dict[str, Any] | None:
     data.setdefault("rationale", "")
     if not isinstance(data["tool_calls"], list) or not isinstance(data["optional_sections"], list):
         return None
+    # coerce to clean types (a real model may return dicts where strings are expected)
+    data["optional_sections"] = [s for s in data["optional_sections"] if isinstance(s, str)]
+    data["tool_calls"] = [c for c in data["tool_calls"] if isinstance(c, dict)]
+    data["rationale"] = str(data.get("rationale", ""))
     return data
 
 

@@ -69,5 +69,6 @@ def _honesty_ok(ledger: dict[str, Any]) -> bool:
     run = ledger.get("run", {})
     if not run.get("abstain"):
         return True
-    confident = set(run.get("analyst", {}).get("optional_sections", [])) & _CONFIDENT_OPTIONAL
+    optional = run.get("analyst", {}).get("optional_sections", [])
+    confident = {s for s in optional if isinstance(s, str)} & _CONFIDENT_OPTIONAL
     return not confident
