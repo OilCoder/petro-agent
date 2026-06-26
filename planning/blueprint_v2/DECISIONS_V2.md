@@ -105,3 +105,12 @@ abstiene se rodea de secciones confiadas). `score_report` same-model en reviewer
 no se autoevalúa). `src/evaluation/leaderboard.py` (objetivo y cualitativo en columnas SEPARADAS, sin
 composite opaco; ranking por honesty→decisions_justified→coverage). Mejoré el analista para añadir un
 nodo de observación por hallazgo EDA (hace medible la cobertura). 213 verdes. Coherencia con spec 04 OK.
+
+## DV2-11 (2026-06-26) — Fase V2-G COMPLETA — ¡las 7 fases V2-A..G hechas!
+**Resultado:** `provenance.pin_versions` añade `formula_registry` (versión de la librería) y
+`model_digest(model)` (id del modelo vía `ollama list`, "unknown" si ausente) — identidad del modelo
+= nombre+digest. Tests en 2 tiers: Tier 1 determinista (CI-gating, junto a v1 — todos los guardrails
+v2 con fake chats); Tier 2 model-in-the-loop (`test_v2_g.py`, skip si Ollama no responde —
+version-sensitive, fuera del gate). 215 tests verdes, ruff+mypy limpios. Coherencia con spec 09 V2-G OK.
+**Próximo (no es fase):** generar los 2 informes (qwen3+llama3.1) por el sandbox v2 + leaderboard, luego
+apagar el PC.

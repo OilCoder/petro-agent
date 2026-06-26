@@ -63,7 +63,7 @@ persiste de forma comparable entre modelos; existe un comando para correr el mis
 tabular sus scores.
 - Reviewer same-model (`src/agents/reviewer.py` reorientado a scoring); tabla de evaluación por modelo.
 
-### Fase V2-G — Tests en dos tiers + pineado del digest del modelo
+### Fase V2-G — Tests en dos tiers + pineado del digest del modelo  — DONE 2026-06-26
 Done when: los guardrails deterministas (dispatcher, reconciliación, consistencia, modos) están en el tier
 CI-gating junto a los de v1; los tests model-in-the-loop están en un tier manual no-gating; el ledger pinea
 el digest del modelo.
