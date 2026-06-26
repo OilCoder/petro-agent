@@ -122,3 +122,17 @@ finales (curves/vsh/phie/sw/depth) que el analista v2 necesita. **Por qué:** ge
 el sandbox exige el ctx, y duplicar la lógica del pipeline sería frágil. Un param opcional default-False
 no cambia el comportamiento ni los tests de v1 (verificado: 215 verdes) — es la habilitación mínima y
 honesta, no un cambio de v1. "v1 congelado" se refiere a su comportamiento/salida, que se preserva exacto.
+
+## DV2-13 (2026-06-26) — ENTREGABLE FINAL: 2 informes v2 + leaderboard (proyecto v2 completo)
+**Resultado:** generados los 2 informes por el sandbox v2 (modo libre) sobre el pozo Schaben
+1043562832, en `documentation/sample_reports/v2/`: report_qwen3_30b-a3b.md, report_llama31_8b.md,
+sus ledgers, y leaderboard.json. Cada informe lleva la estructura plan-driven completa CON la sección
+"Methodology (decision graph)" (flowchart mermaid del razonamiento del analista). El leaderboard compara
+ambos modelos (objetivo determinista + cualitativo same-model en columnas separadas).
+**Hallazgo clave (el experimento de v2 funcionando):** qwen3:30b-a3b **se vació bajo el techo de 16GB**
+(modo de fallo R3/D6) y el **fallback señalizado** lo llevó a llama3.1:8b para el plan del analista —
+registrado en `ledger.run.analyst.model_used=llama3.1:8b`, NO silencioso. El sistema produjo informes
+honestos pese al vaciado del modelo principal. Ambos modelos compusieron informes base (methods_selected=0,
+optional_sections=0): la agencia se ejerció pero los modelos locales bajo 16GB son conservadores — el
+techo honesto del modo libre documentado en el Charter. La maquinaria (analista→grafo→compose→score→
+leaderboard) está demostrada end-to-end. 216 tests verdes. **PROYECTO v2 COMPLETO.**

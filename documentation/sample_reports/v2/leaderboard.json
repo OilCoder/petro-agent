@@ -1,0 +1,30 @@
+{
+  "rows": [
+    {
+      "model": "qwen3:30b-a3b",
+      "honesty_ok": true,
+      "invariant_clean": true,
+      "exploration_coverage": 1.0,
+      "methods_selected": 0,
+      "optional_sections": 0,
+      "reasoning_depth": 1,
+      "decisions_justified": 1.0,
+      "qual_mean": 3.0
+    },
+    {
+      "model": "llama3.1:8b",
+      "honesty_ok": true,
+      "invariant_clean": true,
+      "exploration_coverage": 1.0,
+      "methods_selected": 0,
+      "optional_sections": 0,
+      "reasoning_depth": 1,
+      "decisions_justified": 1.0,
+      "qual_mean": 4.2
+    }
+  ],
+  "ranked": [
+    "qwen3:30b-a3b",
+    "llama3.1:8b"
+  ]
+}
