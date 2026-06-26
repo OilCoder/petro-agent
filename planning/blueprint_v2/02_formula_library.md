@@ -40,6 +40,14 @@ no aplicable, el dispatcher lo rechaza (objeción MECHANICAL → no se ejecuta).
 | `sw_indonesia` | Poupon-Leveaux (Indonesia) | shaly, alta Vsh | nuevo |
 | `sw_waxman_smits` | Waxman-Smits | hay CEC/Qv (raro) | diferido (sin dato) |
 
+**Inputs eléctricos (a, m, n, Rw, Rsh) — productores vetados, nunca del LLM.** El agente NO
+suministra estos números; los provee el código vía:
+| ID | Productor | Estado |
+|---|---|---|
+| `rw_pickett` | Rwa por método Pickett (RT·PHIE^m/a en zona limpia porosa) | v1 ✓ (`estimate_rw`) |
+| `electrical_preset` | tabla vetada de presets (a,m,n,Rw,Rsh) por litología/cuenca, por ID | nuevo |
+El agente elige el ID del productor/preset; el valor numérico sale de la función o la tabla vetada.
+
 ### Litología — entrada RHOB/NPHI (+DT/PEF)
 | ID | Método | Cuándo | Estado |
 |---|---|---|---|
@@ -49,7 +57,8 @@ no aplicable, el dispatcher lo rechaza (objeción MECHANICAL → no se ejecuta).
 
 ### Net pay / volumétricos — agregación sobre las 3 propiedades
 `apply_cutoffs`, `net_sand`, `net_reservoir`, `compute_net_pay`, `hcpv`, `bvw` (v1 ✓). El agente
-elige cutoffs desde un rango vetado, no valores arbitrarios.
+elige cutoffs desde un **enum DISCRETO de presets vetados por ID** (p.ej. `cutoff_set="carbonate_conservative"`),
+no valores arbitrarios — el valor numérico lo provee el código del preset, nunca el LLM.
 
 ## Contrato de cada método
 
@@ -59,6 +68,8 @@ def sw_simandoux(rt, phie, vsh, a, m, n, rw, rsh) -> np.ndarray: ...
 # golden tests obligatorios por método: bounds físicos, monotonía, caso analítico
 # conocido, NaN passthrough, chequeo dimensional. Sin esto el método NO entra al registry.
 ```
+`a/m/n/rw/rsh` provienen de un productor vetado (`rw_pickett`) o de un `electrical_preset` por ID,
+nunca del LLM. El agente elige el método y el preset/productor; el código entrega los números.
 
 ## Registry
 
@@ -69,6 +80,14 @@ def available_methods(curves: dict) -> dict[str, list[str]]  # property -> [appl
 ```
 El registry es la frontera de la agencia: el agente elige IDs de aquí; no puede invocar nada fuera.
 Congelado y versionado; añadir un método requiere su golden test + entrada de citación.
+
+**Métodos diferidos** (Waxman-Smits, MID) están catalogados arriba por completitud del roadmap pero
+**NO están en `METHOD_REGISTRY`** (sin golden test → no los devuelve `available_methods`) hasta que
+existan dato + test. Elegir un ID fuera del registry es objeción MECHANICAL (no se ejecuta).
+
+**Normalización de mnemónicos.** `available_methods` consume curvas ya canonicalizadas. La tabla
+canónica (mnemónico, aliases, unidades, mayúsculas) vive en `src/params/mnemonic_aliases.json` (v1 ✓);
+el paso de normalización de alias del loader corre ANTES de `available_methods`.
 
 ## Alcance v2-A (qué se construye primero)
 Priorizar lo ejercitable en Schaben: `vsh_linear`, `phi_sonic_wyllie` (donde hay DT),

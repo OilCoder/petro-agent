@@ -17,3 +17,25 @@ contraste entre sus grafos de metodología es justamente el experimento que v2 q
 **Decisión:** ver `02_formula_library.md`. Resumen: ≥2 métodos vetados por propiedad, priorizando
 los que el dato Schaben (carbonato, curvas GR/RHOB/NPHI/RT, a veces DT/PEF) permite ejercer, para
 que la SELECCIÓN del agente sea una decisión real y no teórica.
+
+## DV2-2 (2026-06-26) — Pasada de coherencia del blueprint v2 (2 ciclos)
+**Decisión:** corrí 2 ciclos de coherencia orquestados (run wf_fc79fe6d-18c) sobre los 6 docs v2.
+Resultado: 31 inconsistencias (1 crítica, 6 high, 17 medium, 7 low). **Apliqué** la crítica, las 6
+high y los mediums materiales; los lows se folded o quedan capturados. Cambios clave:
+- Las objeciones del reviewer same-model son **advisory** (no bloquean gates); solo MECHANICAL del
+  dispatcher/validate bloquean en guiado (era contradicción crítica entre 04 y 00/01).
+- Cutoffs/params eléctricos (a,m,n,Rw,Rsh) desde **presets vetados por ID o tool (`rw_pickett`)**,
+  nunca del LLM (cierra una fuga del invariante en 02).
+- Esquema canónico del grafo unificado entre 01 y 03 (payload anidado, `result_ledger_key`,
+  `result_hash`, `model_digest`); ejemplo usa `sw_simandoux` (método real de 02), no Pickett.
+- `validate()` del grafo rechaza literales numéricos sueltos en nodos decision/observation (MECHANICAL).
+- Métricas del grafo (03) adoptan las claves canónicas de `objective_score()` (04).
+- El **modo lo fija el invocador**, nunca el LLM (elegir libre = saltarse QC). Metodología obligatoria
+  en modo libre. `max_steps`=2, pre-digest ≤~800 tokens, recompute-libre vía tool (no matemática del LLM).
+**Por qué:** el usuario insistió en un blueprint sin contradicciones como ancla del code-gen; estas
+fugas habrían propagado bugs al código. La pasada las cerró antes de escribir una línea.
+
+## DV2-3 (2026-06-26) — Proceso: coherencia plan↔código por fase (recomendación del usuario)
+**Decisión (adoptada del usuario):** al cerrar CADA fase v2, antes del checkpoint, correr un ciclo de
+coherencia entre lo planeado (blueprint v2) y lo programado (código), para atrapar derivas respecto al
+plan. Y **checkpoint obligatorio al completar cada fase**. Lo incorporo al protocolo del run autónomo.

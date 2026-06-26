@@ -42,13 +42,20 @@ MECHANICAL ante outputs contradictorios. Todo testeado sin modelo.
 Done when: el render es plan-driven (numeración por orden de plan); el catálogo de secciones obligatorias/
 opcionales existe; el pipeline corre en modo guiado (gates obligatorios) y libre (gates advisory) con un
 `section_plan` producido por heurística determinista.
-- Refactor `report_template.py` a plan-driven; `SECTION_CATALOG`; flag de modo en `run`.
+- Refactor `report_template.py` a plan-driven; `SECTION_CATALOG`; flag de modo en `run` (lo fija el
+  invocador, no el LLM). La sección **Metodología es entrada OBLIGATORIA del catálogo en modo libre**.
 - Restricción `ABSTENTION_SAFE` (guiado); gates advisory + visibilidad de flags (libre).
+- `graph.validate()` corre como gate MECHANICAL (bloquea en guiado, advierte en libre) — ver `03` §Validación.
 
 ### Fase V2-E — Nodo agente con LLM (EXPLORE→DECIDE→DISPATCH) + fallback señalizado
 Done when: el LLM produce el plan (métodos + secciones + razón) que alimenta el grafo de metodología; cae
 con banner visible si falla; `analyst_trace`/grafo reproducibles mientras el modelo responda.
 - Nodo agente en `zonate→gating`; wrapper de `client.py` (timeout, empty=fallo, cascada qwen3→llama3.1→heurística).
+- **Contrato de nodos** (ver `03` §Quién escribe cada nodo): el LLM aporta SOLO nodos `decision` (IDs de
+  fórmula + args + razón, sin números); el dispatcher escribe `observation`/`tool_call` (número+hash); el
+  ensamblador escribe `section`. `max_steps` (default 2) lo impone el orquestador; test de que el LLM no lo excede.
+- **Entregable**: sobre el mismo pozo Schaben, un informe **guiado** y uno **libre** con el mismo modelo,
+  cada uno con su grafo de metodología (los 2 informes finales DV2-0 usan ambos modelos × este patrón).
 
 ### Fase V2-F — Reviewer same-model + scoring por modelo
 Done when: un reviewer del mismo modelo califica el informe (score estructurado + objeciones) y el score se
@@ -61,7 +68,8 @@ Done when: los guardrails deterministas (dispatcher, reconciliación, consistenc
 CI-gating junto a los de v1; los tests model-in-the-loop están en un tier manual no-gating; el ledger pinea
 el digest del modelo.
 - Tier 1 determinista (fake chats); Tier 2 model-in-the-loop (golden de grafo, tolerancia semántica).
-- Extender `provenance.pin_versions` con el digest del modelo.
+- Extender `provenance.pin_versions` con el **digest del modelo** Y la **versión del registry/librería de
+  fórmulas** (`MethodSpec.version`), de modo que cada número trace a la versión exacta del método + modelo.
 
 ## Riesgos (del informe de visión, vigentes)
 - Tool-calling local nunca ejercitado (qwen3/16GB, vaciado) → la cascada de fallback es condición de viabilidad.

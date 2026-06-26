@@ -24,11 +24,15 @@ class GraphNode:
 class MethodologyGraph:
     mode: str                    # "guided" | "free"
     model: str                   # "qwen3:30b-a3b"
+    model_digest: str            # from provenance.pin_versions (model identity = name + digest, V2-G)
     nodes: list[GraphNode]
     def add(self, ...) -> str    # returns new node id
     def to_json(self) -> dict
     def to_mermaid(self) -> str  # flowchart for the report
-    def validate(self) -> list[str]  # acyclic, ids unique, deps exist, tool_call->ledger key exists
+    def validate(self) -> list[str]
+        # acyclic · ids unique · deps exist · tool_call.payload.result_ledger_key resolves to a
+        # ledger entry with its result_hash · NO loose numeric literal in decision/observation
+        # payloads (regex: a digit not part of a ledger-key reference) -> MECHANICAL objection
 ```
 
 ### Payload por tipo
@@ -36,6 +40,10 @@ class MethodologyGraph:
 - **decision**: `{rationale, considered, chosen}` — qué decidió y por qué (texto del LLM; NO números).
 - **tool_call**: `{tool, args, result_ledger_key, result_hash}` — qué se ejecutó (lo escribe el dispatcher).
 - **section**: `{section_id}` — qué sección se añadió al informe.
+
+Un método **rechazado** (elegido fuera del registry o no aplicable) produce un nodo `tool_call` con
+`payload.status="rejected"` y `payload.reason`, para que el rastro registre la agencia
+intentada-pero-rechazada (no se ejecuta ni escribe número; alimenta `honesty_ok`/scoring).
 
 ## Quién escribe cada nodo (preserva el invariante)
 
@@ -66,11 +74,12 @@ gates sean advisory — es el control de honestidad que reemplaza al bloqueo.
 
 Dos modelos sobre el MISMO pozo producen grafos distintos: distinto número de observaciones atendidas,
 distintas decisiones, distintos métodos elegidos, distintas secciones. Métricas derivables del grafo,
-deterministas (no opinión del LLM):
-- `n_observations_used` / `n_observations_available` (cobertura de exploración),
-- `n_methods_selected`, `n_optional_sections`,
-- profundidad del DAG (cadenas de razonamiento más largas = más análisis encadenado),
-- `n_decisions_with_rationale` no vacío.
+deterministas (no opinión del LLM). Las claves canónicas las define `objective_score()` en
+`04_evaluation_per_model.md`; aquí se nombran idénticas:
+- `exploration_coverage` = `n_observations_used` / `n_observations_available` (cobertura de exploración),
+- `methods_selected`, `optional_sections`,
+- `reasoning_depth` = **camino dirigido más largo sobre TODOS los tipos de nodo del DAG**,
+- `decisions_justified` = decisiones con `rationale` no vacío / total de decisiones.
 
 Estas métricas alimentan el scoring por modelo (`04_evaluation_per_model.md`) junto con el juicio del
 reviewer same-model. El grafo es la evidencia objetiva; el reviewer es el juicio cualitativo.

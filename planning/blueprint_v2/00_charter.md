@@ -14,6 +14,14 @@ completitud, y **componga el mejor informe posible** — llamando a herramientas
 nunca calculando él mismo. El objetivo no es solo producir informes correctos, sino **medir
 cuánta capacidad de análisis y decisión** tiene un modelo dado, de forma trazable y comparable.
 
+## Stakeholders
+
+| Stakeholder | Interés |
+|---|---|
+| Owner / usuario (analista-in-the-loop) | Revisa el build autónomo y compara la capacidad analítica de los modelos |
+| Modelos locales (qwen3:30b-a3b, llama3.1:8b) | Sujetos evaluados — el sandbox mide su análisis y composición |
+| Consumidores del informe | Reciben un informe trazable, honesto sobre sus límites |
+
 ## Los dos modos (conviven)
 
 | Modo | Filosofía | Gates QC/abstención | Para qué |
@@ -77,6 +85,15 @@ Criterios medibles del sandbox (distintos de los de v1, que medían corrección)
 3. Cada informe emite un grafo de metodología trazable (la cadena de decisión del agente).
 4. Modo guiado: gates QC/abstención obligatorios. Modo libre: gates advisory pero siempre corridos y registrados.
 5. El reviewer de evaluación es del **mismo modelo** que el generador (medición por modelo), no de otra familia.
+6. El **modo (guiado/libre) lo fija el invocador** (humano u orquestador determinista) en la entrada del run;
+   el agente LLM **nunca elige su propio modo** (elegir modo libre = saltarse el QC, prohibido).
+
+> **Nota sobre el reviewer (cambio respecto a v1).** v1 usaba un reviewer adversarial de otra familia
+> para decorrelación; v2 lo **reorienta** a scorer del mismo modelo (medición por modelo, ver `04`).
+> Esto elimina el check de familia independiente: el único guard numérico determinista pasa a ser el
+> claim_verifier (reconciliación por clave). El reviewer same-model da un score cualitativo
+> COMPLEMENTARIO (sesgo de auto-indulgencia conocido), no el control primario de honestidad — ese rol
+> lo cumplen el grafo de metodología (visible, objetivo) y los flags de los gates registrados.
 
 ## Constraints
 
