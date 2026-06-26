@@ -62,3 +62,46 @@ def test_sw_zero_phie_guard():
 def test_sw_nan_passthrough():
     sw = calc_sw(np.array([np.nan, 10.0]), np.array([0.2, np.nan]), A, M, N, RW)
     assert np.isnan(sw[0]) and np.isnan(sw[1])
+
+
+# ----------------------------------------
+# Shaly-sand methods (V2-A): Simandoux, Indonesia
+# ----------------------------------------
+
+from src.petrophysics.sw import sw_indonesia, sw_simandoux  # noqa: E402
+
+RSH = 2.0
+
+
+def test_simandoux_reduces_to_archie_when_clean():
+    rt, phie = np.array([10.0, 30.0]), np.array([0.2, 0.15])
+    arch = calc_sw(rt, phie, A, M, 2.0, RW)
+    sim = sw_simandoux(rt, phie, np.zeros(2), A, M, 2.0, RW, RSH)
+    assert np.allclose(sim, arch, atol=1e-6)
+
+
+def test_simandoux_lowers_sw_vs_archie_in_shale():
+    # adding shale conductivity raises apparent conductivity -> Simandoux Sw < Archie Sw
+    rt, phie, vsh = np.array([20.0]), np.array([0.15]), np.array([0.4])
+    arch = calc_sw(rt, phie, A, M, 2.0, RW)
+    sim = sw_simandoux(rt, phie, vsh, A, M, 2.0, RW, RSH)
+    assert sim[0] < arch[0]
+
+
+def test_simandoux_bounds_and_nan():
+    sw = sw_simandoux(np.array([10.0, np.nan, 5.0]), np.array([0.2, 0.2, -0.1]),
+                      np.array([0.3, 0.3, 0.3]), A, M, 2.0, RW, RSH)
+    assert 0.0 <= sw[0] <= 1.0 and np.isnan(sw[1]) and np.isnan(sw[2])
+
+
+def test_indonesia_reduces_toward_archie_when_clean():
+    rt, phie = np.array([10.0, 30.0]), np.array([0.2, 0.15])
+    arch = calc_sw(rt, phie, A, M, 2.0, RW)
+    indo = sw_indonesia(rt, phie, np.zeros(2), A, M, 2.0, RW, RSH)
+    assert np.allclose(indo, arch, atol=1e-6)
+
+
+def test_indonesia_bounds_and_nan():
+    sw = sw_indonesia(np.array([15.0, np.nan]), np.array([0.18, 0.18]),
+                      np.array([0.5, 0.5]), A, M, 2.0, RW, RSH)
+    assert 0.0 <= sw[0] <= 1.0 and np.isnan(sw[1])

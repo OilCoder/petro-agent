@@ -1,0 +1,90 @@
+"""Method registry: the closed, vetted menu the agent selects from (v2).
+
+The frontier of agency. Each entry maps a method ID to its function, the property it
+computes, the curves it requires, and its citation/version. ``available_methods`` reports
+which IDs are applicable given the present curves. The agent picks IDs from here and never
+invokes anything outside it; electrical params (a, m, n, Rw, Rsh) come only from vetted
+presets, never the LLM. Deferred methods (Waxman-Smits, MID) are NOT registered until they
+have data + golden tests.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from typing import Any
+
+from src.petrophysics import sonic, sw, vsh
+from src.petrophysics.phie import calc_phie
+from src.validators.model_mismatch import neutron_density_crossplot
+
+VERSION = "0.1.0"
+
+
+@dataclass(frozen=True)
+class MethodSpec:
+    """A vetted method the agent may select."""
+
+    id: str
+    property: str  # "vsh" | "porosity" | "sw" | "lithology"
+    fn: Callable[..., Any]
+    required_curves: tuple[str, ...]
+    citation: str
+    version: str = "0.1.0"
+    fixed_kwargs: dict[str, Any] = field(default_factory=dict)
+
+
+METHOD_REGISTRY: dict[str, MethodSpec] = {
+    "vsh_larionov_old": MethodSpec(
+        "vsh_larionov_old", "vsh", vsh.calc_vsh, ("GR",), "Larionov 1969 (old rocks)",
+        fixed_kwargs={"variant": vsh.OLD_ROCKS}),
+    "vsh_larionov_tertiary": MethodSpec(
+        "vsh_larionov_tertiary", "vsh", vsh.calc_vsh, ("GR",), "Larionov 1969 (Tertiary)",
+        fixed_kwargs={"variant": vsh.TERTIARY}),
+    "vsh_linear": MethodSpec(
+        "vsh_linear", "vsh", vsh.vsh_linear, ("GR",), "Linear gamma-ray index (IGR)"),
+    "phie_density_neutron": MethodSpec(
+        "phie_density_neutron", "porosity", calc_phie, ("RHOB", "NPHI"),
+        "Density-neutron crossplot, shale-corrected"),
+    "phi_sonic_wyllie": MethodSpec(
+        "phi_sonic_wyllie", "porosity", sonic.phi_sonic_wyllie, ("DT",),
+        "Wyllie 1956 time-average"),
+    "phi_sonic_rhg": MethodSpec(
+        "phi_sonic_rhg", "porosity", sonic.phi_sonic_rhg, ("DT",), "Raymer-Hunt-Gardner 1980"),
+    "sw_archie": MethodSpec(
+        "sw_archie", "sw", sw.calc_sw, ("RT",), "Archie 1942"),
+    "sw_simandoux": MethodSpec(
+        "sw_simandoux", "sw", sw.sw_simandoux, ("RT",), "Simandoux 1963 (shaly sand)"),
+    "sw_indonesia": MethodSpec(
+        "sw_indonesia", "sw", sw.sw_indonesia, ("RT",), "Poupon-Leveaux 1971 (Indonesia)"),
+    "litho_nd_crossplot": MethodSpec(
+        "litho_nd_crossplot", "lithology", neutron_density_crossplot,
+        ("RHOB", "NPHI"), "Neutron-density lithology crossplot"),
+}
+
+
+# Vetted electrical-parameter presets (a, m, n, Rw, Rsh) — supplied by ID, never by the LLM.
+ELECTRICAL_PRESETS: dict[str, dict[str, float]] = {
+    "carbonate_default": {"a": 1.0, "m": 2.0, "n": 2.0, "rw": 0.04, "rsh": 2.0},
+    "sandstone_default": {"a": 0.62, "m": 2.15, "n": 2.0, "rw": 0.04, "rsh": 4.0},
+}
+
+# Vetted net-pay cutoff presets — supplied by ID, never by the LLM.
+CUTOFF_PRESETS: dict[str, dict[str, float]] = {
+    "carbonate_conservative": {"vsh_cutoff": 0.35, "phie_cutoff": 0.10, "sw_cutoff": 0.50},
+    "sandstone_standard": {"vsh_cutoff": 0.40, "phie_cutoff": 0.08, "sw_cutoff": 0.60},
+}
+
+
+def available_methods(curves: dict[str, Any]) -> dict[str, list[str]]:
+    """Return applicable method IDs per property given the present (canonical) curves.
+
+    A method is applicable iff all its required curves are present. The agent selects only
+    from this result; an ID not returned here is out of scope (rejected by the dispatcher).
+    """
+    present = set(curves)
+    out: dict[str, list[str]] = {}
+    for spec in METHOD_REGISTRY.values():
+        if set(spec.required_curves) <= present:
+            out.setdefault(spec.property, []).append(spec.id)
+    return out

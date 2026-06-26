@@ -39,3 +39,16 @@ fugas habrían propagado bugs al código. La pasada las cerró antes de escribir
 **Decisión (adoptada del usuario):** al cerrar CADA fase v2, antes del checkpoint, correr un ciclo de
 coherencia entre lo planeado (blueprint v2) y lo programado (código), para atrapar derivas respecto al
 plan. Y **checkpoint obligatorio al completar cada fase**. Lo incorporo al protocolo del run autónomo.
+
+## DV2-4 (2026-06-26) — litho_mn diferido en V2-A
+**Decisión:** no construí `litho_mn` (M-N crossplot) en V2-A pese a estar en el catálogo de `02`.
+**Por qué:** `litho_nd_crossplot` (v1) ya cubre litología; M-N necesita DT y aporta poco sobre N-D
+para el screening; lo difiero para mantener V2-A enfocado en dar choice real donde más importa (Sw
+shaly-sand, que es el caso que dispara las objeciones v1). No está en METHOD_REGISTRY → no se ofrece.
+Coherente con la política de "diferidos fuera del registry" (DV2-2). Reevaluable si se quiere M-N.
+
+## DV2-5 (2026-06-26) — Fase V2-A COMPLETA (coherencia plan↔código OK)
+**Resultado:** librería ampliada (vsh_linear, sw_simandoux, sw_indonesia, phi_sonic_wyllie/rhg) +
+`registry.py` (METHOD_REGISTRY, available_methods, ELECTRICAL_PRESETS, CUTOFF_PRESETS), todo
+golden-tested. 158 tests verdes, ruff+mypy limpios. Coherencia con `02` verificada (única deriva:
+litho_mn diferido, DV2-4). Done-when de V2-A cumplido (≥2 métodos/propiedad + available_methods).

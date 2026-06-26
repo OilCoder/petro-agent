@@ -57,3 +57,31 @@ def test_vsh_dimensional():
 def test_vsh_invalid_baseline_raises():
     with pytest.raises(ValueError):
         calc_vsh(GR, 150.0, 10.0)
+
+
+# ----------------------------------------
+# Linear IGR method (V2-A)
+# ----------------------------------------
+
+from src.petrophysics.vsh import vsh_linear  # noqa: E402
+
+
+def test_vsh_linear_equals_igr():
+    gr = np.array([20.0, 70.0, 120.0])  # gr_min=20, gr_max=120 -> IGR 0, 0.5, 1.0
+    v = vsh_linear(gr, 20.0, 120.0)
+    assert np.allclose(v, [0.0, 0.5, 1.0])
+
+
+def test_vsh_linear_clips_and_nan():
+    v = vsh_linear(np.array([10.0, 200.0, np.nan]), 20.0, 120.0)
+    assert v[0] == 0.0 and v[1] == 1.0 and np.isnan(v[2])
+
+
+def test_vsh_linear_overestimates_vs_larionov():
+    gr = np.array([70.0])  # midpoint
+    assert vsh_linear(gr, 20.0, 120.0)[0] > calc_vsh(gr, 20.0, 120.0)[0]
+
+
+def test_vsh_linear_invalid_baseline_raises():
+    with pytest.raises(ValueError):
+        vsh_linear(GR, 150.0, 10.0)

@@ -19,7 +19,7 @@ determinista que atrapa sus fugas esté probada). v1 queda intacto como baseline
 
 ## Fases
 
-### Fase V2-A — Librería de fórmulas vetada (amplía el motor)
+### Fase V2-A — Librería de fórmulas vetada (amplía el motor) — DONE 2026-06-26
 Done when: existen ≥2 métodos golden-tested por propiedad (Vsh, porosidad, Sw, litología) y una tool
 `available_methods(curves)` que reporta cuáles son aplicables dado el set de curvas.
 - Implementar Simandoux / Indonesia (Sw), porosidad sónica (Wyllie/RHG), Larionov terciario + lineal (Vsh)

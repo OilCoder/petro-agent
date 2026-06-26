@@ -53,3 +53,28 @@ def calc_vsh(
     vsh = np.clip(vsh, 0.0, 1.0)
     vsh[np.isnan(gr_arr)] = np.nan
     return vsh
+
+
+def vsh_linear(gr: np.ndarray, gr_min: float, gr_max: float) -> np.ndarray:
+    """Compute shale volume as the linear gamma-ray index (Vsh = IGR).
+
+    ``IGR = (GR - gr_min) / (gr_max - gr_min)``, clipped to [0, 1]. The conservative
+    screening estimate — overestimates Vsh vs Larionov, so it is the cautious choice.
+
+    Args:
+        gr: gamma-ray array (API). NaN propagates to NaN.
+        gr_min: clean-sand GR baseline (API).
+        gr_max: shale GR baseline (API).
+
+    Returns:
+        Vsh array in [0, 1] (NaN where GR is NaN).
+
+    Raises:
+        ValueError: if ``gr_max <= gr_min``.
+    """
+    if gr_max <= gr_min:
+        raise ValueError(f"gr_max ({gr_max}) must exceed gr_min ({gr_min})")
+    gr_arr = np.asarray(gr, dtype=float)
+    vsh = np.clip((gr_arr - gr_min) / (gr_max - gr_min), 0.0, 1.0)
+    vsh[np.isnan(gr_arr)] = np.nan
+    return vsh
