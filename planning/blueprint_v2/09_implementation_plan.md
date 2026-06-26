@@ -47,7 +47,7 @@ opcionales existe; el pipeline corre en modo guiado (gates obligatorios) y libre
 - Restricción `ABSTENTION_SAFE` (guiado); gates advisory + visibilidad de flags (libre).
 - `graph.validate()` corre como gate MECHANICAL (bloquea en guiado, advierte en libre) — ver `03` §Validación.
 
-### Fase V2-E — Nodo agente con LLM (EXPLORE→DECIDE→DISPATCH) + fallback señalizado
+### Fase V2-E — Nodo agente con LLM (EXPLORE→DECIDE→DISPATCH) + fallback señalizado  — DONE 2026-06-26
 Done when: el LLM produce el plan (métodos + secciones + razón) que alimenta el grafo de metodología; cae
 con banner visible si falla; `analyst_trace`/grafo reproducibles mientras el modelo responda.
 - Nodo agente en `zonate→gating`; wrapper de `client.py` (timeout, empty=fallo, cascada qwen3→llama3.1→heurística).

@@ -83,3 +83,15 @@ las secciones obligatorias" (testeado). Implementa: SECTION_CATALOG (oblig./opci
 heuristic_section_plan (determinista, stand-in del LLM), graph.validate() como gate MECHANICAL
 (bloquea guiado, advierte libre). 199 tests verdes. Coherencia con spec 09 V2-D verificada (deriva:
 composer separado, documentada arriba). El modo lo fija el invocador (param), nunca el LLM.
+
+## DV2-9 (2026-06-26) — Fase V2-E COMPLETA (analista LLM + fallback señalizado)
+**Resultado:** `src/agents/analyst.py`: build_eda_digest (pre-digest compacto), run_analyst con
+cascada qwen3→llama3.1→heurística determinista, SIEMPRE señalizada en `ledger.run.analyst`
+(model_used, empty_returns, fell_back_to_deterministic). El LLM emite SOLO el plan (optional_sections
++ tool_calls + rationale, sin números); el dispatcher ejecuta y escribe número+hash; el grafo se
+persiste en `ledger.run.methodology_graph`. Testeado con fake chats (Tier 1, sin Ollama): plan válido,
+fallback por vacío, fallback determinista por todo-falla, rechazo de tool fuera de whitelist. 205 verdes.
+**Decisión (max_steps):** el analista hace UN turno DECIDE por modelo (1 inferencia), dentro del
+max_steps=2 del plan; la terminación la impone el código (loop de cascada acotado), no el LLM —
+cumple el invariante "orquestador determinista dueño de la terminación". La cascada real con Ollama
+se ejercita al generar los 2 informes. Coherencia con spec 09 V2-E verificada.
