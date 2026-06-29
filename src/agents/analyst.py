@@ -18,7 +18,7 @@ import numpy as np
 
 from src.agents.client import ChatFn
 from src.agents.methodology_graph import MethodologyGraph
-from src.agents.report_compose import heuristic_section_plan
+from src.agents.report_compose import OPTIONAL_REQUIRES, heuristic_section_plan
 from src.agents.tool_dispatch import dispatch, validate_plan
 from src.eda import explore
 from src.petrophysics.phie import porosity_method_comparison
@@ -77,9 +77,18 @@ def _eda_findings(digest: dict[str, Any]) -> list[tuple[str, str]]:
     return out or [("eda_digest", "exploration complete")]
 
 
+def _section_catalog() -> str:
+    """The optional-section menu: each section id + the tool that must back it."""
+    items = [f"{sec} (call one of: {', '.join(tools)})" for sec, tools in OPTIONAL_REQUIRES.items()]
+    return (
+        "OPTIONAL SECTIONS — to add one, put its id in optional_sections AND call its backing "
+        "tool (it is dropped if no result backs it):\n- " + "\n- ".join(items)
+    )
+
+
 def _digest_text(digest: dict[str, Any]) -> str:
     """Compact (<~800 token) text of the digest for the LLM — never the raw curve blob."""
-    return "FACTS:\n" + json.dumps(digest, indent=1)[:3000]
+    return "FACTS:\n" + json.dumps(digest, indent=1)[:3000] + "\n\n" + _section_catalog()
 
 
 _OBJECT = re.compile(r"\{.*\}", re.DOTALL)
