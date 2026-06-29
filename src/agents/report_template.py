@@ -329,35 +329,5 @@ def _appendix_checklist(ledger: dict[str, Any]) -> str:
     return "\n".join(rows)
 
 
-# ----------------------------------------
-# Step 4 — Top-level assembler
-# ----------------------------------------
-
-
-def render_well_report(ledger: dict[str, Any], narrative: dict[str, str] | None = None) -> str:
-    """Assemble the full structured Markdown report from the ledger and prose slots.
-
-    Args:
-        ledger: the completed ledger dict (run, parameters, zones, summary, uncertainty…).
-        narrative: optional LLM prose for ``executive_summary`` and ``conclusions``.
-
-    Returns:
-        The complete Markdown report; all numbers are rendered from the ledger.
-    """
-    narrative = narrative or {}
-    sections = [
-        _header(ledger.get("run", {})),
-        _legend(),
-        _executive_summary(ledger, narrative.get("executive_summary", "")),
-        _methodology(),
-        _parameters(ledger),
-        _zonation(ledger),
-        _results(ledger),
-        _uncertainty(ledger),
-        _data_quality(ledger),
-        _conclusions(narrative.get("conclusions", "")),
-        _figures(ledger),
-        _appendix_ledger(ledger),
-        _appendix_checklist(ledger),
-    ]
-    return "\n\n---\n\n".join(sections) + "\n"
+# The v1 monolithic assembler (render_well_report) was removed in the v1 purge; v2 uses
+# the plan-driven composer in report_compose.py, which reuses the section helpers above.

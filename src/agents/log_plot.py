@@ -107,32 +107,6 @@ def pickett_plot(
     return out.name
 
 
-def net_pay_bar(wells: list[dict[str, Any]], out_path: str | Path) -> str:
-    """Bar chart of per-well net pay (P50 with P10-P90 whiskers).
-
-    The honest field-overview figure when surface coordinates for a map are absent.
-    Returns the PNG basename.
-    """
-    labels = [str(w.get("uwi", "?")) for w in wells]
-    p50 = [float(w.get("net_pay_p50") or 0.0) for w in wells]
-    p10 = [float(w.get("net_pay_p10") or p50[i]) for i, w in enumerate(wells)]
-    p90 = [float(w.get("net_pay_p90") or p50[i]) for i, w in enumerate(wells)]
-    lo = [max(0.0, p50[i] - p10[i]) for i in range(len(wells))]
-    hi = [max(0.0, p90[i] - p50[i]) for i in range(len(wells))]
-    fig, ax = plt.subplots(figsize=(max(5, len(wells) * 1.6), 5))
-    ax.bar(range(len(wells)), p50, yerr=[lo, hi], capsize=4, color="tab:green", alpha=0.7)
-    ax.set_xticks(range(len(wells)))
-    ax.set_xticklabels(labels, rotation=30, ha="right", fontsize=7)
-    ax.set_ylabel("Net pay P50 (m), P10-P90 whiskers")
-    ax.set_title("Field net pay by well")
-    ax.grid(True, axis="y", alpha=0.3)
-    out = Path(out_path)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out, dpi=90, bbox_inches="tight")
-    plt.close(fig)
-    return out.name
-
-
 def generate_figures(
     uwi: str,
     depth: np.ndarray,

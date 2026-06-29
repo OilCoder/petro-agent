@@ -51,26 +51,6 @@ def verify_tone(report: str, ledger: dict[str, Any]) -> list[str]:
     return []
 
 
-def verify_report(
-    report: str, ledger: dict[str, Any], rel_tol: float = 0.02, abs_tol: float = 0.01
-) -> dict[str, Any]:
-    """Reconcile report numbers and tone against the ledger.
-
-    Check (1): every decimal in the report must match a ledger value within tolerance.
-    Check (4): a bracketed/abstaining run must use hedging/limitation language.
-    """
-    ledger_nums: set[float] = set()
-    _collect_numbers(ledger, ledger_nums)
-
-    flags: list[float] = []
-    for token in _DECIMAL.findall(report):
-        num = float(token)
-        if not any(abs(num - ln) <= max(abs_tol, rel_tol * abs(ln)) for ln in ledger_nums):
-            flags.append(num)
-    tone_flags = verify_tone(report, ledger)
-    return {"passed": len(flags) == 0 and not tone_flags, "flags": flags, "tone_flags": tone_flags}
-
-
 # Rounding-only epsilon for the keyed reconciliation (the DV2-2 tolerance). Tighter than the
 # flat verifier's 2% so a value that drifts from its tool result (e.g. 1.9% off) is caught.
 KEYED_REL_TOL = 0.005

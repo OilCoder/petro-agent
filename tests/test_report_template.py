@@ -1,6 +1,16 @@
-"""Golden tests for the deterministic report renderer (zone merge + structured render)."""
+"""Golden tests for the deterministic report section renderers (zone merge + sections).
 
-from src.agents.report_template import merge_zones, render_well_report
+The v1 monolithic assembler was removed in the v1 purge; v2 composes via report_compose.
+These tests exercise the shared section helpers directly (the composer reuses them).
+"""
+
+from src.agents.report_template import (
+    _header,
+    _parameters,
+    _results,
+    _uncertainty,
+    merge_zones,
+)
 
 _LEDGER = {
     "run": {
@@ -67,40 +77,24 @@ def test_merge_zones_preserves_total_net_pay():
     assert sum(z["net_pay_m"] for z in merged) == _LEDGER["net_pay_total_m"]
 
 
-def test_render_has_all_sections():
-    md = render_well_report(_LEDGER, {"executive_summary": "Summary prose.", "conclusions": "End."})
-    for heading in (
-        "# Petrophysical Interpretation Report",
-        "## 1. Executive summary",
-        "## 2. Methodology",
-        "## 3. Parameters and provenance",
-        "## 4. Zonation",
-        "## 5. Results",
-        "## 6. Uncertainty and sensitivity",
-        "## 7. Data quality",
-        "## 8. Conclusions",
-        "## Appendix A",
-        "## Appendix B",
-    ):
-        assert heading in md
+def test_header_surfaces_status():
+    assert "DID_NOT_CONVERGE" in _header(_LEDGER["run"])
 
 
-def test_render_injects_narrative_and_numbers():
-    md = render_well_report(_LEDGER, {"executive_summary": "PROSE_MARKER.", "conclusions": "C."})
-    assert "PROSE_MARKER." in md  # narrative slot placed
-    assert "14.0" in md  # net pay P50 rendered from ledger
-    assert "Archie" in md  # frozen citation for parameter 'm'
-    assert "DID_NOT_CONVERGE" in md  # status surfaced
+def test_parameters_renders_frozen_citation():
+    assert "Archie" in _parameters(_LEDGER)  # frozen citation for parameter 'm'
 
 
-def test_render_dominant_uncertainty():
-    md = render_well_report(_LEDGER, {})
+def test_results_renders_p50_from_ledger():
+    assert "14.0" in _results(_LEDGER)  # net pay P50 rendered from ledger
+
+
+def test_uncertainty_surfaces_dominant_driver():
+    md = _uncertainty(_LEDGER)
     assert "Dominant uncertainty: `m`" in md
     assert "dominated by 'm'" in md  # high-leverage warning surfaced
 
 
-def test_render_without_uncertainty():
+def test_uncertainty_degrades_when_absent():
     ledger = {k: v for k, v in _LEDGER.items() if k != "uncertainty"}
-    ledger["run"] = {k: v for k, v in _LEDGER["run"].items() if k != "net_pay_p10_p50_p90"}
-    md = render_well_report(ledger, {})
-    assert "Uncertainty propagation not run" in md
+    assert "not run" in _uncertainty(ledger)
