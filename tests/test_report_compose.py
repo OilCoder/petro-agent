@@ -106,6 +106,28 @@ def test_r2_sections_degrade_when_data_absent():
     assert "needs the RHOB+NPHI" in md  # lithology, no EDA digest
 
 
+def test_porosity_and_sw_sections_render():
+    ledger = {
+        **LEDGER,
+        "run": dict(LEDGER["run"]),
+        "porosity_comparison": {
+            "methods": {"phie_density_neutron": 0.18, "phi_density": 0.20},
+            "selected": "phie_density_neutron",
+        },
+        "sw_summary": {
+            "method": "sw_archie",
+            "mean_sw": 0.35,
+            "a": 1.0,
+            "m": 2.0,
+            "n": 2.0,
+            "rw": 0.04,
+        },
+    }
+    md = compose_report(ledger, {"optional_sections": []}, FREE, _valid_graph())
+    assert "## " in md and "Porosity" in md and "phie_density_neutron" in md
+    assert "Water saturation" in md and "Mean Sw (Archie)" in md
+
+
 def test_vsh_comparison_section_renders_with_selection():
     ledger = {
         **LEDGER,

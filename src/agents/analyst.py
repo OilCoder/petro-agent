@@ -14,11 +14,14 @@ import json
 import re
 from typing import Any
 
+import numpy as np
+
 from src.agents.client import ChatFn
 from src.agents.methodology_graph import MethodologyGraph
 from src.agents.report_compose import heuristic_section_plan
 from src.agents.tool_dispatch import dispatch, validate_plan
 from src.eda import explore
+from src.petrophysics.phie import porosity_method_comparison
 from src.petrophysics.registry import available_methods
 from src.petrophysics.vsh import vsh_method_comparison
 from src.validators.physical import cross_tool_consistency
@@ -107,6 +110,59 @@ def _parse_plan(raw: str) -> dict[str, Any] | None:
     return data
 
 
+def _record_method_comparisons(ledger: dict[str, Any], ctx: dict[str, Any]) -> None:
+    """Stamp the deterministic FIXED-floor comparisons (Vsh §13, porosity §14, Sw §16).
+
+    The selected method is the engine's; the LLM authors none of these numbers.
+    """
+    curves = ctx["curves"]
+    params = ledger.get("parameters", {})
+
+    def _pv(key: str, default: float) -> float:
+        return params.get(key, {}).get("value", default)
+
+    gr = curves.get("GR")
+    if gr is not None:
+        variant = ledger["run"].get("variant", "old_rocks")
+        selected = "vsh_larionov_tertiary" if variant == "tertiary" else "vsh_larionov_old"
+        ledger["vsh_comparison"] = {
+            "methods": vsh_method_comparison(gr, _pv("gr_min", 20.0), _pv("gr_max", 120.0)),
+            "selected": selected,
+        }
+
+    rhob, nphi = curves.get("RHOB"), curves.get("NPHI")
+    if rhob is not None or nphi is not None:
+        pmethods = porosity_method_comparison(
+            rhob,
+            nphi,
+            _pv("rho_ma", 2.71),
+            _pv("rho_fl", 1.0),
+            _pv("phie_max", 0.45),
+            vsh=ctx.get("vsh"),
+            phi_sh_d=_pv("phi_sh_d", 0.0),
+            phi_sh_n=_pv("phi_sh_n", 0.0),
+        )
+        sel = (
+            "phie_density_neutron"
+            if "phie_density_neutron" in pmethods
+            else next(iter(pmethods), "—")
+        )
+        ledger["porosity_comparison"] = {"methods": pmethods, "selected": sel}
+
+    sw = ctx.get("sw")
+    if sw is not None:
+        finite = np.asarray(sw, dtype=float)
+        mean_sw = round(float(np.nanmean(finite)), 4) if np.any(np.isfinite(finite)) else None
+        ledger["sw_summary"] = {
+            "method": "sw_archie",
+            "mean_sw": mean_sw,
+            "a": _pv("a", float("nan")),
+            "m": _pv("m", float("nan")),
+            "n": _pv("n", float("nan")),
+            "rw": _pv("Rw", float("nan")),
+        }
+
+
 def run_analyst(
     ledger: dict[str, Any],
     ctx: dict[str, Any],
@@ -124,20 +180,8 @@ def run_analyst(
     graph = MethodologyGraph(mode=mode, model=model)
     digest = build_eda_digest(ctx)
     ledger.setdefault("run", {})["eda"] = digest
+    _record_method_comparisons(ledger, ctx)
 
-    # Deterministic multi-method Vsh comparison (the FIXED-floor section 13); the selected
-    # method is the engine's variant, never the LLM's authored number.
-    gr = ctx["curves"].get("GR")
-    if gr is not None:
-        params = ledger.get("parameters", {})
-        gmin = params.get("gr_min", {}).get("value", 20.0)
-        gmax = params.get("gr_max", {}).get("value", 120.0)
-        variant = ledger["run"].get("variant", "old_rocks")
-        selected = "vsh_larionov_tertiary" if variant == "tertiary" else "vsh_larionov_old"
-        ledger["vsh_comparison"] = {
-            "methods": vsh_method_comparison(gr, gmin, gmax),
-            "selected": selected,
-        }
     # one observation node per surfaced EDA finding (makes exploration_coverage meaningful)
     for tool, finding in _eda_findings(digest):
         graph.add(

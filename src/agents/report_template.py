@@ -504,6 +504,36 @@ def _vsh(ledger: dict[str, Any]) -> str:
     return "\n".join(rows) + "\n"
 
 
+def _porosity(ledger: dict[str, Any]) -> str:
+    cmp = ledger.get("porosity_comparison") or {}
+    methods = cmp.get("methods") or {}
+    if not methods:
+        return "## Porosity\n\n_Not computed — no RHOB/NPHI curve for the comparison._\n"
+    selected = cmp.get("selected", "—")
+    rows = [
+        "## Porosity\n",
+        "Mean porosity by method (effective where shale-corrected; the LLM authors no number):",
+        "| Method | Mean porosity | Selected |",
+        "|---|---|---|",
+    ]
+    for m, v in methods.items():
+        rows.append(f"| {m} | {_fmt(v, 3)} | {'✓' if m == selected else ''} |")
+    return "\n".join(rows) + "\n"
+
+
+def _sw(ledger: dict[str, Any]) -> str:
+    s = ledger.get("sw_summary") or {}
+    if s.get("mean_sw") is None:
+        return "## Water saturation\n\n_Not computed — no Sw result._\n"
+    return (
+        "## Water saturation\n\n"
+        f"Mean Sw (Archie) = {_fmt(s.get('mean_sw'), 3)} "
+        f"(a={_fmt(s.get('a'), 2)}, m={_fmt(s.get('m'), 2)}, n={_fmt(s.get('n'), 2)}, "
+        f"Rw={_fmt(s.get('rw'), 4)} ohm-m). "
+        "Electrical parameters are engine-sourced; alternative Sw models are optional sections.\n"
+    )
+
+
 def _limitations(ledger: dict[str, Any]) -> str:
     prov = ledger.get("run", {}).get("curve_provenance", {})
     missing = [c for c in _STD_CURVES if c not in prov]

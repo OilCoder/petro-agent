@@ -106,6 +106,41 @@ def phi_density(
     return phi
 
 
+def _mean_finite(arr: np.ndarray) -> float:
+    finite = np.asarray(arr, dtype=float)
+    return round(float(np.nanmean(finite)), 4) if np.any(np.isfinite(finite)) else float("nan")
+
+
+def porosity_method_comparison(
+    rhob: np.ndarray | None,
+    nphi: np.ndarray | None,
+    rho_ma: float,
+    rho_fl: float,
+    phie_max: float = 0.45,
+    vsh: np.ndarray | None = None,
+    phi_sh_d: float = 0.0,
+    phi_sh_n: float = 0.0,
+) -> dict[str, float]:
+    """Mean porosity from each applicable curve-based method (the comparison section 14).
+
+    Deterministic aggregation (not a new formula). Runs the density-neutron, density-only and
+    neutron-only methods on the curves that are present and returns each one's mean.
+
+    Returns:
+        ``{method_id: mean_porosity}`` for the applicable methods (empty if no RHOB/NPHI).
+    """
+    out: dict[str, float] = {}
+    if rhob is not None and nphi is not None:
+        out["phie_density_neutron"] = _mean_finite(
+            calc_phie(rhob, nphi, rho_ma, rho_fl, phie_max, vsh, phi_sh_d, phi_sh_n)
+        )
+    if rhob is not None:
+        out["phi_density"] = _mean_finite(phi_density(rhob, rho_ma, rho_fl, phie_max))
+    if nphi is not None:
+        out["phi_neutron"] = _mean_finite(phi_neutron(nphi, phie_max))
+    return out
+
+
 def phi_neutron(nphi: np.ndarray, phie_max: float = 0.45) -> np.ndarray:
     """Return neutron porosity (already in porosity units), clipped to ``[0, phie_max]``.
 
