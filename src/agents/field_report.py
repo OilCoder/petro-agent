@@ -33,30 +33,40 @@ def aggregate_field(ledgers: list[dict[str, Any]]) -> dict[str, Any]:
         run = lg.get("run", {})
         s = lg.get("summary", {})
         p = run.get("net_pay_p10_p50_p90") or [lg.get("net_pay_total_m")] * 3
-        wells.append({
-            "uwi": run.get("uwi", "?"),
-            "tier": run.get("confidence_tier", "?"),
-            "status": run.get("convergence_status", "?"),
-            "abstain": bool(run.get("abstain", False)),
-            "log_date": run.get("well_metadata", {}).get("log_date", "—"),
-            "gross_m": s.get("gross_m"),
-            "ntg": s.get("ntg"),
-            "net_pay_p10": p[0],
-            "net_pay_p50": p[1],
-            "net_pay_p90": p[2],
-            "avg_phie": s.get("avg_phie"),
-            "avg_sw": s.get("avg_sw"),
-            "n_objections": len(lg.get("objections", [])),
-            "git_sha": run.get("versions", {}).get("git_sha", "—"),
-        })
+        wells.append(
+            {
+                "uwi": run.get("uwi", "?"),
+                "tier": run.get("confidence_tier", "?"),
+                "status": run.get("convergence_status", "?"),
+                "abstain": bool(run.get("abstain", False)),
+                "log_date": run.get("well_metadata", {}).get("log_date", "—"),
+                "gross_m": s.get("gross_m"),
+                "ntg": s.get("ntg"),
+                "net_pay_p10": p[0],
+                "net_pay_p50": p[1],
+                "net_pay_p90": p[2],
+                "avg_phie": s.get("avg_phie"),
+                "avg_sw": s.get("avg_sw"),
+                "n_objections": len(lg.get("objections", [])),
+                "git_sha": run.get("versions", {}).get("git_sha", "—"),
+            }
+        )
 
     def _stats(key: str) -> dict[str, float]:
         vals = [w[key] for w in wells if w.get(key) is not None]
         if not vals:
-            return {"mean": float("nan"), "median": float("nan"),
-                    "min": float("nan"), "max": float("nan")}
-        return {"mean": statistics.fmean(vals), "median": statistics.median(vals),
-                "min": min(vals), "max": max(vals)}
+            return {
+                "mean": float("nan"),
+                "median": float("nan"),
+                "min": float("nan"),
+                "max": float("nan"),
+            }
+        return {
+            "mean": statistics.fmean(vals),
+            "median": statistics.median(vals),
+            "min": min(vals),
+            "max": max(vals),
+        }
 
     field = {
         "n_wells": len(wells),
@@ -104,15 +114,15 @@ def render_field_report(
     field = agg["field"]
     np50 = field["net_pay_p50"]
 
-    best_reservoir = max(wells, key=lambda w: (w["ntg"] or 0.0)) if wells else None
+    best_reservoir = max(wells, key=lambda w: w["ntg"] or 0.0) if wells else None
     best_data = min(wells, key=lambda w: (w["abstain"], w["n_objections"])) if wells else None
 
-    fig_block = "\n".join(
-        f"**{f['title']}**\n\n![{f['title']}]({f['file']})\n" for f in figures
-    ) or "_No field figures generated._"
+    fig_block = (
+        "\n".join(f"**{f['title']}**\n\n![{f['title']}]({f['file']})\n" for f in figures)
+        or "_No field figures generated._"
+    )
     excl_block = (
-        "\n".join(f"- `{e['path']}` — {e['error']}" for e in excluded)
-        if excluded else "None."
+        "\n".join(f"- `{e['path']}` — {e['error']}" for e in excluded) if excluded else "None."
     )
 
     return (
@@ -201,10 +211,13 @@ def generate_field_report(
     narrative = write_field_narrative(agg, chat) if chat is not None and agg["wells"] else {}
     figures: list[dict[str, str]] = []
     if agg["wells"]:
-        figures.append({
-            "title": "Field net pay by well",
-            "file": net_pay_bar(agg["wells"], Path(out_dir) / "field_net_pay.png"),
-        })
+        net_pay_png = net_pay_bar(agg["wells"], Path(out_dir) / "figuras" / "field_net_pay.png")
+        figures.append(
+            {
+                "title": "Field net pay by well",
+                "file": f"figuras/{net_pay_png}",
+            }
+        )
     metadata = {
         "field": ledgers[0]["run"].get("well_metadata", {}).get("field", "—") if ledgers else "—",
         "versions": "engine 0.1.0 · pipeline 0.1.0",

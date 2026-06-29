@@ -38,8 +38,6 @@ def run_validators(
     if "RT" in curves:
         objections += rt_sw_consistency(curves["RT"], sw, rt_floor=rt_floor)
     if "RHOB" in curves and "NPHI" in curves:
-        png = Path(out_dir) / f"{uwi}_crossplot_nd.png"
-        objections += neutron_density_crossplot(
-            curves["RHOB"], curves["NPHI"], png, rho_ma=rho_ma
-        )
+        png = Path(out_dir) / "figuras" / f"{uwi}_crossplot_nd.png"
+        objections += neutron_density_crossplot(curves["RHOB"], curves["NPHI"], png, rho_ma=rho_ma)
     return objections

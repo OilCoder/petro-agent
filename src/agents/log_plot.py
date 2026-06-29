@@ -150,6 +150,7 @@ def generate_figures(
     """
     safe = _safe(uwi)
     out_dir = Path(out_dir)
+    fig_dir = out_dir / "figuras"
 
     def _pv(key: str, default: float) -> float:
         p = params.get(key)
@@ -158,22 +159,26 @@ def generate_figures(
     netpay_flag = apply_cutoffs(
         vsh, phie, sw, _pv("vsh_cutoff", 0.4), _pv("phie_cutoff", 0.08), _pv("sw_cutoff", 0.6)
     )
+
+    # Figures live under <out_dir>/figuras/; the ledger keeps the relative ref so report
+    # links resolve from the report.md at the out_dir root.
     figures: list[dict[str, str]] = []
-    figures.append({
-        "title": "Composite log",
-        "file": composite_log_plot(
-            depth, curves, vsh, phie, sw, netpay_flag, out_dir / f"{safe}_composite.png"
-        ),
-    })
+    composite = composite_log_plot(
+        depth, curves, vsh, phie, sw, netpay_flag, fig_dir / f"{safe}_composite.png"
+    )
+    figures.append({"title": "Composite log", "file": f"figuras/{composite}"})
     if "RT" in curves:
-        figures.append({
-            "title": "Pickett plot",
-            "file": pickett_plot(
-                curves["RT"], phie, _pv("a", 1.0), _pv("m", 2.0), _pv("Rw", 0.04),
-                out_dir / f"{safe}_pickett.png", n=_pv("n", 2.0),
-            ),
-        })
-    crossplot = out_dir / f"{uwi}_crossplot_nd.png"
+        pickett = pickett_plot(
+            curves["RT"],
+            phie,
+            _pv("a", 1.0),
+            _pv("m", 2.0),
+            _pv("Rw", 0.04),
+            fig_dir / f"{safe}_pickett.png",
+            n=_pv("n", 2.0),
+        )
+        figures.append({"title": "Pickett plot", "file": f"figuras/{pickett}"})
+    crossplot = fig_dir / f"{uwi}_crossplot_nd.png"
     if crossplot.exists():
-        figures.append({"title": "Neutron-density crossplot", "file": crossplot.name})
+        figures.append({"title": "Neutron-density crossplot", "file": f"figuras/{crossplot.name}"})
     return figures

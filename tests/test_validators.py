@@ -21,9 +21,7 @@ def test_objection_type_validation():
 
 
 def test_bounds_clean():
-    objs = validate_bounds(
-        np.array([0.1, 0.2]), np.array([0.1, 0.2]), np.array([0.3, 0.4])
-    )
+    objs = validate_bounds(np.array([0.1, 0.2]), np.array([0.1, 0.2]), np.array([0.3, 0.4]))
     assert objs == []
 
 
@@ -77,4 +75,4 @@ def test_harness_runs(tmp_path):
         uwi="TEST",
     )
     assert isinstance(objs, list)
-    assert (tmp_path / "TEST_crossplot_nd.png").exists()
+    assert (tmp_path / "figuras" / "TEST_crossplot_nd.png").exists()
