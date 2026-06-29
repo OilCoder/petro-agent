@@ -8,17 +8,77 @@ creativity). Every number is rendered from the per-well ledgers by code; the LLM
 
 from __future__ import annotations
 
+import json
+import re
 import statistics
 from typing import Any
 
+from src.agents.client import ChatFn
 from src.agents.report_template import _fmt
 
 VERSION = "0.1.0"
+
+# The fixed anchor well (chosen from the data: full suite + DT, runs clean, representative).
+# All models analyze it → comparability and a "does it work" check.
+ANCHOR_UWI = "15-135-26002-00-00"
 
 
 # ----------------------------------------
 # Step 1 — Experiment well selection (1 fixed anchor + N model-chosen)
 # ----------------------------------------
+
+_SELECT_SYSTEM = """You are choosing which wells to include in a FIELD petrophysical report.
+The anchor well is FIXED (already included). Pick the most informative ADDITIONAL wells from the
+FIELD WELLS list (prefer fuller curve suites).
+Output ONLY a JSON object: {"wells": ["<uwi>", ...], "rationale": "<why, words only, NO numbers>"}.
+Use REAL uwis from the list. Never invent a uwi and never write a number."""
+
+_OBJ = re.compile(r"\{.*\}", re.DOTALL)
+
+
+def field_well_inventory(metas: list[dict[str, Any]]) -> str:
+    """Compact text inventory of the field's wells (uwi + curves) for the selection prompt."""
+    lines = [f"{m['uwi']}: curves={sorted(m['curves'])}" for m in metas]
+    return "FIELD WELLS:\n" + "\n".join(lines)
+
+
+def select_field_wells(
+    metas: list[dict[str, Any]],
+    anchor: str,
+    chat: ChatFn,
+    n_free: int = 2,
+) -> dict[str, Any]:
+    """Let the model pick ``n_free`` additional wells (the anchor is always included).
+
+    Falls back deterministically (first ``n_free`` non-anchor wells in inventory order) if the
+    model returns no usable choice — always signaled via ``fell_back``.
+
+    Returns:
+        ``select_wells`` result augmented with ``fell_back`` and ``rationale``.
+    """
+    all_uwis = [m["uwi"] for m in metas]
+    user = field_well_inventory(metas) + (
+        f"\n\nAnchor (already included): {anchor}. Pick {n_free} more wells."
+    )
+    raw = chat(_SELECT_SYSTEM, user)
+    m = _OBJ.search(raw or "")
+    choice: list[str] = []
+    rationale = ""
+    if m:
+        try:
+            data = json.loads(m.group(0))
+            choice = [u for u in data.get("wells", []) if isinstance(u, str)]
+            rationale = str(data.get("rationale", ""))
+        except (ValueError, TypeError):
+            choice = []
+    valid = {u for u in all_uwis if u != anchor}
+    chosen = [u for u in choice if u in valid]
+    fell_back = not chosen
+    if fell_back:
+        chosen = [u for u in all_uwis if u != anchor]
+        rationale = "deterministic fallback (model selection unavailable)"
+    sel = select_wells(all_uwis, anchor, chosen, n_free)
+    return {**sel, "fell_back": fell_back, "rationale": rationale}
 
 
 def select_wells(

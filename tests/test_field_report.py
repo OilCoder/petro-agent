@@ -1,6 +1,39 @@
 """Tests for the v2-native field rollup: selection, cross-well aggregation (no sums), render."""
 
-from src.agents.field_report import aggregate_field, render_field_report, select_wells
+from src.agents.field_report import (
+    aggregate_field,
+    render_field_report,
+    select_field_wells,
+    select_wells,
+)
+
+_METAS = [
+    {"uwi": "A", "curves": ["GR", "RHOB", "NPHI", "RT", "DT"]},
+    {"uwi": "B", "curves": ["GR", "RHOB", "NPHI", "RT"]},
+    {"uwi": "C", "curves": ["GR", "RT"]},
+    {"uwi": "D", "curves": ["GR", "RHOB", "NPHI", "RT"]},
+]
+
+
+def test_select_field_wells_model_choice():
+    chat = lambda s, u: '{"wells": ["B", "D"], "rationale": "fuller suites"}'  # noqa: E731
+    out = select_field_wells(_METAS, anchor="A", chat=chat, n_free=2)
+    assert out["fell_back"] is False
+    assert out["selected"] == ["A", "B", "D"] and out["anchor"] == "A"
+
+
+def test_select_field_wells_falls_back_on_garbage():
+    chat = lambda s, u: "no json here"  # noqa: E731
+    out = select_field_wells(_METAS, anchor="A", chat=chat, n_free=2)
+    assert out["fell_back"] is True
+    assert out["anchor"] == "A" and len(out["free"]) == 2 and "A" not in out["free"]
+
+
+def test_select_field_wells_drops_anchor_and_unknown():
+    chat = lambda s, u: '{"wells": ["A", "ZZ", "C"]}'  # noqa: E731
+    out = select_field_wells(_METAS, anchor="A", chat=chat, n_free=2)
+    assert out["free"] == ["C"]  # anchor + unknown dropped
+
 
 _LEDGERS = [
     {
