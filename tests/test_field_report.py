@@ -5,6 +5,7 @@ from src.agents.field_report import (
     render_field_report,
     select_field_wells,
     select_wells,
+    write_field_narrative,
 )
 
 _METAS = [
@@ -33,6 +34,26 @@ def test_select_field_wells_drops_anchor_and_unknown():
     chat = lambda s, u: '{"wells": ["A", "ZZ", "C"]}'  # noqa: E731
     out = select_field_wells(_METAS, anchor="A", chat=chat, n_free=2)
     assert out["free"] == ["C"]  # anchor + unknown dropped
+
+
+def test_write_field_narrative_prose_only():
+    captured = {}
+
+    def fake_chat(system, user):
+        captured["system"] = system
+        return "Field prose with honest uncertainty."
+
+    agg = {
+        "field": {
+            "n_wells": 3,
+            "n_abstaining": 2,
+            "net_pay_p50": {"mean": 157.4, "min": 82.5, "max": 202.2},
+            "ntg": {"mean": 0.129},
+        }
+    }
+    out = write_field_narrative(agg, fake_chat)
+    assert set(out) == {"executive_summary", "conclusions"}
+    assert "PROSE ONLY" in captured["system"] and "never sum" in captured["system"].lower()
 
 
 _LEDGERS = [

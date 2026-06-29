@@ -162,6 +162,33 @@ def aggregate_field(ledgers: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 # ----------------------------------------
+# Step 2b — Field narrative (prose only; numbers come from the aggregate)
+# ----------------------------------------
+
+_NARR_SYSTEM = """You are a senior petrophysicist writing FIELD-level narrative for a multi-well
+report. PROSE ONLY — no tables, headings, or JSON. Use ONLY the numbers in the FACTS; never sum
+per-well net pay into a field total (wells are not stacked). 2-3 sentences, honest about
+uncertainty when wells abstain."""
+
+
+def write_field_narrative(agg: dict[str, Any], chat: ChatFn) -> dict[str, str]:
+    """Generate field executive-summary and conclusions prose from the aggregate (prose only)."""
+    f = agg["field"]
+    np50 = f["net_pay_p50"]
+    facts = (
+        f"FACTS (the only numbers you may use): wells {f['n_wells']} "
+        f"({f['n_abstaining']} abstaining); cross-well net pay P50 mean {np50['mean']:.1f} m, "
+        f"range {np50['min']:.1f}-{np50['max']:.1f} m (NOT a sum); NTG mean {f['ntg']['mean']:.3f}."
+    )
+    exec_msg = facts + "\n\nWrite the FIELD executive summary (rock/pay story across the wells)."
+    concl_msg = facts + "\n\nWrite the FIELD conclusions (key takeaway + highest-leverage action)."
+    return {
+        "executive_summary": chat(_NARR_SYSTEM, exec_msg).strip(),
+        "conclusions": chat(_NARR_SYSTEM, concl_msg).strip(),
+    }
+
+
+# ----------------------------------------
 # Step 3 — Render the field chapter
 # ----------------------------------------
 
