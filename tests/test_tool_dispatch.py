@@ -32,11 +32,13 @@ def test_validate_plan_rejects_unknown_tool():
     assert any("not a whitelisted id" in i for i in issues)
 
 
-def test_validate_plan_rejects_bad_preset():
-    issues = validate_plan(
-        {"tool_calls": [{"tool": "sw_simandoux", "args": {"electrical_preset": "ghost"}}]}
-    )
-    assert any("unknown electrical_preset" in i for i in issues)
+def test_bad_preset_coerced_to_default_not_rejected():
+    # an unknown/placeholder preset must NOT discard the plan — it is coerced to the default
+    plan = {"tool_calls": [{"tool": "sw_simandoux", "args": {"electrical_preset": "<preset_id>"}}]}
+    assert validate_plan(plan) == []
+    ledger: dict = {}
+    dispatch(plan, CTX, ledger, MethodologyGraph(mode="free", model="m"))
+    assert ledger["tool_results"]["sw_simandoux"]["value"]["preset"] == "carbonate_default"
 
 
 def test_validate_plan_handles_malformed_tool_without_crashing():
@@ -141,11 +143,13 @@ def test_dispatch_runs_electrofacies():
     assert "n_facies" in val and "sizes" in val
 
 
-def test_validate_plan_rejects_bad_matrix_preset():
-    issues = validate_plan(
-        {"tool_calls": [{"tool": "phi_sonic_wyllie", "args": {"matrix_preset": "ghost"}}]}
-    )
-    assert any("unknown matrix_preset" in i for i in issues)
+def test_bad_matrix_preset_coerced_not_rejected():
+    ctx = {**CTX, "curves": {**CTX["curves"], "DT": np.full(N, 80.0)}}
+    plan = {"tool_calls": [{"tool": "phi_sonic_wyllie", "args": {"matrix_preset": "ghost"}}]}
+    assert validate_plan(plan) == []
+    ledger: dict = {}
+    dispatch(plan, ctx, ledger, MethodologyGraph(mode="free", model="m"))
+    assert "mean_phi" in ledger["tool_results"]["phi_sonic_wyllie"]["value"]
 
 
 def test_verify_keyed_flags_19pct_off_number():

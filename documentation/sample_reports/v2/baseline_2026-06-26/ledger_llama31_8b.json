@@ -27,7 +27,7 @@
     "environmental_corrections": "none_applied",
     "config_hash_sha256": "2a9cb78728e386ab31fda1fd3706f9945a450fc402005d70ab67b2faf1361525",
     "versions": {
-      "git_sha": "c88067751b82391d3b092f367d3bafed08abca05",
+      "git_sha": "a653a3568dbfd19f08bb09dbda1d4de1dbcc7c6a",
       "libraries": {
         "lasio": "0.32",
         "numpy": "2.5.0",
@@ -62,14 +62,10 @@
         "vsh": [
           "vsh_larionov_old",
           "vsh_larionov_tertiary",
-          "vsh_linear",
-          "vsh_clavier",
-          "vsh_steiber"
+          "vsh_linear"
         ],
         "porosity": [
-          "phie_density_neutron",
-          "phi_density",
-          "phi_neutron"
+          "phie_density_neutron"
         ],
         "sw": [
           "sw_archie",
@@ -78,18 +74,6 @@
         ],
         "lithology": [
           "litho_nd_crossplot"
-        ],
-        "permeability": [
-          "perm_timur",
-          "perm_coates"
-        ],
-        "rock_quality": [
-          "rqi",
-          "fzi",
-          "winland_r35"
-        ],
-        "facies": [
-          "electrofacies"
         ]
       },
       "badhole": {
@@ -155,9 +139,9 @@
       }
     },
     "analyst": {
-      "model_used": "deterministic",
+      "model_used": "llama3.1:8b",
       "empty_returns": 0,
-      "fell_back_to_deterministic": true,
+      "fell_back_to_deterministic": false,
       "optional_sections": [],
       "n_observations_available": 3
     },
@@ -182,7 +166,7 @@
           "depends_on": [],
           "payload": {
             "tool": "crossplot_density_neutron",
-            "finding": "lithology nearest dolomite (from density-neutron numeric crossplot)",
+            "finding": "lithology nearest dolomite",
             "source_ledger_key": "ledger:eda"
           }
         },
@@ -201,20 +185,11 @@
           "type": "decision",
           "depends_on": [],
           "payload": {
-            "rationale": "deterministic heuristic (analyst unavailable)",
-            "chosen": ""
+            "rationale": "The data shows a low resistivity threshold of 1.67, indicating potential issues with the logging quality. The nearest lithology is dolomite, and there are intervals flagged as degraded or excluded. To better understand the porosity and lithology, we will include these optional sections.",
+            "chosen": "vsh_larionov_tertiary,phie_density_neutron"
           }
         }
       ]
-    },
-    "claim_verifier": {
-      "result": "FLAGS",
-      "flags": [
-        23.8,
-        29.2,
-        15.4
-      ],
-      "tone_flags": []
     }
   },
   "parameters": {
@@ -1396,42 +1371,16 @@
   "figures": [
     {
       "title": "Composite log",
-      "file": "figuras/15-135-24881-00-00_composite.png"
+      "file": "15-135-24881-00-00_composite.png"
     },
     {
       "title": "Pickett plot",
-      "file": "figuras/15-135-24881-00-00_pickett.png"
+      "file": "15-135-24881-00-00_pickett.png"
     },
     {
       "title": "Neutron-density crossplot",
-      "file": "figuras/15-135-24,881-00-00_crossplot_nd.png"
+      "file": "15-135-24,881-00-00_crossplot_nd.png"
     }
   ],
-  "vsh_comparison": {
-    "methods": {
-      "vsh_larionov_old": 0.3642,
-      "vsh_larionov_tertiary": 0.2752,
-      "vsh_linear": 0.4964,
-      "vsh_clavier": 0.3444,
-      "vsh_steiber": 0.2983
-    },
-    "selected": "vsh_larionov_old"
-  },
-  "porosity_comparison": {
-    "methods": {
-      "phie_density_neutron": 0.099,
-      "phi_density": 0.1385,
-      "phi_neutron": 0.2109
-    },
-    "selected": "phie_density_neutron"
-  },
-  "sw_summary": {
-    "method": "sw_archie",
-    "mean_sw": 0.8088,
-    "a": 1.0,
-    "m": 2.0,
-    "n": 2.0,
-    "rw": 0.03168006701327748
-  },
   "tool_results": {}
 }

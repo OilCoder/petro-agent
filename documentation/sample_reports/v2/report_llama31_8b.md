@@ -10,7 +10,7 @@
 | **Confidence tier** | ○ BRACKETED |
 | **Engine versions** | calc_vsh 0.1.0 · calc_phie 0.1.0 · calc_sw 0.1.0 · formula_registry 0.1.0 |
 | **Config hash (SHA-256)** | `2a9cb78728e386ab…` |
-| **Git SHA** | `a653a3568dbf` |
+| **Git SHA** | `c88067751b82` |
 | **Generated** | autonomously, no human in the per-report loop |
 
 
@@ -21,7 +21,7 @@
 
 ---
 
-> ⚠️ methodology graph warnings: dec_1: numeric literal in 'rationale' (reference a ledger key)
+> ⚠️ **claim verifier FLAGS:** 3 number(s) not traceable to the ledger
 
 ---
 
@@ -30,13 +30,11 @@
 > ⚠️ **ABSTENTION — this is NOT a confident estimate.** The run did not converge to a defensible result; the numbers below are an uncalibrated engineering estimate, reported for transparency only:
 > - 1 unresolved MECHANICAL objection(s)
 
-The well's gross interval spans an impressive 1323.1 meters, but its net-to-gross ratio of 0.060 suggests that only a small fraction of this length is actually productive. The dominant uncertainty parameter, Rw, introduces significant variability in our estimates, with a swing of 70.6 meters indicating the potential for substantial differences in net pay.
+The well's reservoir characteristics are shrouded in uncertainty due to a DID_NOT_CONVERGE status and unresolved MECHANICAL objection(s). The dominant uncertainty parameter is Rw, which significantly impacts the estimated net pay. As a result, the net-pay estimates should be viewed with caution.
 
-We can bracket the average porosity at around 23.8%, based on the P10/P50/P90 values of 0.238/0.243/0.245. Water saturation is estimated to be approximately 29.2% on average, with a range that could potentially span from 28.5% to 30.1%. Shale volume is similarly uncertain, falling within the range of 15.4% to 16.3%.
+The average porosity (PHIE) of the net-pay zones is approximately 23.8%, while water saturation (Sw) averages around 29.2%. Shale volume (Vsh) accounts for about 15.4% of the interval. The gross interval spans 1323.1 meters, with a net-to-gross ratio of 0.060.
 
-The net-pay estimates are heavily influenced by Rw, and as such, we must approach these results with caution. The P10/P50/P90 values for net pay are 48.9/71.1/126.1 meters, respectively, but the high-leverage warning regarding Rw's dominance underscores the need for further calibration or refinement of this parameter.
-
-It is essential to note that this run DID_NOT_CONVERGE due to unresolved MECHANICAL objections, which precludes us from presenting a confident estimate.
+The estimated net pay is bracketed due to the high-leverage warning associated with Rw, which is a regional DEFAULT and uncalibrated. Consequently, the P10/P50/P90 estimates of 48.9/71.1/126.1 meters should be interpreted as ranges rather than point estimates.
 
 > **Net pay P10 / P50 / P90 = 48.9 / 71.1 / 126.1 m.**
 > Net pay is dominated by 'Rw', which is a regional DEFAULT (uncalibrated). This is the single largest uncertainty — the result is bracketed, not a confident point estimate.
@@ -44,9 +42,167 @@ It is essential to note that this run DID_NOT_CONVERGE due to unresolved MECHANI
 
 ---
 
-## 2. Methodology
+## 2. Data inventory (from LAS)
 
-All numbers are produced by the deterministic, golden-tested engine. The LLM only selects methods/parameters and writes prose — it never computes a number.
+- Curves present (canonical ← raw): DCAL←DCAL, GR←GR, NPHI←CNLS, RHOB←RHOB, RT←RILD
+- Logged interval: 59.44–1382.57 m
+- Log date: Sat Feb 28 00-46-47 2009
+- Service company: Log Tech · Company: Berexco, Inc.
+- Field: Schaben
+- Not provided by LAS (out of scope): core, mud logs, pressure tests, production, completion, formation tops.
+
+
+---
+
+## 3. LAS quality control
+
+| Edit type | Curve | Detail |
+|---|---|---|
+| unit_conversion | NPHI | factor 0.01 |
+| hard_range_mask | RT | count 117 |
+| hard_range_mask | RHOB | count 1 |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| spike_removal | — | — |
+| degradation | — | — |
+| degradation | — | — |
+| range_warn | GR | count 4 |
+| range_warn | RHOB | count 4 |
+| range_warn | NPHI | count 3 |
+
+
+---
+
+## 4. Standardization
+
+Raw mnemonics mapped to canonical curve names:
+| Canonical | Raw mnemonic |
+|---|---|
+| DCAL | DCAL |
+| GR | GR |
+| NPHI | CNLS |
+| RHOB | RHOB |
+| RT | RILD |
+
+Unit conversions: NPHI×0.01.
+
+
+---
+
+## 5. Per-curve log QC
+
+- Bad-hole: GOOD=0.853, DEGRADED=0.118, EXCLUDED=0.029
+- Low-resistivity: rt_threshold=1.67, n_flagged=687, intervals=[[278.7, 281.6], [284.4, 291.5], [292.3, 338.9], [362.0, 362.3], [400.1, 401.4], [420.2, 421.5], [460.1, 462.8], [463.4, 463.4], [463.8, 464.7], [465.0, 466.3]]
+
+
+---
+
+## 6. Data preparation
+
+Edits applied before compute (by type): degradation: 2, hard_range_mask: 2, range_warn: 3, spike_removal: 89, unit_conversion: 1.
+
+
+---
+
+## 7. Interval definition
+
+- Logged interval: 59.44–1382.57 m
+- Gross evaluated interval: 1323.1 m
+- Computed net-pay runs (pre-merge): 66
+- Zonation is computed by depth (no formation tops in LAS).
+
+
+---
+
+## 8. Methodology
+
+All numbers are produced by the deterministic, golden-tested engine. The LLM only selects methods/parameters and writes prose — it never computes a number. Figures are deterministic renderings of these computed numbers for the human reader; the agent reasons over the numeric EDA digest, not images (the models have no vision).
 
 | Step | Method (frozen) | Version |
 |---|---|---|
@@ -59,7 +215,69 @@ All numbers are produced by the deterministic, golden-tested engine. The LLM onl
 
 ---
 
-## 3. Parameters and provenance
+## 9. Gamma-ray analysis
+
+- Clean baseline gr_min = 20.0 API · shale gr_max = 120.0 API
+- Shale index IGR = (GR − gr_min)/(gr_max − gr_min), the basis for Vsh.
+
+
+---
+
+## 10. Resistivity analysis
+
+Low-resistivity scan: rt_threshold=1.67, n_flagged=687, intervals=[[278.7, 281.6], [284.4, 291.5], [292.3, 338.9], [362.0, 362.3], [400.1, 401.4], [420.2, 421.5], [460.1, 462.8], [463.4, 463.4], [463.8, 464.7], [465.0, 466.3]].
+
+
+---
+
+## 11. Caliper / hole quality
+
+Bad-hole summary (quality classes): GOOD=0.853, DEGRADED=0.118, EXCLUDED=0.029.
+
+
+---
+
+## 12. Lithology interpretation
+
+Nearest lithology (density-neutron numeric crossplot): dolomite. Comparison with core/mud log: not available (LAS-only).
+
+
+---
+
+## 13. Shale volume (Vsh)
+
+Mean Vsh by method (selection is the engine's; the LLM authors no number):
+| Method | Mean Vsh | Selected |
+|---|---|---|
+| vsh_larionov_old | 0.364 | ✓ |
+| vsh_larionov_tertiary | 0.275 |  |
+| vsh_linear | 0.496 |  |
+| vsh_clavier | 0.344 |  |
+| vsh_steiber | 0.298 |  |
+
+
+---
+
+## 14. Porosity
+
+Mean porosity by method (effective where shale-corrected; the LLM authors no number):
+| Method | Mean porosity | Selected |
+|---|---|---|
+| phie_density_neutron | 0.099 | ✓ |
+| phi_density | 0.139 |  |
+| phi_neutron | 0.211 |  |
+
+
+---
+
+## 15. Water saturation
+
+Mean Sw (Archie) = 0.809 (a=1.00, m=2.00, n=2.00, Rw=0.0317 ohm-m). Electrical parameters are engine-sourced; alternative Sw models are optional sections.
+
+
+---
+
+## 16. Parameters and provenance
 
 | Parameter | Value | Unit | Provenance | Source |
 |---|---|---|---|---|
@@ -87,7 +305,16 @@ All numbers are produced by the deterministic, golden-tested engine. The LLM onl
 
 ---
 
-## 4. Zonation (net-pay intervals)
+## 17. Water resistivity (Rw)
+
+- Rw = 0.0317 ohm-m · provenance: data_driven
+- Sourced by the engine (Pickett / SP / default); never authored by the LLM.
+- Net-pay sensitivity to Rw: 70.6 m swing.
+
+
+---
+
+## 18. Zonation (net-pay intervals)
 
 Raw net-pay runs merged into 45 intervals (gap tolerance 1.5 m); showing the 15 thickest, depth-ordered. Full set traces in the ledger.
 
@@ -111,7 +338,7 @@ Raw net-pay runs merged into 45 intervals (gap tolerance 1.5 m); showing the 15 
 
 ---
 
-## 5. Results
+## 19. Results
 
 | Quantity | Value |
 |---|---|
@@ -125,7 +352,7 @@ Raw net-pay runs merged into 45 intervals (gap tolerance 1.5 m); showing the 15 
 
 ---
 
-## 6. Uncertainty and sensitivity
+## 20. Uncertainty and sensitivity
 
 Monte Carlo, 500 realizations (seed 42). Net pay swing per parameter (one-at-a-time):
 
@@ -142,7 +369,7 @@ Monte Carlo, 500 realizations (seed 42). Net pay swing per parameter (one-at-a-t
 
 ---
 
-## 7. Data quality and validator objections
+## 21. Data quality and validator objections
 
 Curve provenance (canonical ← raw mnemonic): DCAL←DCAL, GR←GR, NPHI←CNLS, RHOB←RHOB, RT←RILD.
 
@@ -155,22 +382,48 @@ QC edits applied before compute — degradation: 2, hard_range_mask: 2, range_wa
 
 ---
 
-## 8. Methodology (decision graph)
+## 22. Methodology (decision graph)
 
 ```mermaid
 flowchart TD
     obs_1["observation: low-resistivity intervals present"]
-    obs_2["observation: lithology nearest dolomite"]
+    obs_2["observation: lithology nearest dolomite (from density-neutron numeric…"]
     obs_3["observation: degraded/excluded intervals present"]
-    dec_1["decision: The data shows a low resistivity threshold of 1."]
+    dec_1["decision: deterministic heuristic (analyst unavailable)"]
 ```
 
 
 ---
 
-## 9. Conclusions
+## 23. Figures
 
-The well's net pay is bracketed due to the dominant influence of Rw, a regional DEFAULT value that has not been calibrated for this specific location. The P10/P50/P90 estimates range from 48.9 to 126.1 meters, indicating significant uncertainty in the reservoir's productivity. Given the high-leverage warning and unresolved MECHANICAL objection(s), it is essential to revisit Rw and consider calibrating its value based on local data or core analysis to improve the accuracy of the net pay estimates.
+**Composite log**
+
+![Composite log](figuras/15-135-24881-00-00_composite.png)
+
+**Pickett plot**
+
+![Pickett plot](figuras/15-135-24881-00-00_pickett.png)
+
+**Neutron-density crossplot**
+
+![Neutron-density crossplot](figuras/15-135-24,881-00-00_crossplot_nd.png)
+
+
+---
+
+## 24. Limitations
+
+- LAS-only study: no core calibration, no pressure tests (no true fluid contacts), no production, no mud logs, no formation tops (zonation computed by depth).
+- Standard curves absent in this well: SP, DT, PEF, CALI.
+- Results are uncalibrated; accuracy depends on data not provided.
+
+
+---
+
+## 25. Conclusions
+
+The net-pay estimates for this well are bracketed due to the dominant influence of Rw, a regional DEFAULT value that has not been calibrated for this specific location. The P10/P50/P90 values range from 48.9 to 126.1 meters, indicating significant uncertainty in the pay zone thickness. The average porosity and water saturation across the net-pay intervals are 0.238 and 0.292, respectively, while shale volume averages 0.154. Given the high-leverage warning regarding Rw, it is essential to prioritize its calibration or replacement with a more accurate value for this region.
 
 ---
 
@@ -190,7 +443,15 @@ The well's net pay is bracketed due to the dominant influence of Rw, a regional 
     "n": 2.0,
     "Rw": 0.03168006701327748
   },
-  "claim_verifier": null
+  "claim_verifier": {
+    "result": "FLAGS",
+    "flags": [
+      23.8,
+      29.2,
+      15.4
+    ],
+    "tone_flags": []
+  }
 }
 ```
 
@@ -207,4 +468,4 @@ The well's net pay is bracketed due to the dominant influence of Rw, a regional 
 | Parameter citations frozen | ✓ |
 | Validator objections listed, not hidden | ✓ |
 | Uncertainty propagated (Monte Carlo) | ✓ |
-| Claim verifier run on prose | ✗ |
+| Claim verifier run on prose | ✓ |

@@ -22,7 +22,7 @@ from src.agents.report_compose import OPTIONAL_REQUIRES, heuristic_section_plan
 from src.agents.tool_dispatch import dispatch, validate_plan
 from src.eda import explore
 from src.petrophysics.phie import porosity_method_comparison
-from src.petrophysics.registry import available_methods
+from src.petrophysics.registry import ELECTRICAL_PRESETS, MATRIX_PRESETS, available_methods
 from src.petrophysics.vsh import vsh_method_comparison
 from src.validators.physical import cross_tool_consistency
 
@@ -33,10 +33,16 @@ From the FACTS (pre-computed observations) and AVAILABLE METHODS, decide which o
 analyses add completeness.
 
 ABSOLUTE RULES:
-- Output ONLY a JSON object: {"optional_sections": [...], "tool_calls": [{"tool": "<id>",
-  "args": {"electrical_preset": "<preset_id>"}}], "rationale": "<why, NO numbers>"}.
-- Choose method IDs ONLY from AVAILABLE METHODS and section IDs from the catalog. Never
-  invent an ID. Never write a number — the engine computes; you select.
+- Output ONLY a JSON object with this shape (a concrete example, copy the structure not the
+  values):
+  {"optional_sections": ["shaly_sand_saturation"],
+   "tool_calls": [{"tool": "sw_simandoux", "args": {"electrical_preset": "carbonate_default"}}],
+   "rationale": "dirty rock so a shaly-sand model is appropriate"}
+- Use REAL ids from AVAILABLE METHODS and the section catalog. NEVER copy angle-bracket
+  placeholders like <id> or <preset_id> — substitute a real value or omit the arg.
+- For sw_* methods set args.electrical_preset; for sonic methods set args.matrix_preset; use one
+  of the VALID args listed. If unsure, omit args (a safe default is applied).
+- Never write a number — the engine computes; you select.
 - Keep the rationale to plain words (no decimals); reference what the data shows, not values."""
 
 
@@ -78,11 +84,13 @@ def _eda_findings(digest: dict[str, Any]) -> list[tuple[str, str]]:
 
 
 def _section_catalog() -> str:
-    """The optional-section menu: each section id + the tool that must back it."""
+    """The optional-section menu: each section id + the tool that must back it, plus valid args."""
     items = [f"{sec} (call one of: {', '.join(tools)})" for sec, tools in OPTIONAL_REQUIRES.items()]
     return (
         "OPTIONAL SECTIONS — to add one, put its id in optional_sections AND call its backing "
-        "tool (it is dropped if no result backs it):\n- " + "\n- ".join(items)
+        "tool (it is dropped if no result backs it):\n- " + "\n- ".join(items) + "\n\n"
+        f"VALID args: electrical_preset ∈ {list(ELECTRICAL_PRESETS)}; "
+        f"matrix_preset ∈ {list(MATRIX_PRESETS)}."
     )
 
 

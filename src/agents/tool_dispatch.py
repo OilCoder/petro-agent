@@ -44,7 +44,8 @@ def _hash(result: Any) -> str:
 
 
 def validate_plan(plan: dict[str, Any]) -> list[str]:
-    """Return issues with a plan (empty = valid). Rejects unknown tools and bad preset args."""
+    """Return issues with a plan (empty = valid). Rejects only unknown/malformed tool ids;
+    preset args are coerced to a vetted default at dispatch, never rejected here."""
     issues: list[str] = []
     calls = plan.get("tool_calls")
     if not isinstance(calls, list):
@@ -56,23 +57,18 @@ def validate_plan(plan: dict[str, Any]) -> list[str]:
         tool = call.get("tool")
         if not isinstance(tool, str) or tool not in ALLOWED_TOOLS:
             issues.append(f"call {i}: tool {tool!r} not a whitelisted id")
-            continue
-        args = call.get("args", {}) if isinstance(call.get("args"), dict) else {}
-        spec = METHOD_REGISTRY.get(tool)
-        if spec is not None and spec.property == "sw":
-            preset = args.get("electrical_preset")
-            if preset is not None and preset not in ELECTRICAL_PRESETS:
-                issues.append(f"call {i}: unknown electrical_preset {preset!r}")
-        if tool in ("phi_sonic_wyllie", "phi_sonic_rhg"):
-            mp = args.get("matrix_preset")
-            if mp is not None and mp not in MATRIX_PRESETS:
-                issues.append(f"call {i}: unknown matrix_preset {mp!r}")
+    # Note: preset args are NOT rejected here — an unknown/placeholder preset is coerced to the
+    # vetted default at dispatch time, so one sloppy arg never discards an otherwise good plan.
     return issues
 
 
 def _run_sw_method(method_id: str, ctx: dict[str, Any], args: dict[str, Any]) -> dict[str, Any]:
     spec = METHOD_REGISTRY[method_id]
-    preset = ELECTRICAL_PRESETS[args.get("electrical_preset", "carbonate_default")]
+    # Unknown/placeholder preset → vetted default (robust to sloppy LLM args).
+    eff_preset = args.get("electrical_preset", "carbonate_default")
+    if eff_preset not in ELECTRICAL_PRESETS:
+        eff_preset = "carbonate_default"
+    preset = ELECTRICAL_PRESETS[eff_preset]
     rt, phie, vsh = ctx["curves"]["RT"], ctx["phie"], ctx["vsh"]
     if method_id == "sw_archie":
         arr = spec.fn(rt, phie, preset["a"], preset["m"], preset["n"], preset["rw"])
@@ -82,7 +78,7 @@ def _run_sw_method(method_id: str, ctx: dict[str, Any], args: dict[str, Any]) ->
         )
     finite = np.asarray(arr, dtype=float)
     mean = float(np.nanmean(finite)) if np.any(np.isfinite(finite)) else float("nan")
-    return {"mean_sw": round(mean, 4), "method": method_id, "preset": args.get("electrical_preset")}
+    return {"mean_sw": round(mean, 4), "method": method_id, "preset": eff_preset}
 
 
 def _mean(arr: Any) -> float:
@@ -132,7 +128,9 @@ def _run_porosity_method(
     elif method_id == "phi_neutron":
         arr = spec.fn(curves["NPHI"], phie_max)
     else:  # sonic: matrix/fluid transit times from a vetted preset, never the LLM
-        preset = MATRIX_PRESETS[args.get("matrix_preset", "limestone")]
+        preset = MATRIX_PRESETS.get(
+            args.get("matrix_preset", "limestone"), MATRIX_PRESETS["limestone"]
+        )
         if method_id == "phi_sonic_wyllie":
             arr = spec.fn(curves["DT"], preset["dt_matrix"], preset["dt_fluid"], phie_max)
         else:  # phi_sonic_rhg(dt, dt_matrix, c=0.67, phie_max)
