@@ -107,6 +107,31 @@ def pickett_plot(
     return out.name
 
 
+def field_map_plot(wells: list[dict[str, Any]], out_path: str | Path) -> str | None:
+    """Scatter of well positions (header LAT/LON) sized by net pay P50; None if no coordinates.
+
+    The honest field map when header coordinates are present. Returns the PNG basename, or
+    None when no well has usable LAT/LON (the caller then omits the map).
+    """
+    pts = [w for w in wells if w.get("latitude") and w.get("longitude")]
+    if not pts:
+        return None
+    lon = [float(w["longitude"]) for w in pts]
+    lat = [float(w["latitude"]) for w in pts]
+    sizes = [max(10.0, float(w.get("net_pay_p50") or 0.0) * 5.0) for w in pts]
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.scatter(lon, lat, s=sizes, c="tab:green", alpha=0.6, edgecolors="k")
+    ax.set_xlabel("Longitude")
+    ax.set_ylabel("Latitude")
+    ax.set_title("Field well map (marker ∝ net pay P50)")
+    ax.grid(True, alpha=0.3)
+    out = Path(out_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=90, bbox_inches="tight")
+    plt.close(fig)
+    return out.name
+
+
 def generate_figures(
     uwi: str,
     depth: np.ndarray,

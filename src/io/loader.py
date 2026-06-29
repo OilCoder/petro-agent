@@ -135,6 +135,8 @@ def load_las(path: str) -> WellData:
         "field": _header(las, "FLD"),
         "depth_start_m": f"{float(depth[0]):.2f}",
         "depth_stop_m": f"{float(depth[-1]):.2f}",
+        "latitude": _header(las, "LAT"),
+        "longitude": _header(las, "LON"),
     }
 
     return WellData(
