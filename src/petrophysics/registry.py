@@ -36,30 +36,51 @@ class MethodSpec:
 
 METHOD_REGISTRY: dict[str, MethodSpec] = {
     "vsh_larionov_old": MethodSpec(
-        "vsh_larionov_old", "vsh", vsh.calc_vsh, ("GR",), "Larionov 1969 (old rocks)",
-        fixed_kwargs={"variant": vsh.OLD_ROCKS}),
+        "vsh_larionov_old",
+        "vsh",
+        vsh.calc_vsh,
+        ("GR",),
+        "Larionov 1969 (old rocks)",
+        fixed_kwargs={"variant": vsh.OLD_ROCKS},
+    ),
     "vsh_larionov_tertiary": MethodSpec(
-        "vsh_larionov_tertiary", "vsh", vsh.calc_vsh, ("GR",), "Larionov 1969 (Tertiary)",
-        fixed_kwargs={"variant": vsh.TERTIARY}),
+        "vsh_larionov_tertiary",
+        "vsh",
+        vsh.calc_vsh,
+        ("GR",),
+        "Larionov 1969 (Tertiary)",
+        fixed_kwargs={"variant": vsh.TERTIARY},
+    ),
     "vsh_linear": MethodSpec(
-        "vsh_linear", "vsh", vsh.vsh_linear, ("GR",), "Linear gamma-ray index (IGR)"),
+        "vsh_linear", "vsh", vsh.vsh_linear, ("GR",), "Linear gamma-ray index (IGR)"
+    ),
     "phie_density_neutron": MethodSpec(
-        "phie_density_neutron", "porosity", calc_phie, ("RHOB", "NPHI"),
-        "Density-neutron crossplot, shale-corrected"),
+        "phie_density_neutron",
+        "porosity",
+        calc_phie,
+        ("RHOB", "NPHI"),
+        "Density-neutron crossplot, shale-corrected",
+    ),
     "phi_sonic_wyllie": MethodSpec(
-        "phi_sonic_wyllie", "porosity", sonic.phi_sonic_wyllie, ("DT",),
-        "Wyllie 1956 time-average"),
+        "phi_sonic_wyllie", "porosity", sonic.phi_sonic_wyllie, ("DT",), "Wyllie 1956 time-average"
+    ),
     "phi_sonic_rhg": MethodSpec(
-        "phi_sonic_rhg", "porosity", sonic.phi_sonic_rhg, ("DT",), "Raymer-Hunt-Gardner 1980"),
-    "sw_archie": MethodSpec(
-        "sw_archie", "sw", sw.calc_sw, ("RT",), "Archie 1942"),
+        "phi_sonic_rhg", "porosity", sonic.phi_sonic_rhg, ("DT",), "Raymer-Hunt-Gardner 1980"
+    ),
+    "sw_archie": MethodSpec("sw_archie", "sw", sw.calc_sw, ("RT",), "Archie 1942"),
     "sw_simandoux": MethodSpec(
-        "sw_simandoux", "sw", sw.sw_simandoux, ("RT",), "Simandoux 1963 (shaly sand)"),
+        "sw_simandoux", "sw", sw.sw_simandoux, ("RT",), "Simandoux 1963 (shaly sand)"
+    ),
     "sw_indonesia": MethodSpec(
-        "sw_indonesia", "sw", sw.sw_indonesia, ("RT",), "Poupon-Leveaux 1971 (Indonesia)"),
+        "sw_indonesia", "sw", sw.sw_indonesia, ("RT",), "Poupon-Leveaux 1971 (Indonesia)"
+    ),
     "litho_nd_crossplot": MethodSpec(
-        "litho_nd_crossplot", "lithology", neutron_density_crossplot,
-        ("RHOB", "NPHI"), "Neutron-density lithology crossplot"),
+        "litho_nd_crossplot",
+        "lithology",
+        neutron_density_crossplot,
+        ("RHOB", "NPHI"),
+        "Neutron-density lithology crossplot",
+    ),
 }
 
 

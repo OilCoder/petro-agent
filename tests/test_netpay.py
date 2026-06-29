@@ -30,9 +30,7 @@ def test_cutoffs_per_cutoff_rejection():
 
 
 def test_cutoffs_nan_excluded():
-    flag = apply_cutoffs(
-        np.array([np.nan]), np.array([0.2]), np.array([0.3]), VSH_C, PHIE_C, SW_C
-    )
+    flag = apply_cutoffs(np.array([np.nan]), np.array([0.2]), np.array([0.3]), VSH_C, PHIE_C, SW_C)
     assert bool(flag[0]) is False
 
 

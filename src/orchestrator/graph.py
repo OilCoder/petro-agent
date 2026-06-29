@@ -119,17 +119,29 @@ def run_pipeline(
         warn = high_leverage_flag(sens["dominant_parameter"], params)
         ledger["uncertainty"] = {**mc, "sensitivity": sens, "high_leverage_warning": warn}
         ledger["run"]["net_pay_p10_p50_p90"] = [
-            mc["net_pay_p10"], mc["net_pay_p50"], mc["net_pay_p90"]
+            mc["net_pay_p10"],
+            mc["net_pay_p50"],
+            mc["net_pay_p90"],
         ]
 
     ledger["figures"] = generate_figures(
-        ledger["run"]["uwi"], well.depth_m, final["curves"],
-        final["vsh"], final["phie"], final["sw"], params, out_dir,
+        ledger["run"]["uwi"],
+        well.depth_m,
+        final["curves"],
+        final["vsh"],
+        final["phie"],
+        final["sw"],
+        params,
+        out_dir,
     )
     if return_ctx:
         ctx = {
-            "curves": final["curves"], "vsh": final["vsh"], "phie": final["phie"],
-            "sw": final["sw"], "depth_m": well.depth_m, "step_m": float(well.step_m),
+            "curves": final["curves"],
+            "vsh": final["vsh"],
+            "phie": final["phie"],
+            "sw": final["sw"],
+            "depth_m": well.depth_m,
+            "step_m": float(well.step_m),
             "quality_map": qc.quality_map,
         }
         return ledger, ctx

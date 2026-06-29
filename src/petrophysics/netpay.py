@@ -66,9 +66,7 @@ def net_reservoir(
     step: float,
 ) -> float:
     """Net-reservoir thickness (Vsh + PHIE cutoffs), metres."""
-    return float(
-        np.count_nonzero(_net_reservoir_flag(vsh, phie, vsh_cutoff, phie_cutoff)) * step
-    )
+    return float(np.count_nonzero(_net_reservoir_flag(vsh, phie, vsh_cutoff, phie_cutoff)) * step)
 
 
 def net_to_gross(net_m: float, gross_m: float) -> float:

@@ -31,8 +31,20 @@ def _collect_numbers(obj: Any, out: set[float]) -> None:
             out.add(float(m))
 
 
-_HEDGE_TERMS = ("bracket", "uncertain", "range", "default", "not", "caution", "abstain",
-                "limit", "regional", "p10", "p90", "uncalibrated")
+_HEDGE_TERMS = (
+    "bracket",
+    "uncertain",
+    "range",
+    "default",
+    "not",
+    "caution",
+    "abstain",
+    "limit",
+    "regional",
+    "p10",
+    "p90",
+    "uncalibrated",
+)
 
 
 def verify_tone(report: str, ledger: dict[str, Any]) -> list[str]:
@@ -41,6 +53,8 @@ def verify_tone(report: str, ledger: dict[str, Any]) -> list[str]:
     A ``bracketed`` tier or an ``abstain`` run whose prose contains no hedging/limitation
     language is over-confident — the report asserts more certainty than the ledger allows.
     """
+    if not report.strip():
+        return []  # absent prose is not overconfident prose
     run = ledger.get("run", {})
     bracketed = run.get("confidence_tier") == "bracketed" or run.get("abstain")
     if not bracketed:

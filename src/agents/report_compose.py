@@ -14,6 +14,7 @@ import re
 from typing import Any
 
 from src.agents import report_template as v1
+from src.agents.claim_verifier import verify_keyed, verify_tone
 from src.agents.methodology_graph import MethodologyGraph
 
 VERSION = "0.1.0"
@@ -29,10 +30,17 @@ _MANDATORY_BODY = [
     "results",
     "uncertainty",
     "data_quality",
+    "figures",
     "conclusions",
 ]
 # Optional sections the plan may insert (after results). Vetted, closed set.
 OPTIONAL_SECTIONS = ("shaly_sand_saturation", "sonic_porosity")
+# Each optional section is backed by a named tool result; the section is emitted ONLY when that
+# result exists, so "section present ⇒ a real tool number backs it" always holds (no theater).
+OPTIONAL_REQUIRES: dict[str, tuple[str, ...]] = {
+    "shaly_sand_saturation": ("sw_simandoux",),
+    "sonic_porosity": ("phi_sonic_wyllie", "phi_sonic_rhg"),
+}
 # Optional sections allowed when the run abstains (diagnostic only — never confident analysis).
 ABSTENTION_SAFE: tuple[str, ...] = ()
 
@@ -41,25 +49,44 @@ def _strip_number(block: str) -> str:
     return re.sub(r"^(#+ )\d+\.\s*", r"\1", block, flags=re.MULTILINE)
 
 
+def _optional_supported(section_id: str, ledger: dict[str, Any]) -> bool:
+    """True only when a backing tool result exists for the optional section."""
+    results = ledger.get("tool_results", {})
+    return any(k in results for k in OPTIONAL_REQUIRES.get(section_id, ()))
+
+
 def _shaly_sand(ledger: dict[str, Any]) -> str:
     sw = ledger.get("tool_results", {}).get("sw_simandoux", {}).get("value", {})
     return f"## Shaly-sand saturation\n\nMean Sw (Simandoux): {sw.get('mean_sw', '—')}.\n"
+
+
+def _sonic_porosity(ledger: dict[str, Any]) -> str:
+    results = ledger.get("tool_results", {})
+    for key in ("phi_sonic_wyllie", "phi_sonic_rhg"):
+        val = results.get(key, {}).get("value", {})
+        if val:
+            return (
+                f"## Sonic porosity\n\nMean sonic porosity ({key}): {val.get('mean_phi', '—')}.\n"
+            )
+    return "## Sonic porosity\n\n_Not computed — no sonic-porosity tool result._\n"
 
 
 def _render_known(section_id: str, ledger: dict[str, Any], narrative: dict[str, str]) -> str:
     """Render a v1 section (number-stripped) or a v2 optional section."""
     renderers = {
         "executive_summary": lambda: v1._executive_summary(
-            ledger, narrative.get("executive_summary", "")),
+            ledger, narrative.get("executive_summary", "")
+        ),
         "methodology": v1._methodology,
         "parameters": lambda: v1._parameters(ledger),
         "zonation": lambda: v1._zonation(ledger),
         "results": lambda: v1._results(ledger),
         "uncertainty": lambda: v1._uncertainty(ledger),
         "data_quality": lambda: v1._data_quality(ledger),
+        "figures": lambda: v1._figures(ledger),
         "conclusions": lambda: v1._conclusions(narrative.get("conclusions", "")),
         "shaly_sand_saturation": lambda: _shaly_sand(ledger),
-        "sonic_porosity": lambda: "## Sonic porosity\n\nSonic-derived porosity (DT present).\n",
+        "sonic_porosity": lambda: _sonic_porosity(ledger),
     }
     if section_id not in renderers:
         raise KeyError(section_id)
@@ -87,6 +114,7 @@ def heuristic_section_plan(ledger: dict[str, Any]) -> dict[str, Any]:
 def _ordered_body(section_plan: dict[str, Any], mode: str, ledger: dict[str, Any]) -> list[str]:
     abstain = bool(ledger.get("run", {}).get("abstain"))
     requested = [s for s in section_plan.get("optional_sections", []) if s in OPTIONAL_SECTIONS]
+    requested = [s for s in requested if _optional_supported(s, ledger)]
     if abstain:
         # in guided, only abstention-safe optionals survive; confident analysis is dropped
         requested = [s for s in requested if s in ABSTENTION_SAFE] if mode == GUIDED else requested
@@ -129,6 +157,30 @@ def compose_report(
             else _render_known(sid, ledger, narrative)
         )
         body_blocks.append(re.sub(r"^## ", f"## {n}. ", block, count=1))
+
+    # Claim verification (deterministic): reconcile numbers in the LLM-authored PROSE against the
+    # ledger (tight, keyed) + check tone. Only the narrative can hallucinate a number — the tables
+    # are rendered deterministically from the ledger (correct by construction, only display-
+    # rounded), so verifying them would flag rounding, not lies. Stamped on the ledger for the
+    # completeness gate; a FLAGS result is surfaced in the preamble, never hidden.
+    prose = (
+        narrative.get("executive_summary", "") + "\n" + narrative.get("conclusions", "")
+    ).strip()
+    keyed = verify_keyed(prose, ledger)
+    tone_flags = verify_tone(prose, ledger)
+    passed = keyed["passed"] and not tone_flags
+    ledger.setdefault("run", {})["claim_verifier"] = {
+        "result": "PASS" if passed else "FLAGS",
+        "flags": keyed["flags"],
+        "tone_flags": tone_flags,
+    }
+    if not passed:
+        detail = []
+        if keyed["flags"]:
+            detail.append(f"{len(keyed['flags'])} number(s) not traceable to the ledger")
+        if tone_flags:
+            detail.append("tone (overconfident for tier)")
+        preamble.append("> ⚠️ **claim verifier FLAGS:** " + "; ".join(detail))
 
     appendix = [
         _strip_number(v1._appendix_ledger(ledger)),

@@ -20,6 +20,7 @@ from src.agents.report_compose import heuristic_section_plan
 from src.agents.tool_dispatch import dispatch, validate_plan
 from src.eda import explore
 from src.petrophysics.registry import available_methods
+from src.validators.physical import cross_tool_consistency
 
 VERSION = "0.1.0"
 
@@ -60,7 +61,12 @@ def _eda_findings(digest: dict[str, Any]) -> list[tuple[str, str]]:
         out.append(("low_resistivity_scan", "low-resistivity intervals present"))
     lit = digest.get("lithology", {})
     if lit.get("nearest"):
-        out.append(("crossplot_density_neutron", f"lithology nearest {lit['nearest']}"))
+        out.append(
+            (
+                "crossplot_density_neutron",
+                f"lithology nearest {lit['nearest']} (from density-neutron numeric crossplot)",
+            )
+        )
     bh = digest.get("badhole", {})
     if bh.get("DEGRADED", 0) + bh.get("EXCLUDED", 0) > 0:
         out.append(("badhole_summary", "degraded/excluded intervals present"))
@@ -153,6 +159,15 @@ def run_analyst(
         },
     )
     dispatch({"tool_calls": plan["tool_calls"]}, ctx, ledger, graph)
+
+    # Cross-tool consistency: a dispatched tool result that contradicts the core calibration
+    # becomes a MECHANICAL objection (a contradiction, not a silent dual number).
+    cross_objs = cross_tool_consistency(ledger)
+    if cross_objs:
+        ledger.setdefault("objections", []).extend(
+            {"validator_id": o.validator_id, "type": o.objection_type, "detail": o.detail}
+            for o in cross_objs
+        )
 
     ledger["run"]["analyst"] = {
         "model_used": used,

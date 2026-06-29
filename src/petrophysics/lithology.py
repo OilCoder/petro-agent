@@ -123,8 +123,11 @@ def estimate_rw(
     phie_arr = np.asarray(phie, dtype=float)
     vsh_arr = np.asarray(vsh, dtype=float)
     clean_porous = (
-        (vsh_arr < 0.3) & (phie_arr > 0.08)
-        & np.isfinite(rt_arr) & np.isfinite(phie_arr) & (rt_arr > 0)
+        (vsh_arr < 0.3)
+        & (phie_arr > 0.08)
+        & np.isfinite(rt_arr)
+        & np.isfinite(phie_arr)
+        & (rt_arr > 0)
     )
     if int(clean_porous.sum()) < MIN_SAMPLES:
         return default, False

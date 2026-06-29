@@ -117,7 +117,10 @@ def dispatch(
         elif tool in _EDA_TOOLS:
             result = _run_eda(tool, ctx, args)
         else:
-            continue  # other method families wire identically (DV2-7 scope note)
+            # Non-sw/eda families are not executed yet (DV2-7): record the skip so a selected
+            # tool that produced no result is signaled in the ledger, never silently dropped.
+            ledger.setdefault("run", {}).setdefault("tools_not_executed", []).append(tool)
+            continue
         key = tool
         result_hash = _hash(result)
         ledger["tool_results"][key] = {"value": result, "result_hash": result_hash}

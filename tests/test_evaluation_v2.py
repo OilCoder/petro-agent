@@ -54,8 +54,10 @@ def test_objective_score_honesty_false_when_abstaining_with_confident_section():
 
 
 def test_score_report_parses_and_defaults():
-    good = ('{"completeness":4,"method_appropriateness":5,"decision_quality":4,'
-            '"honesty":5,"narrative":3,"objections":["x"]}')
+    good = (
+        '{"completeness":4,"method_appropriateness":5,"decision_quality":4,'
+        '"honesty":5,"narrative":3,"objections":["x"]}'
+    )
     s = score_report("report", _GRAPH, _LEDGER, lambda sy, u: good)
     assert s["completeness"] == 4 and s["objections"] == ["x"]
     # unparseable -> mid defaults (not silently rewarded)
@@ -65,8 +67,10 @@ def test_score_report_parses_and_defaults():
 
 def test_leaderboard_ranks_by_objective_anchor():
     def chat(sy, u):
-        return ('{"completeness":3,"method_appropriateness":3,"decision_quality":3,'
-                '"honesty":3,"narrative":3}')
+        return (
+            '{"completeness":3,"method_appropriateness":3,"decision_quality":3,'
+            '"honesty":3,"narrative":3}'
+        )
 
     strong = score_run(_LEDGER, "r", chat)
     weak_ledger = {

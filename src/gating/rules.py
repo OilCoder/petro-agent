@@ -28,9 +28,7 @@ def confidence_tier(provenances: Iterable[str]) -> str:
     return BRACKETED
 
 
-def high_leverage_flag(
-    dominant_parameter: str | None, params: dict[str, Any]
-) -> dict[str, Any]:
+def high_leverage_flag(dominant_parameter: str | None, params: dict[str, Any]) -> dict[str, Any]:
     """Flag (soft) when the net-pay-dominating parameter is only a regional default.
 
     Returns ``{warn, parameter, provenance, message}``. Decision (b) hard abstention

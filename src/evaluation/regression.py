@@ -71,9 +71,7 @@ def run_regression(wells: list[dict[str, Any]]) -> dict[str, Any]:
     """
     results = []
     for w in wells:
-        res = evaluate_well(
-            w["pred"], w["ref"], w["pred_net_pay"], w["ref_net_pay"]
-        )
+        res = evaluate_well(w["pred"], w["ref"], w["pred_net_pay"], w["ref_net_pay"])
         results.append({"uwi": w.get("uwi", "?"), **res})
     overall = bool(results) and all(r["pass"] for r in results)
     return {"wells": results, "overall_pass": overall, "n_wells": len(results)}

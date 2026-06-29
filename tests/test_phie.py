@@ -81,8 +81,9 @@ def test_phie_goes_to_zero_in_pure_shale():
     # Vsh=1 at the shale points -> effective porosity collapses to zero.
     rhob = np.array([RHO_MA - PHI_SH_D * (RHO_MA - RHO_FL)])  # phi_d == phi_sh_d
     nphi = np.array([PHI_SH_N])
-    phie = calc_phie(rhob, nphi, RHO_MA, RHO_FL, vsh=np.array([1.0]),
-                     phi_sh_d=PHI_SH_D, phi_sh_n=PHI_SH_N)
+    phie = calc_phie(
+        rhob, nphi, RHO_MA, RHO_FL, vsh=np.array([1.0]), phi_sh_d=PHI_SH_D, phi_sh_n=PHI_SH_N
+    )
     assert phie[0] == pytest.approx(0.0, abs=1e-9)
 
 
@@ -90,21 +91,36 @@ def test_phie_clean_sand_unchanged_by_correction():
     # Vsh=0 -> shale correction is a no-op; identical to the total-porosity result.
     rhob, nphi = np.array([2.00]), np.array([0.30])
     phit = calc_phie(rhob, nphi, RHO_MA, RHO_FL)
-    phie = calc_phie(rhob, nphi, RHO_MA, RHO_FL, vsh=np.array([0.0]),
-                     phi_sh_d=PHI_SH_D, phi_sh_n=PHI_SH_N)
+    phie = calc_phie(
+        rhob, nphi, RHO_MA, RHO_FL, vsh=np.array([0.0]), phi_sh_d=PHI_SH_D, phi_sh_n=PHI_SH_N
+    )
     assert phie[0] == pytest.approx(phit[0])
 
 
 def test_phie_effective_decreases_with_vsh():
     # Monotonic: higher shale volume -> lower effective porosity.
     rhob, nphi = np.full(3, 2.30), np.full(3, 0.30)
-    phie = calc_phie(rhob, nphi, RHO_MA, RHO_FL, vsh=np.array([0.0, 0.4, 0.8]),
-                     phi_sh_d=PHI_SH_D, phi_sh_n=PHI_SH_N)
+    phie = calc_phie(
+        rhob,
+        nphi,
+        RHO_MA,
+        RHO_FL,
+        vsh=np.array([0.0, 0.4, 0.8]),
+        phi_sh_d=PHI_SH_D,
+        phi_sh_n=PHI_SH_N,
+    )
     assert np.all(np.diff(phie) < 0)
 
 
 def test_phie_effective_nan_passthrough():
     # Shale correction preserves the both-NaN exclusion.
-    phie = calc_phie(np.array([np.nan]), np.array([np.nan]), RHO_MA, RHO_FL,
-                     vsh=np.array([0.5]), phi_sh_d=PHI_SH_D, phi_sh_n=PHI_SH_N)
+    phie = calc_phie(
+        np.array([np.nan]),
+        np.array([np.nan]),
+        RHO_MA,
+        RHO_FL,
+        vsh=np.array([0.5]),
+        phi_sh_d=PHI_SH_D,
+        phi_sh_n=PHI_SH_N,
+    )
     assert np.isnan(phie[0])

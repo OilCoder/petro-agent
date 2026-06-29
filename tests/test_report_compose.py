@@ -94,3 +94,36 @@ def test_invalid_graph_only_warns_in_free():
     g.add("decision", {"rationale": "Sw is 0.33 here"})  # numeric literal -> invalid
     md = compose_report(LEDGER, {"optional_sections": []}, FREE, g)
     assert "methodology graph warnings" in md and "BLOCKED" not in md
+
+
+def test_claim_verifier_stamped_and_gate_passes():
+    ledger = {**LEDGER, "run": dict(LEDGER["run"])}
+    md = compose_report(ledger, {"optional_sections": []}, FREE, _valid_graph())
+    assert ledger["run"]["claim_verifier"]["result"] == "PASS"
+    assert "Claim verifier run on prose | ✓" in md  # Appendix B now satisfied
+
+
+def test_claim_verifier_flags_untraceable_number():
+    ledger = {**LEDGER, "run": dict(LEDGER["run"])}
+    narrative = {"executive_summary": "Net pay is 999.9 m.", "conclusions": ""}
+    md = compose_report(ledger, {"optional_sections": []}, FREE, _valid_graph(), narrative)
+    assert ledger["run"]["claim_verifier"]["result"] == "FLAGS"
+    assert 999.9 in ledger["run"]["claim_verifier"]["flags"]
+    assert "claim verifier FLAGS" in md
+
+
+def test_sonic_section_requires_tool_result():
+    # selected but no backing tool result -> section is NOT emitted (no theater)
+    md = compose_report(LEDGER, {"optional_sections": ["sonic_porosity"]}, FREE, _valid_graph())
+    assert "Sonic porosity" not in md
+    # with a real tool result -> section renders the number
+    ledger = {
+        **LEDGER,
+        "run": dict(LEDGER["run"]),
+        "tool_results": {
+            **LEDGER["tool_results"],
+            "phi_sonic_wyllie": {"value": {"mean_phi": 0.18}, "result_hash": "y"},
+        },
+    }
+    md2 = compose_report(ledger, {"optional_sections": ["sonic_porosity"]}, FREE, _valid_graph())
+    assert "Sonic porosity" in md2 and "0.18" in md2

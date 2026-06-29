@@ -40,9 +40,7 @@ def calc_sw(
         sw = ((a * rw) / (rt_arr * phie_arr**m)) ** (1.0 / n)
 
     sw = np.clip(sw, 0.0, 1.0)
-    undefined = (
-        np.isnan(rt_arr) | np.isnan(phie_arr) | (phie_arr <= 0.0) | (rt_arr <= 0.0)
-    )
+    undefined = np.isnan(rt_arr) | np.isnan(phie_arr) | (phie_arr <= 0.0) | (rt_arr <= 0.0)
     sw[undefined] = np.nan
     return sw
 

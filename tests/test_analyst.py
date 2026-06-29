@@ -83,8 +83,10 @@ def test_analyst_signaled_deterministic_fallback_when_all_fail():
 
 
 def test_analyst_rejects_out_of_whitelist_tool():
-    bad = ('{"optional_sections": [], '
-           '"tool_calls": [{"tool": "sw_invented", "args": {}}], "rationale": "x"}')
+    bad = (
+        '{"optional_sections": [], '
+        '"tool_calls": [{"tool": "sw_invented", "args": {}}], "rationale": "x"}'
+    )
     ledger: dict = {}
     out = run_analyst(ledger, CTX, "guided", lambda s, u: bad, "m")
     # invalid plan -> falls back; nothing from the bad tool dispatched

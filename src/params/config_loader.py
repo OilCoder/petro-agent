@@ -44,9 +44,7 @@ def _to_param(entry: dict) -> ParamValue:
     )
 
 
-def resolve_param(
-    config: dict, region: str, key: str, uwi: str | None = None
-) -> ParamValue:
+def resolve_param(config: dict, region: str, key: str, uwi: str | None = None) -> ParamValue:
     """Resolve one parameter: a per-UWI override wins over the regional default.
 
     Raises:

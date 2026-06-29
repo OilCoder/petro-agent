@@ -11,9 +11,7 @@ from src.validators.objections import IRREDUCIBLE, MECHANICAL, SUPPORT, Objectio
 VERSION = "0.1.0"
 
 
-def cross_tool_consistency(
-    ledger: dict[str, Any], rel_tol: float = 0.20
-) -> list[Objection]:
+def cross_tool_consistency(ledger: dict[str, Any], rel_tol: float = 0.20) -> list[Objection]:
     """Flag analyst tool-results that contradict the deterministic core calibration.
 
     The closed menu restricts WHICH tools run, not whether their outputs agree with
@@ -37,10 +35,13 @@ def cross_tool_consistency(
         tool_sw = value.get("mean_sw") if isinstance(value, dict) else None
         if tool_sw is not None and core_sw not in (None, 0) and np.isfinite(tool_sw):
             if abs(tool_sw - core_sw) > rel_tol * abs(core_sw):
-                objs.append(Objection(
-                    "cross_tool_consistency", MECHANICAL,
-                    f"{key} mean_sw {tool_sw:.3f} contradicts core avg_sw {core_sw:.3f}",
-                ))
+                objs.append(
+                    Objection(
+                        "cross_tool_consistency",
+                        MECHANICAL,
+                        f"{key} mean_sw {tool_sw:.3f} contradicts core avg_sw {core_sw:.3f}",
+                    )
+                )
     return objs
 
 
@@ -71,17 +72,23 @@ def net_pay_plausibility(
     objs: list[Objection] = []
     ntg = net_pay_m / gross_m if gross_m > 0 else 0.0
     if ntg > ntg_max:
-        objs.append(Objection(
-            "net_pay_plausibility", IRREDUCIBLE,
-            f"NTG {ntg:.2f} > {ntg_max} — implausibly high for tight carbonate "
-            f"(uncalibrated cutoffs/Rw)",
-        ))
+        objs.append(
+            Objection(
+                "net_pay_plausibility",
+                IRREDUCIBLE,
+                f"NTG {ntg:.2f} > {ntg_max} — implausibly high for tight carbonate "
+                f"(uncalibrated cutoffs/Rw)",
+            )
+        )
     if np.isfinite(avg_phie) and avg_phie > phie_plausible_max:
-        objs.append(Objection(
-            "net_pay_plausibility", IRREDUCIBLE,
-            f"net-pay avg PHIE {avg_phie:.2f} > {phie_plausible_max} — implausibly high "
-            f"for carbonate",
-        ))
+        objs.append(
+            Objection(
+                "net_pay_plausibility",
+                IRREDUCIBLE,
+                f"net-pay avg PHIE {avg_phie:.2f} > {phie_plausible_max} — implausibly high "
+                f"for carbonate",
+            )
+        )
     return objs
 
 
@@ -102,9 +109,7 @@ def validate_bounds(
         bad &= ~np.isnan(a)
         n = int(np.count_nonzero(bad))
         if n:
-            objs.append(
-                Objection(vid, MECHANICAL, f"{n} samples outside [{lo}, {hi}]")
-            )
+            objs.append(Objection(vid, MECHANICAL, f"{n} samples outside [{lo}, {hi}]"))
     return objs
 
 

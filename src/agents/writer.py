@@ -28,6 +28,8 @@ ABSOLUTE RULES:
 - "DID_NOT_CONVERGE" is an INTERNAL QC flag (the validation loop hit a data-limited
   objection); mention it at most as a one-line caveat. Do NOT make the report about it.
 - 2 to 4 sentences. Be honest; never assert more certainty than the tier allows.
+- You did NOT see any figure, plot, or log image. Never write "as seen in the crossplot",
+  "the log shows", or imply visual inspection — your only evidence is the numeric FACTS.
 """
 
 

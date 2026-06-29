@@ -89,8 +89,16 @@ def test_simandoux_lowers_sw_vs_archie_in_shale():
 
 
 def test_simandoux_bounds_and_nan():
-    sw = sw_simandoux(np.array([10.0, np.nan, 5.0]), np.array([0.2, 0.2, -0.1]),
-                      np.array([0.3, 0.3, 0.3]), A, M, 2.0, RW, RSH)
+    sw = sw_simandoux(
+        np.array([10.0, np.nan, 5.0]),
+        np.array([0.2, 0.2, -0.1]),
+        np.array([0.3, 0.3, 0.3]),
+        A,
+        M,
+        2.0,
+        RW,
+        RSH,
+    )
     assert 0.0 <= sw[0] <= 1.0 and np.isnan(sw[1]) and np.isnan(sw[2])
 
 
@@ -102,6 +110,7 @@ def test_indonesia_reduces_toward_archie_when_clean():
 
 
 def test_indonesia_bounds_and_nan():
-    sw = sw_indonesia(np.array([15.0, np.nan]), np.array([0.18, 0.18]),
-                      np.array([0.5, 0.5]), A, M, 2.0, RW, RSH)
+    sw = sw_indonesia(
+        np.array([15.0, np.nan]), np.array([0.18, 0.18]), np.array([0.5, 0.5]), A, M, 2.0, RW, RSH
+    )
     assert 0.0 <= sw[0] <= 1.0 and np.isnan(sw[1])

@@ -61,24 +61,40 @@ def compute(state: PipelineState) -> dict[str, Any]:
     # Substep — deterministic parameter selection from the data (replaces dead compute agent)
     rho_ma, ma_dd = estimate_matrix_density(rhob, vsh, default=_pv(state, "rho_ma"))
     phi_sh_d, phi_sh_n, sh_dd = estimate_shale_points(
-        rhob, nphi, vsh, rho_ma, rho_fl,
-        _pv(state, "phi_sh_d"), _pv(state, "phi_sh_n"),
+        rhob,
+        nphi,
+        vsh,
+        rho_ma,
+        rho_fl,
+        _pv(state, "phi_sh_d"),
+        _pv(state, "phi_sh_n"),
     )
 
     phie = calc_phie(
-        rhob, nphi, rho_ma, rho_fl, _pv(state, "phie_max"),
-        vsh=vsh, phi_sh_d=phi_sh_d, phi_sh_n=phi_sh_n,
+        rhob,
+        nphi,
+        rho_ma,
+        rho_fl,
+        _pv(state, "phie_max"),
+        vsh=vsh,
+        phi_sh_d=phi_sh_d,
+        phi_sh_n=phi_sh_n,
     )
     a, m, n = _pv(state, "a"), _pv(state, "m"), _pv(state, "n")
     rw, rw_dd = estimate_rw(curves["RT"], phie, vsh, a, m, default=_pv(state, "Rw"))
     sw = calc_sw(curves["RT"], phie, a, m, n, rw)
     calibration = {
-        "rho_ma": {"value": rho_ma, "data_driven": ma_dd,
-                   "regional_default": _pv(state, "rho_ma")},
-        "phi_sh_d": {"value": phi_sh_d, "data_driven": sh_dd,
-                     "regional_default": _pv(state, "phi_sh_d")},
-        "phi_sh_n": {"value": phi_sh_n, "data_driven": sh_dd,
-                     "regional_default": _pv(state, "phi_sh_n")},
+        "rho_ma": {"value": rho_ma, "data_driven": ma_dd, "regional_default": _pv(state, "rho_ma")},
+        "phi_sh_d": {
+            "value": phi_sh_d,
+            "data_driven": sh_dd,
+            "regional_default": _pv(state, "phi_sh_d"),
+        },
+        "phi_sh_n": {
+            "value": phi_sh_n,
+            "data_driven": sh_dd,
+            "regional_default": _pv(state, "phi_sh_n"),
+        },
         "Rw": {"value": rw, "data_driven": rw_dd, "regional_default": _pv(state, "Rw")},
     }
     return {"vsh": vsh, "phie": phie, "sw": sw, "calibration": calibration}
@@ -88,10 +104,15 @@ def validate(state: PipelineState) -> dict[str, Any]:
     """Run the fixed validator harness."""
     rho_ma_used = state.get("calibration", {}).get("rho_ma", {}).get("value", _pv(state, "rho_ma"))
     objs = run_validators(
-        state["vsh"], state["phie"], state["sw"], state["curves"],
-        phie_max=_pv(state, "phie_max"), rho_ma=rho_ma_used,
+        state["vsh"],
+        state["phie"],
+        state["sw"],
+        state["curves"],
+        phie_max=_pv(state, "phie_max"),
+        rho_ma=rho_ma_used,
         rt_floor=_pv(state, "rt_hydrocarbon_floor"),
-        out_dir=state["out_dir"], uwi=state["uwi"],
+        out_dir=state["out_dir"],
+        uwi=state["uwi"],
     )
     return {"objections": objs}
 
@@ -174,8 +195,12 @@ def zonate(state: PipelineState) -> dict[str, Any]:
     """Delineate contiguous net-pay zones, their thickness, and per-zone averages."""
     vsh, phie, sw = state["vsh"], state["phie"], state["sw"]
     flag = apply_cutoffs(
-        vsh, phie, sw,
-        _pv(state, "vsh_cutoff"), _pv(state, "phie_cutoff"), _pv(state, "sw_cutoff"),
+        vsh,
+        phie,
+        sw,
+        _pv(state, "vsh_cutoff"),
+        _pv(state, "phie_cutoff"),
+        _pv(state, "sw_cutoff"),
     )
     depth = state["depth_m"]
     step = state["step_m"]
@@ -187,14 +212,16 @@ def zonate(state: PipelineState) -> dict[str, Any]:
             j = i
             while j < n and flag[j]:
                 j += 1
-            zones.append({
-                "top_m": float(depth[i]),
-                "base_m": float(depth[j - 1]),
-                "net_pay_m": float((j - i) * step),
-                "avg_phie": _safe_mean(phie[i:j]),
-                "avg_sw": _safe_mean(sw[i:j]),
-                "avg_vsh": _safe_mean(vsh[i:j]),
-            })
+            zones.append(
+                {
+                    "top_m": float(depth[i]),
+                    "base_m": float(depth[j - 1]),
+                    "net_pay_m": float((j - i) * step),
+                    "avg_phie": _safe_mean(phie[i:j]),
+                    "avg_sw": _safe_mean(sw[i:j]),
+                    "avg_vsh": _safe_mean(vsh[i:j]),
+                }
+            )
             i = j
         else:
             i += 1
@@ -204,8 +231,13 @@ def zonate(state: PipelineState) -> dict[str, Any]:
 
 
 def _well_summary(
-    flag: Any, depth: Any, vsh: Any, phie: Any, sw: Any,
-    net_pay_total_m: float, n_zones_raw: int,
+    flag: Any,
+    depth: Any,
+    vsh: Any,
+    phie: Any,
+    sw: Any,
+    net_pay_total_m: float,
+    n_zones_raw: int,
 ) -> dict[str, Any]:
     """Well-level aggregates over the net-pay interval (deterministic, ledger-bound)."""
     gross_m = float(depth[-1] - depth[0]) if np.asarray(depth).size > 1 else 0.0

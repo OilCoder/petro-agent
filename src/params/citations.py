@@ -18,9 +18,7 @@ _CITATIONS_PATH = Path(__file__).with_name("citations.json")
 def load_citations(path: str | Path = _CITATIONS_PATH) -> dict[str, Citation]:
     """Load the citations table into typed :class:`Citation` records."""
     raw = json.loads(Path(path).read_text())
-    return {
-        key: Citation(parameter=key, **fields) for key, fields in raw.items()
-    }
+    return {key: Citation(parameter=key, **fields) for key, fields in raw.items()}
 
 
 def cite(parameter: str, table: dict[str, Citation] | None = None) -> Citation:

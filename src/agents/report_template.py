@@ -159,7 +159,9 @@ def _methodology() -> str:
     return (
         "## 2. Methodology\n\n"
         "All numbers are produced by the deterministic, golden-tested engine. The LLM only "
-        "selects methods/parameters and writes prose — it never computes a number.\n\n"
+        "selects methods/parameters and writes prose — it never computes a number. Figures are "
+        "deterministic renderings of these computed numbers for the human reader; the agent "
+        "reasons over the numeric EDA digest, not images (the models have no vision).\n\n"
         "| Step | Method (frozen) | Version |\n|---|---|---|\n"
         "| Vsh | Larionov old rocks (Paleozoic) from GR | `calc_vsh 0.1.0` |\n"
         "| PHIE | Density–neutron crossplot (neutron-only fallback) | `calc_phie 0.1.0` |\n"
@@ -171,9 +173,11 @@ def _methodology() -> str:
 
 def _parameters(ledger: dict[str, Any]) -> str:
     citations = load_citations()
-    rows = ["## 3. Parameters and provenance\n",
-            "| Parameter | Value | Unit | Provenance | Source |",
-            "|---|---|---|---|---|"]
+    rows = [
+        "## 3. Parameters and provenance\n",
+        "| Parameter | Value | Unit | Provenance | Source |",
+        "|---|---|---|---|---|",
+    ]
     for key, p in ledger.get("parameters", {}).items():
         cit = citations.get(key)
         src = f"{cit.author} {cit.year}" if cit else "—"
@@ -191,6 +195,11 @@ def _parameters(ledger: dict[str, Any]) -> str:
 def _zonation(ledger: dict[str, Any], max_rows: int = 15) -> str:
     merged = merge_zones(ledger.get("zones", []))
     total = len(merged)
+    if total == 0:
+        return (
+            "## 4. Zonation (net-pay intervals)\n\n"
+            "_No net-pay intervals identified (no interval met the cutoffs)._\n"
+        )
     # Show the thickest intervals (depth-ordered) — net pay is dominated by these;
     # the long tail of thin runs stays in the ledger.
     thickest = sorted(merged, key=lambda z: -z["net_pay_m"])[:max_rows]
@@ -202,17 +211,18 @@ def _zonation(ledger: dict[str, Any], max_rows: int = 15) -> str:
         else f"Raw net-pay runs merged into {total} geological intervals "
         f"(gap tolerance {DEFAULT_GAP_TOL_M} m).\n"
     )
-    rows = ["## 4. Zonation (net-pay intervals)\n", note,
-            "| Interval | Top (m) | Base (m) | Net pay (m) | Avg PHIE | Avg Sw | Avg Vsh |",
-            "|---|---|---|---|---|---|---|"]
+    rows = [
+        "## 4. Zonation (net-pay intervals)\n",
+        note,
+        "| Interval | Top (m) | Base (m) | Net pay (m) | Avg PHIE | Avg Sw | Avg Vsh |",
+        "|---|---|---|---|---|---|---|",
+    ]
     for idx, z in enumerate(shown, 1):
         rows.append(
             f"| Z{idx} | {_fmt(z['top_m'], 1)} | {_fmt(z['base_m'], 1)} | "
             f"{_fmt(z['net_pay_m'], 1)} | {_fmt(z.get('avg_phie'), 3)} | "
             f"{_fmt(z.get('avg_sw'), 3)} | {_fmt(z.get('avg_vsh'), 3)} |"
         )
-    if not shown:
-        rows.append("| — | — | — | — | — | — | — |")
     return "\n".join(rows)
 
 
@@ -230,6 +240,8 @@ def _figures(ledger: dict[str, Any]) -> str:
 def _results(ledger: dict[str, Any]) -> str:
     s = ledger.get("summary", {})
     p = ledger.get("run", {}).get("net_pay_p10_p50_p90")
+    if not s and not p:
+        return "## 5. Results\n\n_Not computed — no results summary in the ledger._\n"
     np_line = (
         f"{_fmt(p[0], 1)} / {_fmt(p[1], 1)} / {_fmt(p[2], 1)} m"
         if p
@@ -256,10 +268,13 @@ def _uncertainty(ledger: dict[str, Any]) -> str:
         )
     sens = unc.get("sensitivity", {})
     swings = sens.get("swings_m", {})
-    rows = ["## 6. Uncertainty and sensitivity\n",
-            f"Monte Carlo, {unc.get('n_realizations', '—')} realizations (seed "
-            f"{unc.get('seed', '—')}). Net pay swing per parameter (one-at-a-time):\n",
-            "| Parameter | Net-pay swing (m) |", "|---|---|"]
+    rows = [
+        "## 6. Uncertainty and sensitivity\n",
+        f"Monte Carlo, {unc.get('n_realizations', '—')} realizations (seed "
+        f"{unc.get('seed', '—')}). Net pay swing per parameter (one-at-a-time):\n",
+        "| Parameter | Net-pay swing (m) |",
+        "|---|---|",
+    ]
     for k, v in sorted(swings.items(), key=lambda kv: -float(kv[1])):
         rows.append(f"| {k} | {_fmt(v, 1)} |")
     dom = sens.get("dominant_parameter", "—")
@@ -279,10 +294,13 @@ def _data_quality(ledger: dict[str, Any]) -> str:
     edit_str = ", ".join(f"{k}: {v}" for k, v in sorted(by_type.items())) or "none"
     prov = ledger.get("run", {}).get("curve_provenance", {})
     prov_str = ", ".join(f"{c}←{m}" for c, m in sorted(prov.items())) or "—"
-    rows = ["## 7. Data quality and validator objections\n",
-            f"Curve provenance (canonical ← raw mnemonic): {prov_str}.\n",
-            f"QC edits applied before compute — {edit_str}.\n",
-            "| Validator | Type | Detail |", "|---|---|---|"]
+    rows = [
+        "## 7. Data quality and validator objections\n",
+        f"Curve provenance (canonical ← raw mnemonic): {prov_str}.\n",
+        f"QC edits applied before compute — {edit_str}.\n",
+        "| Validator | Type | Detail |",
+        "|---|---|---|",
+    ]
     for o in ledger.get("objections", []):
         rows.append(
             f"| {o.get('validator_id', '—')} | {o.get('type', '—')} | {o.get('detail', '—')} |"
@@ -302,8 +320,7 @@ def _appendix_ledger(ledger: dict[str, Any]) -> str:
         "net_pay_total_m": ledger.get("net_pay_total_m"),
         "net_pay_p10_p50_p90": ledger.get("run", {}).get("net_pay_p10_p50_p90"),
         "driving_params": {
-            k: ledger.get("parameters", {}).get(k, {}).get("value")
-            for k in ("a", "m", "n", "Rw")
+            k: ledger.get("parameters", {}).get(k, {}).get("value") for k in ("a", "m", "n", "Rw")
         },
         "claim_verifier": ledger.get("run", {}).get("claim_verifier"),
     }
