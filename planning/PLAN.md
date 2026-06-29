@@ -42,11 +42,11 @@ planning/blueprint_v2/  charter, arquitectura, librería, grafo, eval, spec 10, 
 
 ## Phases
 
-### Phase R1 — Dispatch para todas las familias de métodos
+### Phase R1 — Dispatch para todas las familias de métodos (COMPLETED)
 Done when: el agente puede seleccionar y EJECUTAR métodos de porosity/vsh/lithology (no solo sw); cada tool_result lleva resumen numérico + hash; un método no ejecutable es objeción, no no-op silencioso.
-- [ ] Añadir `_run_porosity_method`, `_run_vsh_method`, `_run_lithology_method` (src/agents/tool_dispatch.py)
-- [ ] Presets de matriz/fluido sónico por ID vetado (src/petrophysics/registry.py)
-- [ ] Golden tests del dispatch por familia (tests/test_tool_dispatch.py)
+- [x] Añadir `_run_porosity_method`, `_run_vsh_method`, `_run_lithology_method` (src/agents/tool_dispatch.py) (2026-06-28)
+- [x] Presets de matriz/fluido sónico por ID vetado (`MATRIX_PRESETS`, src/petrophysics/registry.py) (2026-06-28)
+- [x] Golden tests del dispatch por familia (tests/test_tool_dispatch.py) (2026-06-28)
 
 ### Phase R2 — Secciones [FIJO] renderer-only (el dato ya existe en el ledger)
 Done when: el informe incluye las secciones 3,4,5,6,7,8,10.1,10.2,10.4,11,15,34 desde datos ya presentes, con degradación honesta si falta una curva.

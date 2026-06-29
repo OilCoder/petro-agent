@@ -19,6 +19,7 @@ from src.agents.methodology_graph import MethodologyGraph
 from src.eda import explore
 from src.petrophysics.registry import (
     ELECTRICAL_PRESETS,
+    MATRIX_PRESETS,
     METHOD_REGISTRY,
 )
 
@@ -55,11 +56,16 @@ def validate_plan(plan: dict[str, Any]) -> list[str]:
         if not isinstance(tool, str) or tool not in ALLOWED_TOOLS:
             issues.append(f"call {i}: tool {tool!r} not a whitelisted id")
             continue
-        args = call.get("args", {})
-        preset = args.get("electrical_preset") if isinstance(args, dict) else None
-        if tool in METHOD_REGISTRY and METHOD_REGISTRY[tool].property == "sw":
+        args = call.get("args", {}) if isinstance(call.get("args"), dict) else {}
+        spec = METHOD_REGISTRY.get(tool)
+        if spec is not None and spec.property == "sw":
+            preset = args.get("electrical_preset")
             if preset is not None and preset not in ELECTRICAL_PRESETS:
                 issues.append(f"call {i}: unknown electrical_preset {preset!r}")
+        if tool in ("phi_sonic_wyllie", "phi_sonic_rhg"):
+            mp = args.get("matrix_preset")
+            if mp is not None and mp not in MATRIX_PRESETS:
+                issues.append(f"call {i}: unknown matrix_preset {mp!r}")
     return issues
 
 
@@ -76,6 +82,64 @@ def _run_sw_method(method_id: str, ctx: dict[str, Any], args: dict[str, Any]) ->
     finite = np.asarray(arr, dtype=float)
     mean = float(np.nanmean(finite)) if np.any(np.isfinite(finite)) else float("nan")
     return {"mean_sw": round(mean, 4), "method": method_id, "preset": args.get("electrical_preset")}
+
+
+def _mean(arr: Any) -> float:
+    finite = np.asarray(arr, dtype=float)
+    return round(float(np.nanmean(finite)), 4) if np.any(np.isfinite(finite)) else float("nan")
+
+
+def _pv(ledger: dict[str, Any], key: str, default: float) -> float:
+    """Read a parameter value from the ledger (the engine's data-driven/default value)."""
+    p = ledger.get("parameters", {}).get(key)
+    if isinstance(p, dict) and "value" in p:
+        return float(p["value"])
+    return default
+
+
+def _run_vsh_method(
+    method_id: str, ctx: dict[str, Any], ledger: dict[str, Any], args: dict[str, Any]
+) -> dict[str, Any]:
+    spec = METHOD_REGISTRY[method_id]
+    gr = ctx["curves"]["GR"]
+    gmin, gmax = _pv(ledger, "gr_min", 20.0), _pv(ledger, "gr_max", 120.0)
+    arr = spec.fn(gr, gmin, gmax, **spec.fixed_kwargs)
+    return {"mean_vsh": _mean(arr), "method": method_id}
+
+
+def _run_porosity_method(
+    method_id: str, ctx: dict[str, Any], ledger: dict[str, Any], args: dict[str, Any]
+) -> dict[str, Any]:
+    spec = METHOD_REGISTRY[method_id]
+    curves = ctx["curves"]
+    phie_max = _pv(ledger, "phie_max", 0.45)
+    if method_id == "phie_density_neutron":
+        arr = spec.fn(
+            curves["RHOB"],
+            curves["NPHI"],
+            _pv(ledger, "rho_ma", 2.71),
+            _pv(ledger, "rho_fl", 1.0),
+            phie_max=phie_max,
+            vsh=ctx.get("vsh"),
+            phi_sh_d=_pv(ledger, "phi_sh_d", 0.0),
+            phi_sh_n=_pv(ledger, "phi_sh_n", 0.0),
+        )
+    else:  # sonic: matrix/fluid transit times from a vetted preset, never the LLM
+        preset = MATRIX_PRESETS[args.get("matrix_preset", "limestone")]
+        if method_id == "phi_sonic_wyllie":
+            arr = spec.fn(curves["DT"], preset["dt_matrix"], preset["dt_fluid"], phie_max)
+        else:  # phi_sonic_rhg(dt, dt_matrix, c=0.67, phie_max)
+            arr = spec.fn(curves["DT"], preset["dt_matrix"], phie_max=phie_max)
+    return {"mean_phi": _mean(arr), "method": method_id, "preset": args.get("matrix_preset")}
+
+
+def _run_lithology_method(
+    method_id: str, ctx: dict[str, Any], args: dict[str, Any]
+) -> dict[str, Any]:
+    # Numeric value from the golden-tested EDA crossplot (the registry fn is the figure/validator
+    # twin); the agent's lithology call yields the nearest-lithology call, not a fabricated number.
+    cp = explore.crossplot_density_neutron(ctx["curves"]["RHOB"], ctx["curves"]["NPHI"])
+    return {"nearest_litho": cp.get("nearest"), "method": method_id}
 
 
 def _run_eda(tool: str, ctx: dict[str, Any], args: dict[str, Any]) -> dict[str, Any]:
@@ -111,14 +175,22 @@ def dispatch(
     ledger.setdefault("tool_results", {})
     written: list[str] = []
     for call in plan["tool_calls"]:
-        tool, args = call["tool"], call.get("args", {})
-        if tool in METHOD_REGISTRY and METHOD_REGISTRY[tool].property == "sw":
+        tool = call["tool"]
+        args = call.get("args", {}) if isinstance(call.get("args"), dict) else {}
+        spec = METHOD_REGISTRY.get(tool)
+        if spec is not None and spec.property == "sw":
             result = _run_sw_method(tool, ctx, args)
+        elif spec is not None and spec.property == "vsh":
+            result = _run_vsh_method(tool, ctx, ledger, args)
+        elif spec is not None and spec.property == "porosity":
+            result = _run_porosity_method(tool, ctx, ledger, args)
+        elif spec is not None and spec.property == "lithology":
+            result = _run_lithology_method(tool, ctx, args)
         elif tool in _EDA_TOOLS:
             result = _run_eda(tool, ctx, args)
         else:
-            # Non-sw/eda families are not executed yet (DV2-7): record the skip so a selected
-            # tool that produced no result is signaled in the ledger, never silently dropped.
+            # Unknown family: record the skip so a selected tool that produced no result is
+            # signaled in the ledger, never silently dropped.
             ledger.setdefault("run", {}).setdefault("tools_not_executed", []).append(tool)
             continue
         key = tool

@@ -90,6 +90,13 @@ ELECTRICAL_PRESETS: dict[str, dict[str, float]] = {
     "sandstone_default": {"a": 0.62, "m": 2.15, "n": 2.0, "rw": 0.04, "rsh": 4.0},
 }
 
+# Vetted sonic matrix/fluid transit-time presets (µs/ft) — supplied by ID, never by the LLM.
+MATRIX_PRESETS: dict[str, dict[str, float]] = {
+    "limestone": {"dt_matrix": 47.5, "dt_fluid": 189.0},
+    "sandstone": {"dt_matrix": 55.5, "dt_fluid": 189.0},
+    "dolomite": {"dt_matrix": 43.5, "dt_fluid": 189.0},
+}
+
 # Vetted net-pay cutoff presets — supplied by ID, never by the LLM.
 CUTOFF_PRESETS: dict[str, dict[str, float]] = {
     "carbonate_conservative": {"vsh_cutoff": 0.35, "phie_cutoff": 0.10, "sw_cutoff": 0.50},

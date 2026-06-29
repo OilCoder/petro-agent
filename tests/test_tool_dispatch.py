@@ -84,6 +84,45 @@ def test_dispatch_invalid_plan_writes_nothing():
     assert written == [] and "tool_results" not in ledger
 
 
+def test_dispatch_runs_vsh_method():
+    plan = {"tool_calls": [{"tool": "vsh_larionov_old", "args": {}}]}
+    ledger: dict = {}
+    dispatch(plan, CTX, ledger, MethodologyGraph(mode="free", model="m"))
+    val = ledger["tool_results"]["vsh_larionov_old"]["value"]
+    assert "mean_vsh" in val and np.isfinite(val["mean_vsh"])
+
+
+def test_dispatch_runs_porosity_density_neutron():
+    plan = {"tool_calls": [{"tool": "phie_density_neutron", "args": {}}]}
+    ledger: dict = {}
+    dispatch(plan, CTX, ledger, MethodologyGraph(mode="free", model="m"))
+    val = ledger["tool_results"]["phie_density_neutron"]["value"]
+    assert "mean_phi" in val and np.isfinite(val["mean_phi"])
+
+
+def test_dispatch_runs_sonic_with_matrix_preset():
+    ctx = {**CTX, "curves": {**CTX["curves"], "DT": np.full(N, 80.0)}}
+    plan = {"tool_calls": [{"tool": "phi_sonic_wyllie", "args": {"matrix_preset": "sandstone"}}]}
+    ledger: dict = {}
+    dispatch(plan, ctx, ledger, MethodologyGraph(mode="free", model="m"))
+    val = ledger["tool_results"]["phi_sonic_wyllie"]["value"]
+    assert "mean_phi" in val and np.isfinite(val["mean_phi"]) and val["preset"] == "sandstone"
+
+
+def test_dispatch_runs_lithology_method():
+    plan = {"tool_calls": [{"tool": "litho_nd_crossplot", "args": {}}]}
+    ledger: dict = {}
+    dispatch(plan, CTX, ledger, MethodologyGraph(mode="free", model="m"))
+    assert "nearest_litho" in ledger["tool_results"]["litho_nd_crossplot"]["value"]
+
+
+def test_validate_plan_rejects_bad_matrix_preset():
+    issues = validate_plan(
+        {"tool_calls": [{"tool": "phi_sonic_wyllie", "args": {"matrix_preset": "ghost"}}]}
+    )
+    assert any("unknown matrix_preset" in i for i in issues)
+
+
 def test_verify_keyed_flags_19pct_off_number():
     # flat verifier (2%) passes a 1.9%-off number; the keyed (0.5%) flags it
     ledger = {"tool_results": {"sw_simandoux": {"value": {"mean_sw": 0.300}, "result_hash": "x"}}}
