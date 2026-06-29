@@ -136,3 +136,33 @@ honestos pese al vaciado del modelo principal. Ambos modelos compusieron informe
 optional_sections=0): la agencia se ejerció pero los modelos locales bajo 16GB son conservadores — el
 techo honesto del modo libre documentado en el Charter. La maquinaria (analista→grafo→compose→score→
 leaderboard) está demostrada end-to-end. 216 tests verdes. **PROYECTO v2 COMPLETO.**
+
+## DV2-14 (2026-06-28) — Purga de v1: v2 es la única dirección del proyecto
+**Decisión:** v1 deja de ser baseline congelado a conservar. Todo el código v1 del repo no usado
+por v2 se eliminó: `compute_agent.py` (huérfano), `report.py` (generate_report v1), `field_report.py`
+(rollup sin cablear), `reviewer.review_report`/`_SYSTEM` (revisor adversarial cross-family),
+`claim_verifier.verify_report` (verificador flat-2%, superado por verify_keyed),
+`report_template.render_well_report` (assembler monolítico) y `log_plot.net_pay_bar`, más sus tests.
+**Por qué:** dos pipelines en paralelo confunden y v2 es más completo y con objetivo claro. Se conservó
+todo lo compartido (section helpers, writer, score_report same-family, verify_keyed/verify_tone).
+**Verificación:** grep sin stragglers; 52 source files (antes 55); suite verde, ruff+mypy limpios.
+
+## DV2-15 (2026-06-28) — Guardrails v2 cableados + fin del "report theater"
+**Decisión:** los guardrails construidos+testeados pero nunca ejecutados ahora corren en el flujo:
+(1) `compose_report` ejecuta el claim verifier (verify_keyed numbers + verify_tone) sobre la PROSA
+del LLM y sella `ledger.run.claim_verifier` → el completeness gate (Appendix B) pasa de ✗ a ✓.
+(2) `run_analyst` ejecuta `cross_tool_consistency` tras el dispatch; las contradicciones se vuelven
+objeciones MECHANICAL, no números duales silenciosos. (3) Las secciones opcionales se emiten SOLO si
+existe su tool_result de respaldo; la sección sonic lee tool_results en vez de un string fabricado.
+(4) Zonación/resultados degradan a "_Not computed_" explícito en vez de tablas huecas. (5) El dispatch
+señaliza familias de tools no ejecutadas. **Por qué (alcance del claim verifier):** se verifica solo la
+narrativa — las tablas son determinísticas (correctas por construcción, solo redondeadas para display);
+verificarlas marcaría redondeo, no mentiras. **Verificación:** corrida end-to-end → Appendix B ✓,
+claim_verifier=PASS; tests nuevos en test_report_compose; 216 tests verdes.
+
+## DV2-16 (2026-06-28) — Spec del informe completo + informe por campo diferido
+**Decisión:** se escribió `10_complete_report_spec.md` (solo capítulos + qué debe contener cada uno),
+con alcance pozo (ch. 0–17, 19–20) + capítulo de campo (ch. 18). El informe por campo se quiere, pero
+se reconstruye como feature nativa de v2 más adelante (no como el `field_report.py` v1 sin cablear, que
+se eliminó). El spec es el blanco objetivo de esa reconstrucción y de futuras secciones (permeabilidad,
+correcciones ambientales, mineralogía) aún no implementadas.
