@@ -171,6 +171,22 @@ def test_claim_verifier_flags_untraceable_number():
     assert "claim verifier FLAGS" in md
 
 
+def test_permeability_optional_section_gated_by_tool_result():
+    # not selectable without a backing tool result
+    md = compose_report(LEDGER, {"optional_sections": ["permeability"]}, FREE, _valid_graph())
+    assert "Permeability (uncalibrated)" not in md
+    ledger = {
+        **LEDGER,
+        "run": dict(LEDGER["run"]),
+        "tool_results": {
+            **LEDGER["tool_results"],
+            "perm_timur": {"value": {"mean_k_md": 12.3, "calibrated": False}, "result_hash": "z"},
+        },
+    }
+    md2 = compose_report(ledger, {"optional_sections": ["permeability"]}, FREE, _valid_graph())
+    assert "Permeability (uncalibrated)" in md2 and "12.3" in md2 and "no core" in md2
+
+
 def test_sonic_section_requires_tool_result():
     # selected but no backing tool result -> section is NOT emitted (no theater)
     md = compose_report(LEDGER, {"optional_sections": ["sonic_porosity"]}, FREE, _valid_graph())

@@ -17,6 +17,7 @@ import numpy as np
 
 from src.agents.methodology_graph import MethodologyGraph
 from src.eda import explore
+from src.petrophysics import permeability
 from src.petrophysics.registry import (
     ELECTRICAL_PRESETS,
     MATRIX_PRESETS,
@@ -139,6 +140,25 @@ def _run_porosity_method(
     return {"mean_phi": _mean(arr), "method": method_id, "preset": args.get("matrix_preset")}
 
 
+def _run_permeability_method(
+    method_id: str, ctx: dict[str, Any], args: dict[str, Any]
+) -> dict[str, Any]:
+    # Sw is used as the irreducible-Sw proxy (no core); the result carries the uncalibrated flag.
+    spec = METHOD_REGISTRY[method_id]
+    arr = spec.fn(ctx["phie"], ctx["sw"])
+    return {"mean_k_md": _mean(arr), "method": method_id, "calibrated": False}
+
+
+def _run_rock_quality_method(
+    method_id: str, ctx: dict[str, Any], args: dict[str, Any]
+) -> dict[str, Any]:
+    # Built on an uncalibrated Timur permeability, so it inherits the uncalibrated flag.
+    spec = METHOD_REGISTRY[method_id]
+    k = permeability.perm_timur(ctx["phie"], ctx["sw"])
+    arr = spec.fn(k, ctx["phie"])
+    return {"mean_value": _mean(arr), "index": method_id, "calibrated": False}
+
+
 def _run_lithology_method(
     method_id: str, ctx: dict[str, Any], args: dict[str, Any]
 ) -> dict[str, Any]:
@@ -192,6 +212,10 @@ def dispatch(
             result = _run_porosity_method(tool, ctx, ledger, args)
         elif spec is not None and spec.property == "lithology":
             result = _run_lithology_method(tool, ctx, args)
+        elif spec is not None and spec.property == "permeability":
+            result = _run_permeability_method(tool, ctx, args)
+        elif spec is not None and spec.property == "rock_quality":
+            result = _run_rock_quality_method(tool, ctx, args)
         elif tool in _EDA_TOOLS:
             result = _run_eda(tool, ctx, args)
         else:

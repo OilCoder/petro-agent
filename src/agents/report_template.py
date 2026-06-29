@@ -534,6 +534,38 @@ def _sw(ledger: dict[str, Any]) -> str:
     )
 
 
+def _permeability_section(ledger: dict[str, Any]) -> str:
+    results = ledger.get("tool_results", {})
+    rows = []
+    for key in ("perm_timur", "perm_coates"):
+        v = results.get(key, {}).get("value", {})
+        if v:
+            rows.append(f"- {key}: mean k = {_fmt(v.get('mean_k_md'), 2)} mD")
+    if not rows:
+        return "## Permeability (uncalibrated)\n\n_Not computed — no permeability tool result._\n"
+    return (
+        "## Permeability (uncalibrated)\n\n"
+        + "\n".join(rows)
+        + "\n\n_Uncalibrated screening estimate (no core); Sw used as the Swirr proxy._\n"
+    )
+
+
+def _rock_quality_section(ledger: dict[str, Any]) -> str:
+    results = ledger.get("tool_results", {})
+    rows = []
+    for key in ("rqi", "fzi", "winland_r35"):
+        v = results.get(key, {}).get("value", {})
+        if v:
+            rows.append(f"- {key}: mean = {_fmt(v.get('mean_value'), 3)}")
+    if not rows:
+        return "## Rock quality (uncalibrated)\n\n_Not computed — no rock-quality tool result._\n"
+    return (
+        "## Rock quality (uncalibrated)\n\n"
+        + "\n".join(rows)
+        + "\n\n_Built on the uncalibrated permeability; indicative only._\n"
+    )
+
+
 def _limitations(ledger: dict[str, Any]) -> str:
     prov = ledger.get("run", {}).get("curve_provenance", {})
     missing = [c for c in _STD_CURVES if c not in prov]

@@ -20,6 +20,7 @@ CTX = {
     },
     "phie": np.full(N, 0.2),
     "vsh": np.full(N, 0.3),
+    "sw": np.full(N, 0.3),
     "depth_m": np.arange(N, dtype=float) * 0.5,
     "step_m": 0.5,
     "quality_map": np.array(["GOOD"] * N, dtype=object),
@@ -114,6 +115,22 @@ def test_dispatch_runs_lithology_method():
     ledger: dict = {}
     dispatch(plan, CTX, ledger, MethodologyGraph(mode="free", model="m"))
     assert "nearest_litho" in ledger["tool_results"]["litho_nd_crossplot"]["value"]
+
+
+def test_dispatch_runs_permeability_uncalibrated():
+    plan = {"tool_calls": [{"tool": "perm_timur", "args": {}}]}
+    ledger: dict = {}
+    dispatch(plan, CTX, ledger, MethodologyGraph(mode="free", model="m"))
+    val = ledger["tool_results"]["perm_timur"]["value"]
+    assert "mean_k_md" in val and val["calibrated"] is False
+
+
+def test_dispatch_runs_rock_quality():
+    plan = {"tool_calls": [{"tool": "rqi", "args": {}}]}
+    ledger: dict = {}
+    dispatch(plan, CTX, ledger, MethodologyGraph(mode="free", model="m"))
+    val = ledger["tool_results"]["rqi"]["value"]
+    assert "mean_value" in val and val["calibrated"] is False
 
 
 def test_validate_plan_rejects_bad_matrix_preset():
