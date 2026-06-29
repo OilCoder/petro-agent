@@ -18,6 +18,15 @@ VERSION = "0.1.0"
 
 NODE_TYPES = ("observation", "decision", "tool_call", "section")
 _DECIMAL_IN_TEXT = re.compile(r"(?<![\w:])\d+\.\d+")  # a computed-looking value in prose
+_MERMAID_BREAKING = re.compile(r'["\[\]]')  # chars that break a Mermaid quoted node label
+
+
+def _mermaid_label(text: str, limit: int = 60) -> str:
+    """Sanitize and word-boundary-truncate a node label for a Mermaid quoted string."""
+    safe = " ".join(_MERMAID_BREAKING.sub("", text).split())
+    if len(safe) > limit:
+        safe = safe[:limit].rsplit(" ", 1)[0] + "…"
+    return safe
 
 
 @dataclass(frozen=True)
@@ -77,7 +86,7 @@ class MethodologyGraph:
                 or n.payload.get("section_id")
                 or n.type
             )
-            lines.append(f'    {n.id}["{n.type}: {str(label)[:48]}"]')
+            lines.append(f'    {n.id}["{n.type}: {_mermaid_label(str(label))}"]')
             for dep in n.depends_on:
                 lines.append(f"    {dep} --> {n.id}")
         lines.append("```")
