@@ -78,3 +78,85 @@ def vsh_linear(gr: np.ndarray, gr_min: float, gr_max: float) -> np.ndarray:
     vsh = np.clip((gr_arr - gr_min) / (gr_max - gr_min), 0.0, 1.0)
     vsh[np.isnan(gr_arr)] = np.nan
     return vsh
+
+
+def vsh_clavier(gr: np.ndarray, gr_min: float, gr_max: float) -> np.ndarray:
+    """Compute shale volume via the Clavier 1971 non-linear correction.
+
+    ``Vsh = 1.7 - sqrt(3.38 - (IGR + 0.7)**2)``, IGR clipped to [0, 1] and Vsh to [0, 1].
+    A non-linear alternative to Larionov; less aggressive than the linear index.
+
+    Args:
+        gr: gamma-ray array (API). NaN propagates to NaN.
+        gr_min: clean-sand GR baseline (API).
+        gr_max: shale GR baseline (API).
+
+    Returns:
+        Vsh array in [0, 1] (NaN where GR is NaN).
+
+    Raises:
+        ValueError: if ``gr_max <= gr_min``.
+    """
+    if gr_max <= gr_min:
+        raise ValueError(f"gr_max ({gr_max}) must exceed gr_min ({gr_min})")
+    gr_arr = np.asarray(gr, dtype=float)
+    igr = np.clip((gr_arr - gr_min) / (gr_max - gr_min), 0.0, 1.0)
+    vsh = 1.7 - np.sqrt(np.clip(3.38 - (igr + 0.7) ** 2, 0.0, None))
+    vsh = np.clip(vsh, 0.0, 1.0)
+    vsh[np.isnan(gr_arr)] = np.nan
+    return vsh
+
+
+def vsh_steiber(gr: np.ndarray, gr_min: float, gr_max: float) -> np.ndarray:
+    """Compute shale volume via the Steiber 1970 non-linear correction.
+
+    ``Vsh = IGR / (3 - 2*IGR)``, IGR clipped to [0, 1] and Vsh to [0, 1].
+    A non-linear alternative that reads below the linear index in mid-range.
+
+    Args:
+        gr: gamma-ray array (API). NaN propagates to NaN.
+        gr_min: clean-sand GR baseline (API).
+        gr_max: shale GR baseline (API).
+
+    Returns:
+        Vsh array in [0, 1] (NaN where GR is NaN).
+
+    Raises:
+        ValueError: if ``gr_max <= gr_min``.
+    """
+    if gr_max <= gr_min:
+        raise ValueError(f"gr_max ({gr_max}) must exceed gr_min ({gr_min})")
+    gr_arr = np.asarray(gr, dtype=float)
+    igr = np.clip((gr_arr - gr_min) / (gr_max - gr_min), 0.0, 1.0)
+    vsh = igr / (3.0 - 2.0 * igr)
+    vsh = np.clip(vsh, 0.0, 1.0)
+    vsh[np.isnan(gr_arr)] = np.nan
+    return vsh
+
+
+def vsh_method_comparison(gr: np.ndarray, gr_min: float, gr_max: float) -> dict[str, float]:
+    """Mean Vsh from every GR-only method, for the multi-method comparison section.
+
+    Deterministic aggregation (not a new formula) — runs the vetted Vsh methods on the same
+    GR and returns each one's mean, so the report can show how the estimate varies by method.
+
+    Args:
+        gr: gamma-ray array (API).
+        gr_min: clean-sand GR baseline (API).
+        gr_max: shale GR baseline (API).
+
+    Returns:
+        ``{method_id: mean_vsh}`` (NaN where a method yields no finite value).
+    """
+    methods = {
+        "vsh_larionov_old": calc_vsh(gr, gr_min, gr_max, OLD_ROCKS),
+        "vsh_larionov_tertiary": calc_vsh(gr, gr_min, gr_max, TERTIARY),
+        "vsh_linear": vsh_linear(gr, gr_min, gr_max),
+        "vsh_clavier": vsh_clavier(gr, gr_min, gr_max),
+        "vsh_steiber": vsh_steiber(gr, gr_min, gr_max),
+    }
+    out: dict[str, float] = {}
+    for key, arr in methods.items():
+        finite = arr[np.isfinite(arr)]
+        out[key] = round(float(np.mean(finite)), 4) if finite.size else float("nan")
+    return out

@@ -124,3 +124,27 @@ def test_phie_effective_nan_passthrough():
         phi_sh_n=PHI_SH_N,
     )
     assert np.isnan(phie[0])
+
+
+# --- single-curve porosity (R3) ---
+from src.petrophysics.phie import phi_density, phi_neutron  # noqa: E402
+
+
+def test_phi_density_known_value():
+    out = phi_density(np.array([2.5]), 2.65, 1.0)
+    assert abs(out[0] - (2.65 - 2.5) / (2.65 - 1.0)) < 1e-9
+
+
+def test_phi_density_clips_and_nan():
+    out = phi_density(np.array([1.0, np.nan]), 2.65, 1.0, phie_max=0.45)
+    assert out[0] == 0.45 and np.isnan(out[1])
+
+
+def test_phi_density_bad_bounds_raises():
+    with pytest.raises(ValueError):
+        phi_density(np.array([2.5]), 1.0, 1.0)
+
+
+def test_phi_neutron_passthrough_and_clip():
+    out = phi_neutron(np.array([0.2, 0.9, np.nan]), phie_max=0.45)
+    assert abs(out[0] - 0.2) < 1e-9 and out[1] == 0.45 and np.isnan(out[2])

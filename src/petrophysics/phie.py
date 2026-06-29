@@ -77,3 +77,46 @@ def calc_phie(
     phie[np.isnan(rhob_arr) & np.isnan(nphi_arr)] = np.nan
 
     return np.clip(phie, 0.0, phie_max)
+
+
+def phi_density(
+    rhob: np.ndarray, rho_ma: float, rho_fl: float, phie_max: float = 0.45
+) -> np.ndarray:
+    """Compute density porosity from bulk density (single-curve, total porosity).
+
+    ``phi_D = (rho_ma - rhob) / (rho_ma - rho_fl)``, clipped to ``[0, phie_max]``.
+
+    Args:
+        rhob: bulk density array (g/cc). NaN propagates to NaN.
+        rho_ma: matrix density (g/cc).
+        rho_fl: fluid density (g/cc).
+        phie_max: physical-plausibility ceiling (v/v).
+
+    Returns:
+        Density porosity in [0, phie_max] (NaN where RHOB is NaN).
+
+    Raises:
+        ValueError: if ``rho_fl >= rho_ma``.
+    """
+    if rho_fl >= rho_ma:
+        raise ValueError(f"rho_fl ({rho_fl}) must be below rho_ma ({rho_ma})")
+    rhob_arr = np.asarray(rhob, dtype=float)
+    phi = np.clip((rho_ma - rhob_arr) / (rho_ma - rho_fl), 0.0, phie_max)
+    phi[np.isnan(rhob_arr)] = np.nan
+    return phi
+
+
+def phi_neutron(nphi: np.ndarray, phie_max: float = 0.45) -> np.ndarray:
+    """Return neutron porosity (already in porosity units), clipped to ``[0, phie_max]``.
+
+    Args:
+        nphi: neutron porosity array (v/v). NaN propagates to NaN.
+        phie_max: physical-plausibility ceiling (v/v).
+
+    Returns:
+        Neutron porosity in [0, phie_max] (NaN where NPHI is NaN).
+    """
+    nphi_arr = np.asarray(nphi, dtype=float)
+    phi = np.clip(nphi_arr, 0.0, phie_max)
+    phi[np.isnan(nphi_arr)] = np.nan
+    return phi

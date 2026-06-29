@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from src.petrophysics import sonic, sw, vsh
-from src.petrophysics.phie import calc_phie
+from src.petrophysics.phie import calc_phie, phi_density, phi_neutron
 from src.validators.model_mismatch import neutron_density_crossplot
 
 VERSION = "0.1.0"
@@ -54,12 +54,24 @@ METHOD_REGISTRY: dict[str, MethodSpec] = {
     "vsh_linear": MethodSpec(
         "vsh_linear", "vsh", vsh.vsh_linear, ("GR",), "Linear gamma-ray index (IGR)"
     ),
+    "vsh_clavier": MethodSpec(
+        "vsh_clavier", "vsh", vsh.vsh_clavier, ("GR",), "Clavier 1971 (non-linear)"
+    ),
+    "vsh_steiber": MethodSpec(
+        "vsh_steiber", "vsh", vsh.vsh_steiber, ("GR",), "Steiber 1970 (non-linear)"
+    ),
     "phie_density_neutron": MethodSpec(
         "phie_density_neutron",
         "porosity",
         calc_phie,
         ("RHOB", "NPHI"),
         "Density-neutron crossplot, shale-corrected",
+    ),
+    "phi_density": MethodSpec(
+        "phi_density", "porosity", phi_density, ("RHOB",), "Density porosity (single-curve)"
+    ),
+    "phi_neutron": MethodSpec(
+        "phi_neutron", "porosity", phi_neutron, ("NPHI",), "Neutron porosity (single-curve)"
     ),
     "phi_sonic_wyllie": MethodSpec(
         "phi_sonic_wyllie", "porosity", sonic.phi_sonic_wyllie, ("DT",), "Wyllie 1956 time-average"

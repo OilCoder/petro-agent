@@ -54,11 +54,12 @@ Done when: el informe incluye las secciones 3,4,5,6,7,8,10.1,10.2,10.4,11,15,34 
 - [x] Ampliar `_MANDATORY_BODY` (9→21) + `_render_known` (src/agents/report_compose.py) (2026-06-28)
 - [x] Tests de presencia + degradación honesta (tests/test_report_compose.py) (2026-06-28)
 
-### Phase R3 — Fórmulas faltantes del catálogo 02 + golden tests
-Done when: `vsh_clavier`, `vsh_steiber`, `phi_density`, `phi_neutron`, `litho_mn` existen, golden-tested, y entran al registry; hay comparación multi-método de Vsh (sección 13).
-- [ ] Métodos nuevos (src/petrophysics/vsh.py, phie.py, lithology.py) + registry
-- [ ] Helper de comparación multi-método de Vsh
-- [ ] Golden tests por método (tests/)
+### Phase R3 — Fórmulas faltantes del catálogo 02 + golden tests (COMPLETED)
+Done when: `vsh_clavier`, `vsh_steiber`, `phi_density`, `phi_neutron` existen, golden-tested, y entran al registry; hay comparación multi-método de Vsh (sección 13). `litho_mn` se difiere a R4 (crossplot [MODELO], requiere DT).
+- [x] `vsh_clavier`, `vsh_steiber` (vsh.py); `phi_density`, `phi_neutron` (phie.py) + registry + dispatch (2026-06-28)
+- [x] `vsh_method_comparison` + sección `_vsh` (spec 13) cableada en modo fijo (2026-06-28)
+- [x] Golden tests por método + test de la sección de comparación (2026-06-28)
+- ~~litho_mn~~ (diferido a R4: crossplot [MODELO], requiere DT)
 
 ### Phase R4 — Métodos [MODELO] de profundidad + sus secciones
 Done when: permeabilidad, derivados, electrofacies, rock typing y crossplots extra existen como tools seleccionables, cada uno respaldado por tool_result, con su sección opcional.

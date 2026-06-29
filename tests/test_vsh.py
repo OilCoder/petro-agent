@@ -85,3 +85,56 @@ def test_vsh_linear_overestimates_vs_larionov():
 def test_vsh_linear_invalid_baseline_raises():
     with pytest.raises(ValueError):
         vsh_linear(GR, 150.0, 10.0)
+
+
+# --- Clavier / Steiber (non-linear, R3) ---
+from src.petrophysics.vsh import vsh_clavier, vsh_steiber  # noqa: E402
+
+
+def test_vsh_clavier_endpoints():
+    out = vsh_clavier(np.array([20.0, 120.0]), 20.0, 120.0)
+    assert abs(out[0]) < 1e-9 and abs(out[1] - 1.0) < 1e-9
+
+
+def test_vsh_steiber_endpoints():
+    out = vsh_steiber(np.array([20.0, 120.0]), 20.0, 120.0)
+    assert abs(out[0]) < 1e-9 and abs(out[1] - 1.0) < 1e-9
+
+
+def test_vsh_clavier_bounds_and_monotonic():
+    gr = np.linspace(20.0, 120.0, 11)
+    out = vsh_clavier(gr, 20.0, 120.0)
+    assert np.all((out >= 0.0) & (out <= 1.0))
+    assert np.all(np.diff(out) >= -1e-12)
+
+
+def test_vsh_steiber_below_linear_midrange():
+    # Steiber reads below the linear index at mid-range (IGR=0.5 -> 0.5/2 = 0.25)
+    out = vsh_steiber(np.array([70.0]), 20.0, 120.0)
+    assert abs(out[0] - 0.25) < 1e-9
+
+
+def test_vsh_nonlinear_nan_passthrough():
+    assert np.isnan(vsh_clavier(np.array([np.nan]), 20.0, 120.0)[0])
+    assert np.isnan(vsh_steiber(np.array([np.nan]), 20.0, 120.0)[0])
+
+
+def test_vsh_nonlinear_bad_bounds_raise():
+    with pytest.raises(ValueError):
+        vsh_clavier(np.array([50.0]), 100.0, 100.0)
+    with pytest.raises(ValueError):
+        vsh_steiber(np.array([50.0]), 100.0, 100.0)
+
+
+def test_vsh_method_comparison_keys_and_clean_zero():
+    from src.petrophysics.vsh import vsh_method_comparison
+
+    cmp = vsh_method_comparison(np.array([20.0, 20.0]), 20.0, 120.0)
+    assert set(cmp) == {
+        "vsh_larionov_old",
+        "vsh_larionov_tertiary",
+        "vsh_linear",
+        "vsh_clavier",
+        "vsh_steiber",
+    }
+    assert all(abs(v) < 1e-9 for v in cmp.values())  # all methods read 0 in clean sand

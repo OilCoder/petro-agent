@@ -106,6 +106,19 @@ def test_r2_sections_degrade_when_data_absent():
     assert "needs the RHOB+NPHI" in md  # lithology, no EDA digest
 
 
+def test_vsh_comparison_section_renders_with_selection():
+    ledger = {
+        **LEDGER,
+        "run": dict(LEDGER["run"]),
+        "vsh_comparison": {
+            "methods": {"vsh_larionov_old": 0.15, "vsh_linear": 0.30},
+            "selected": "vsh_larionov_old",
+        },
+    }
+    md = compose_report(ledger, {"optional_sections": []}, FREE, _valid_graph())
+    assert "Shale volume (Vsh)" in md and "vsh_larionov_old" in md and "✓" in md
+
+
 def test_invalid_graph_blocks_in_guided():
     g = MethodologyGraph(mode=GUIDED, model="m")
     g.add("decision", {"rationale": "Sw is 0.33 here"})  # numeric literal -> invalid

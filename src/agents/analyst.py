@@ -20,6 +20,7 @@ from src.agents.report_compose import heuristic_section_plan
 from src.agents.tool_dispatch import dispatch, validate_plan
 from src.eda import explore
 from src.petrophysics.registry import available_methods
+from src.petrophysics.vsh import vsh_method_comparison
 from src.validators.physical import cross_tool_consistency
 
 VERSION = "0.1.0"
@@ -123,6 +124,20 @@ def run_analyst(
     graph = MethodologyGraph(mode=mode, model=model)
     digest = build_eda_digest(ctx)
     ledger.setdefault("run", {})["eda"] = digest
+
+    # Deterministic multi-method Vsh comparison (the FIXED-floor section 13); the selected
+    # method is the engine's variant, never the LLM's authored number.
+    gr = ctx["curves"].get("GR")
+    if gr is not None:
+        params = ledger.get("parameters", {})
+        gmin = params.get("gr_min", {}).get("value", 20.0)
+        gmax = params.get("gr_max", {}).get("value", 120.0)
+        variant = ledger["run"].get("variant", "old_rocks")
+        selected = "vsh_larionov_tertiary" if variant == "tertiary" else "vsh_larionov_old"
+        ledger["vsh_comparison"] = {
+            "methods": vsh_method_comparison(gr, gmin, gmax),
+            "selected": selected,
+        }
     # one observation node per surfaced EDA finding (makes exploration_coverage meaningful)
     for tool, finding in _eda_findings(digest):
         graph.add(

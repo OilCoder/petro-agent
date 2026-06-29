@@ -124,6 +124,12 @@ def _run_porosity_method(
             phi_sh_d=_pv(ledger, "phi_sh_d", 0.0),
             phi_sh_n=_pv(ledger, "phi_sh_n", 0.0),
         )
+    elif method_id == "phi_density":
+        arr = spec.fn(
+            curves["RHOB"], _pv(ledger, "rho_ma", 2.71), _pv(ledger, "rho_fl", 1.0), phie_max
+        )
+    elif method_id == "phi_neutron":
+        arr = spec.fn(curves["NPHI"], phie_max)
     else:  # sonic: matrix/fluid transit times from a vetted preset, never the LLM
         preset = MATRIX_PRESETS[args.get("matrix_preset", "limestone")]
         if method_id == "phi_sonic_wyllie":

@@ -487,6 +487,23 @@ def _rw(ledger: dict[str, Any]) -> str:
     return "\n".join(rows) + "\n"
 
 
+def _vsh(ledger: dict[str, Any]) -> str:
+    cmp = ledger.get("vsh_comparison") or {}
+    methods = cmp.get("methods") or {}
+    if not methods:
+        return "## Shale volume (Vsh)\n\n_Not computed — no GR curve for the comparison._\n"
+    selected = cmp.get("selected", "—")
+    rows = [
+        "## Shale volume (Vsh)\n",
+        "Mean Vsh by method (selection is the engine's; the LLM authors no number):",
+        "| Method | Mean Vsh | Selected |",
+        "|---|---|---|",
+    ]
+    for m, v in methods.items():
+        rows.append(f"| {m} | {_fmt(v, 3)} | {'✓' if m == selected else ''} |")
+    return "\n".join(rows) + "\n"
+
+
 def _limitations(ledger: dict[str, Any]) -> str:
     prov = ledger.get("run", {}).get("curve_provenance", {})
     missing = [c for c in _STD_CURVES if c not in prov]
