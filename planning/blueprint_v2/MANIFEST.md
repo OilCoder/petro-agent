@@ -16,7 +16,7 @@ sobre `planning/VISION_AGENTE_ANALISTA.md`.
 - [x] 02_formula_library.md (catálogo de métodos vetados por propiedad + registry + firmas) — drafted 2026-06-26
 - [x] 03_methodology_graph.md (schema, persistencia, render, métricas comparativas) — drafted 2026-06-26
 - [x] 04_evaluation_per_model.md (reviewer same-model + score objetivo/cualitativo + leaderboard) — drafted 2026-06-26
-- [x] 10_complete_report_spec.md (capítulos del informe completo: pozo + capítulo de campo, solo listas) — drafted 2026-06-28
+- [x] 10_complete_report_spec.md (informe completo LAS-only, técnico, 36 caps etiquetados [FIJO]/[MODELO]) — drafted 2026-06-28
 
 ## Decisions (usuario, 2026-06-26)
 - 2026-06-26: **Invariante v2** = librería vetada; el agente elige/parametriza pero NO escribe matemática

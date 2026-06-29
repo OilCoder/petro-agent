@@ -1,119 +1,195 @@
-# Complete Petrophysical Report — Chapter Spec (v2 target)
+# Informe Petrofísico Completo desde LAS — Spec (v2, experimento LLM)
 
-Listing only: chapter/unit names and what each must contain. No explanations.
-Scope: per-well report (ch. 0–17, 19–20) + a per-field chapter (ch. 18).
+Propósito del proyecto: medir si un LLM local puede redactar informes petrofísicos, y con
+qué profundidad. Esta spec define un informe **completo pero acotado a lo técnico** y
+**derivable SOLO de archivos LAS** (única entrada, como en `data/`).
 
-## 0. Cover / metadata
-- Well UWI, field, operator, country/basin
-- Log date, service company, run number
-- Engine + library versions, config hash (SHA-256), git SHA
-- Model + model_digest, generation mode (guided/free)
-- "No human in the per-report loop" statement
+Reglas de alcance:
+- Solo contenido TÉCNICO. Sin historia de campo, sin control documental/aprobaciones.
+- Análisis que requieren datos no provistos (núcleo, mud log, pruebas de presión, producción,
+  completamiento, tops de formación) NO se inventan: se nombran en Limitaciones (cap. 34).
+- El informe se ADAPTA a las curvas disponibles por pozo (algunos solo GR; otros GR/RHOB/NPHI/RT).
+- Sin tops en el LAS → se usa zonación COMPUTADA por profundidad, no por formación.
 
-## 1. Executive summary
-- Headline rock story (Vsh / PHIE / Sw)
-- Net pay as P10/P50/P90 range
-- Confidence tier (FIRM / QUALIFIED / BRACKETED)
-- Abstention banner when the run did not converge
-- Dominant uncertainty driver + single highest-leverage next action
+Leyenda: **[FIJO]** = todo modelo debe producirlo (piso comparable) · **[MODELO]** = decisión
+del modelo (señal de profundidad/creatividad). La asignación es una **propuesta** a fijar por
+el usuario antes de cablearla en `report_compose`.
 
-## 2. Well & data inventory
-- Curve list (raw mnemonic → canonical) with units
-- Depth interval, sampling step, null value
-- Missing / aliased curves
-- Fallbacks taken (with reason)
+## 0. Metadatos y procedencia  [FIJO]
+- UWI, ubicación/coordenadas (del header LAS), fecha de registro, compañía de servicio
+- Intervalo registrado, paso de muestreo, valor nulo
+- Versiones de motor/librería, config hash (SHA-256), git SHA, modelo + model_digest, modo
 
-## 3. Log quality control (QC)
-- Bad-hole / washout summary (caliper vs bit)
-- Spike removal, hard-range masks, range warnings (counts)
-- Unit conversions applied (counts)
-- GR baseline check
-- Per-curve histogram stats
-- Curves degraded / excluded with reason
+## 1. Resumen ejecutivo  [FIJO]
+- Alcance, pozos/intervalos evaluados, calidad general de datos
+- Resultados clave (Vsh, PHIE, Sw), net pay como rango P10/P50/P90
+- Tier de confianza + banner de abstención si no converge
+- Incertidumbre dominante, conclusión y recomendación de mayor palanca
 
-## 4. Environmental corrections
-- Corrections applied (borehole, mud, temperature) + source
-- Corrections NOT applied (explicit) + impact note
+## 2. Objetivo y alcance técnico  [MODELO]
+- Objetivo del análisis, alcance, supuestos, entregables
 
-## 5. Lithology & mineralogy
-- Density-neutron crossplot nearest-lithology call
-- Matrix assumption (rho_ma) + source
-- Mineral / gas-crossover flags when detected
+## 3. Inventario de datos (desde LAS)  [FIJO]
+- Archivos LAS, pozos, curvas por pozo (mnemónico→canónico) con unidades
+- Cobertura en profundidad, paso, nulos; ¿coordenadas presentes?
+- Datos NO disponibles (sin tops/núcleo/presión/producción)
 
-## 6. Shale volume (Vsh)
-- Method selected (Larionov old / tertiary / linear) + rationale
-- GR endpoints (gr_min / gr_max) + provenance
-- Vsh summary stats
+## 4. QC de archivos LAS  [FIJO]
+- Formato/versión, header, lista de curvas, unidades, nombres no estándar
+- Curvas duplicadas/constantes, valores físicamente imposibles, nulos, paso
 
-## 7. Porosity
-- Method(s): density-neutron; sonic (Wyllie / RHG) when DT present
-- Fluid / matrix parameters + provenance, PHIE cap
-- Total vs effective porosity (shale-corrected)
-- Summary stats
+## 5. Estandarización  [FIJO]
+- Homologación de mnemónicos y unidades, conversiones
+- Curvas principales/auxiliares/descartadas, base de datos final
 
-## 8. Water saturation
-- Model(s): Archie / Simandoux / Indonesia + selection rationale
-- a, m, n, Rw, Rsh + provenance (data-driven vs default)
-- Sw summary stats
-- Pickett-plot consistency note
+## 6. QC de registros por curva  [FIJO]
+- Por curva disponible: GR, resistividad (prof/media/somera), SP, caliper, densidad,
+  neutrón, sónico, PEF
+- Washouts (caliper vs bit), gas effect, ciclos saltados, zonas de mala lectura
+- Flags de calidad por curva e intervalo
 
-## 9. Permeability (when estimable)
-- Method (e.g. PHIE-based transform) + caveat
-- Explicit "not estimated" + reason when no calibration
+## 7. Preparación de datos  [FIJO]
+- Nulos, outliers, despike, interpolación controlada, recorte de inválidos
+- Corrección por borehole (si hay caliper); base interpretativa maestra
 
-## 10. Cutoffs & pay criteria
-- Vsh / PHIE / Sw cutoffs + provenance
-- Net sand → net reservoir → net pay definition chain
+## 8. Definición de intervalos  [FIJO]
+- Intervalo total / válido / excluido (baja calidad o incompleto)
+- Zonación COMPUTADA por profundidad (no hay tops de formación en LAS)
 
-## 11. Net pay & zonation
-- Net pay P10/P50/P90, NTG, gross interval
-- Per-zone table (top / base / net pay / avg PHIE / avg Sw / avg Vsh)
-- Merge tolerance; thickest-N shown, full set in ledger
-- Per-zone net pay (never a stacked total)
+## 9. Metodología petrofísica  [FIJO]
+- Flujo, curvas usadas, parámetros (matriz/fluido/temperatura/Rw)
+- Parámetros de Archie, criterios de corte
+- Métodos seleccionados vs alternativos, flujo de QC interpretativo
 
-## 12. Uncertainty & sensitivity
-- Monte Carlo P10/P50/P90 (realizations, seed)
-- One-at-a-time parameter swing table
-- Dominant uncertainty driver
-- "Not computed" path when MC unavailable
+## 10. Análisis de curvas
+- 10.1 Gamma ray: baselines limpio/arcilloso, IGR  [FIJO]
+- 10.2 Resistividad: prof/media/somera, invasión, indicadores HC  [FIJO si RT]
+- 10.3 SP: baseline lutita, permeabilidad cualitativa, Rw preliminar  [MODELO]
+- 10.4 Caliper / calidad de hueco: washouts, efecto en curvas  [FIJO si caliper]
+- 10.5 Densidad-neutrón: separación, crossover, gas, litología  [FIJO si RHOB+NPHI]
+- 10.6 Sónico: porosidad sónica, ciclos saltados, compactación  [MODELO si DT]
+- 10.7 PEF / mineralogía: indicadores litológicos  [MODELO si PEF]
 
-## 13. Figures & cross-plots
-- Composite log, Pickett plot, density-neutron crossplot
-- Note: figures are deterministic renderings of computed numbers (not agent-interpreted)
+## 11. Interpretación litológica  [FIJO]
+- Por reglas y crossplots; clases litológicas; incertidumbre
+- (Comparación con núcleo/mud log: NO disponible)
 
-## 14. Methodology (decision graph)
-- Observation → decision → tool_call → section DAG (mermaid)
-- Tool calls with args + result hashes
-- Numeric-literal-free decision prose
-- Fallback cascade record (model_used, empty_returns, fell_back)
+## 12. Crossplots petrofísicos
+- RHOB-NPHI, Pickett  [FIJO]
+- Hingle, Buckles, M-N, litología, electrofacies  [MODELO]
 
-## 15. Parameters & provenance
-- Every parameter: value, unit, provenance tag, frozen citation
-- FIRM / QUALIFIED / BRACKETED legend
+## 13. Volumen de arcilla (Vsh)  [FIJO]
+- Métodos (lineal, Larionov joven/antiguo, Clavier, Steiber), comparación, seleccionado
+- Vsh bruto/corregido, por zona, incertidumbre
 
-## 16. Validator objections & interpretation QC
-- Bounds, Vsh-PHIE anticorrelation, rt-sw consistency, cross-tool consistency
-- Claim verifier result (keyed numbers + tone): PASS / FLAGS — listed, not hidden
-- Tools selected but not executed (signaled)
+## 14. Porosidad  [FIJO]
+- Densidad, neutrón, sónica; total, efectiva, corregida por arcilla
+- Por zona; incertidumbre; (calibración con núcleo: NO disponible)
 
-## 17. Comparison / benchmark (when reference exists)
-- Vs offset wells or accepted interpretation (e.g. VOLVE)
-- Per-model leaderboard: objective score vs qualitative, ranked by objective anchor
+## 15. Resistividad de agua (Rw)  [FIJO]
+- Fuentes (SP, Pickett, default); corrección a temperatura de formación
+- Salinidad equivalente; incertidumbre; sensibilidad de Sw a Rw
 
-## 18. Field chapter (multi-well rollup)
-- Per-well inventory table (status, tier, net pay P50, NTG, objections)
-- Cross-well statistics (mean / median / range) — never summed thickness
-- Field net-pay figure
-- Best reservoir quality / best data quality wells
-- Excluded wells with reason; N_loaded / N_excluded
+## 16. Saturación de agua  [FIJO núcleo + MODELO modelos]
+- Archie  [FIJO]
+- Simandoux / Indonesia / Dual Water / Waxman-Smits  [MODELO]
+- a, m, n, Rt; Sw total/efectiva, Sh, Sw irreducible; por zona; sensibilidad; incertidumbre
 
-## 19. Conclusions & recommendations
-- What is defensible vs bracketed
-- Highest-leverage data acquisition to reduce the dominant uncertainty
+## 17. Permeabilidad (log-based, sin calibrar)  [MODELO]
+- Timur / Coates / Wyllie-Rose; relación phi-k; calidad de roca
+- Caveat obligatorio: no calibrada (sin núcleo)
 
-## 20. Appendices
-- Ledger excerpt (traceability)
-- Completeness gate checklist
-- Glossary of symbols / terms
-- Frozen references / citations
-- Excluded files / runs
+## 18. Parámetros derivados  [MODELO]
+- BVW, HCPV, Phi-H, RQI, FZI, Winland R35, índice de calidad de reservorio
+
+## 19. Electrofacies  [MODELO]
+- Clustering no supervisado sobre curvas (sin etiquetas de núcleo)
+- Nº de facies, estadística, interpretación, reservorio vs no-reservorio
+
+## 20. Rock typing  [MODELO]
+- Tipos de roca petrofísicos/hidráulicos (sin calibrar), flow units
+
+## 21. Cutoffs petrofísicos  [FIJO]
+- Criterios net sand/reservoir/pay; cutoffs Vsh/PHIE/Sw + procedencia
+- Sensibilidad y justificación
+
+## 22. Net reservoir y net pay  [FIJO]
+- Gross, net sand, net reservoir, net pay, NTG
+- Por zona; acumulado; propiedades ponderadas por espesor; pay flags
+
+## 23. Contactos de fluidos (log-based, cualitativo)  [MODELO]
+- Indicadores OWC/GWC por Sw/resistividad; cualitativo
+- (Free water level por presión: NO disponible)
+
+## 24. Evaluación por pozo  [FIJO]
+- Resumen, curvas, calidad, zonas computadas, litología
+- Vsh/PHIE/Sw/k, net reservoir/pay, zonas candidatas, riesgos, recomendación
+
+## 25. Multi-pozo / campo  [MODELO]
+- Correlación por GR (sin tops), estadística cross-well (nunca sumas)
+- Mapa de campo desde coordenadas del header, overview de net pay, ranking
+
+## 26. Análisis estadístico  [MODELO]
+- Distribuciones por curva/pozo/zona, histogramas, boxplots, correlaciones, atípicos
+
+## 27. Incertidumbre y sensibilidad  [FIJO]
+- Monte Carlo P10/P50/P90 (realizaciones, seed)
+- Sensibilidad por parámetro (Rw/a/m/n/cutoffs), driver dominante
+- Escenarios bajo/base/alto
+
+## 28. Ranking de oportunidades  [MODELO]
+- Pozos/zonas/intervalos por calidad/pay/riesgo; score integrado
+
+## 29. Metodología (grafo de decisión)  [FIJO]
+- DAG observación→decisión→tool_call→sección (mermaid)
+- Tool calls con args + hashes; prosa de decisión sin números; registro del fallback
+
+## 30. Parámetros y procedencia  [FIJO]
+- Cada parámetro: valor, unidad, procedencia, cita congelada
+- Leyenda FIRM/QUALIFIED/BRACKETED
+
+## 31. Objeciones de validadores y verificación de afirmaciones  [FIJO]
+- Bounds, anticorrelación Vsh-PHIE, consistencia rt-sw, cross-tool
+- Resultado del claim verifier (números + tono): PASS/FLAGS, listado no escondido
+- Tools no ejecutados (señalizado)
+
+## 32. Conclusiones  [FIJO]
+- Por calidad de datos, litología, Vsh, PHIE, Sw, k, net reservoir/pay
+- Mejores pozos/zonas, riesgos
+
+## 33. Recomendaciones  [FIJO]
+- Datos a adquirir (núcleo/presión/producción/registros) para calibrar y reducir
+  la incertidumbre dominante
+
+## 34. Limitaciones del estudio  [FIJO]
+- Solo LAS: sin calibración de núcleo, sin presión (sin contactos verdaderos),
+  sin producción, sin mud logs, sin tops (zonación computada)
+- Disponibilidad de curvas por pozo; escala vertical/lateral
+
+## 35. Nomenclatura y referencias  [MODELO]
+- Abreviaturas, símbolos, unidades, referencias de fórmulas y software
+
+## 36. Apéndices y entregables  [MODELO]
+- Tabla de resultados por profundidad, tracks por pozo, crossplots, tabla de parámetros
+- Completeness gate, extracto del ledger, artefactos reproducibles
+
+---
+
+## El experimento — qué se fija y qué se mide
+
+**Piso FIJO** (obligatorio para todo modelo, andamiaje de honestidad + núcleo técnico, para
+comparar modelos en igualdad): cap. 0, 1, 3-9, 10.1, 11, 12 (RHOB-NPHI + Pickett), 13, 14, 15,
+16 (Archie), 21, 22, 24, 27, 29, 30, 31, 32, 33, 34. Mapean a `report_compose._MANDATORY_BODY`
++ el completeness gate.
+
+**Zona de DECISIÓN del modelo** (señal de profundidad/creatividad): cap. 2, 10.3/10.6/10.7,
+12 (Hingle/Buckles/M-N), 16 (Simandoux/Indonesia/DW/W-S), 17, 18, 19, 20, 23, 25, 26, 28, 35,
+36. Mapean a `OPTIONAL_SECTIONS` (modo libre), cada una respaldada por un tool_result real.
+
+**Qué medimos por modelo:** cuántas secciones [MODELO] eligió **y respaldó con números reales**
+(profundidad), qué combinaciones (creatividad), y la calidad (claim verifier PASS + riqueza del
+grafo de metodología + score same-model). El piso FIJO garantiza comparabilidad; la zona libre
+revela capacidad.
+
+> Nota: la asignación [FIJO]/[MODELO] es una propuesta. Se finaliza con el usuario antes de
+> cablearla en `src/agents/report_compose.py` (`_MANDATORY_BODY` / `OPTIONAL_SECTIONS`).

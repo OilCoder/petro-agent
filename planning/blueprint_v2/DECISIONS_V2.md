@@ -166,3 +166,20 @@ con alcance pozo (ch. 0–17, 19–20) + capítulo de campo (ch. 18). El informe
 se reconstruye como feature nativa de v2 más adelante (no como el `field_report.py` v1 sin cablear, que
 se eliminó). El spec es el blanco objetivo de esa reconstrucción y de futuras secciones (permeabilidad,
 correcciones ambientales, mineralogía) aún no implementadas.
+
+## DV2-17 (2026-06-28) — Spec del informe completo reorientada a LAS-only + framing del experimento
+**Decisión:** se reescribió `10_complete_report_spec.md` partiendo del hecho de que la ÚNICA entrada
+son archivos LAS (como en `data/`, 198 pozos KGS). Se acotó a contenido técnico (sin historia de
+campo ni control documental) y se intersectó con lo realmente derivable de un LAS: las curvas varían
+por pozo (algunos solo GR), hay coordenadas en el header (mapas posibles) pero NO hay tops (zonación
+computada, no por formación) ni núcleo/presión/producción/mud logs (out of scope, nombrados en
+Limitaciones, cap. 34). 36 capítulos técnicos, cada uno etiquetado **[FIJO]** (piso obligatorio para
+todo modelo) o **[MODELO]** (decisión del modelo, señal de profundidad/creatividad).
+**Por qué:** el propósito del proyecto es medir si un LLM puede redactar informes petrofísicos; el
+piso FIJO da comparabilidad entre modelos y la zona libre revela capacidad. La medición por modelo:
+nº de secciones [MODELO] elegidas Y respaldadas con números reales + claim verifier PASS + riqueza
+del grafo + score same-model.
+**Pendiente (decisión del usuario, luego follow-up de código):** fijar la asignación [FIJO]/[MODELO]
+y recién entonces cablearla en `report_compose._MANDATORY_BODY` / `OPTIONAL_SECTIONS`. Varios caps
+[FIJO] aún no los produce el motor (SP/Rw, comparación multi-método de Vsh, QC por curva, mapa de
+campo desde coords) — gaps de implementación futuros.
