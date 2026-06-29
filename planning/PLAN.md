@@ -63,21 +63,24 @@ Done when: `vsh_clavier`, `vsh_steiber`, `phi_density`, `phi_neutron` existen, g
 
 ### Phase R4 — Métodos [MODELO] de profundidad + sus secciones
 Done when: permeabilidad, derivados, electrofacies, rock typing y crossplots extra existen como tools seleccionables, cada uno respaldado por tool_result, con su sección opcional.
-- [ ] src/petrophysics/permeability.py (Timur/Coates, caveat sin-calibrar)
+- [ ] src/petrophysics/permeability.py (Timur/Coates, MODELO con caveat "no calibrada, sin núcleo" — DV2-18)
 - [ ] src/petrophysics/rock_quality.py (RQI/FZI/Winland)
 - [ ] src/petrophysics/electrofacies.py (clustering no supervisado)
 - [ ] Crossplots Hingle/Buckles/M-N (src/agents/log_plot.py)
 - [ ] Registry + dispatch + renderers opcionales + golden tests
 
-### Phase R5 — Informe de campo / multi-pozo (nativo v2)
-Done when: dado un set de LAS se produce un capítulo de campo (estadística cross-well sin sumas, correlación GR, mapa desde coordenadas del header, ranking).
-- [ ] Nuevo src/agents/field_report.py (reconstruido) + figura de campo
-- [ ] Tests de agregación (never-sum) + render
+### Phase R5 — Informe de campo / multi-pozo (nativo v2) — REQUERIDO (DV2-18)
+Done when: dado un set de LAS se produce un capítulo de campo (estadística cross-well sin sumas, correlación GR, mapa desde coordenadas del header, ranking). Diseño de experimento: 1 pozo fijo (ancla, todos los modelos lo analizan) + 2 pozos de libre elección del modelo.
+- [ ] Nuevo src/agents/field_report.py (reconstruido) + figura de campo + mapa desde LAT/LON del header
+- [ ] Selección 1-fijo + 2-libres (ancla determinista + elección del modelo)
+- [ ] Tests de agregación (never-sum) + render + selección
 
-### Phase R6 — Cablear el split [FIJO]/[MODELO] definitivo (requiere decisión del usuario)
+### Phase R6 — Cablear el split [FIJO]/[MODELO] definitivo
 Done when: `_MANDATORY_BODY` = [FIJO] acordados; `OPTIONAL_SECTIONS` + `OPTIONAL_REQUIRES` = [MODELO] con su tool de respaldo; modos respetan el split.
-- [!] Reparto [FIJO]/[MODELO] (BLOCKED 2026-06-28: pendiente decisión del usuario sobre el spec 10)
-- [ ] Poblar listas + ampliar catálogo del prompt del analista (src/agents/report_compose.py, analyst.py)
+- [x] Reparto [FIJO]/[MODELO] fijado por el usuario (DV2-18, 2026-06-28)
+- [x] Piso FIJO ya cableado en `_MANDATORY_BODY` (R2/R3)
+- [ ] Agregar cada sección [MODELO] a `OPTIONAL_SECTIONS` + `OPTIONAL_REQUIRES` conforme R4 la construya
+- [ ] Ampliar el catálogo del prompt del analista con las IDs nuevas (src/agents/analyst.py)
 
 ### Phase R7 — Verificación e2e + medición por modelo + docs
 Done when: corrida e2e produce el informe completo ([FIJO] todas + [MODELO] elegidas con número real); el leaderboard mide profundidad por modelo; specs/manifest/PLAN actualizados.

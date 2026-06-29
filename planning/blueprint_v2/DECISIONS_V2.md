@@ -183,3 +183,23 @@ del grafo + score same-model.
 y recién entonces cablearla en `report_compose._MANDATORY_BODY` / `OPTIONAL_SECTIONS`. Varios caps
 [FIJO] aún no los produce el motor (SP/Rw, comparación multi-método de Vsh, QC por curva, mapa de
 campo desde coords) — gaps de implementación futuros.
+
+## DV2-18 (2026-06-28) — Reparto [FIJO]/[MODELO] fijado por el usuario + diseño del experimento de campo
+**Decisión (usuario):** se confirma el reparto del spec 10.
+- **FIJO** (piso obligatorio, guiado y libre): metadatos, resumen, inventario, QC de LAS,
+  estandarización, QC por curva, preparación, intervalos, metodología, GR, **resistividad,
+  caliper, litología, Rw** (las analíticas borderline van FIJO — degradan si falta la curva),
+  Vsh (multi-método), porosidad, Sw-Archie, cutoffs, net pay/zonación, resultados, parámetros+
+  procedencia, incertidumbre, validadores+claim verifier, grafo, figuras, conclusiones,
+  recomendaciones, limitaciones.
+- **MODELO** (solo si hay tool_result real): objetivo narrativo, SP, sónico, PEF, crossplots
+  extra (Hingle/Buckles/M-N), Sw alternativos (Simandoux/Indonesia/DW/W-S), **permeabilidad
+  (Timur/Coates) con caveat obligatorio "no calibrada, sin núcleo"**, derivados (BVW/HCPV/RQI/
+  FZI), electrofacies, rock typing, contactos, multi-pozo/campo, estadística, ranking,
+  nomenclatura, apéndices extra.
+- **Informe por campo EN ALCANCE** (no diferido). Diseño del experimento de campo: **1 pozo
+  fijo (ancla, lo analizan todos los modelos → comparabilidad) + 2 pozos de libre elección del
+  modelo** (mide criterio de selección y profundidad a nivel de campo).
+**Efecto en el roadmap:** R6 desbloqueado (el FIJO ya está en `_MANDATORY_BODY`; las MODELO se
+agregan a `OPTIONAL_SECTIONS` conforme R4 las construya). R5 (field report) pasa de opcional a
+requerido, con el esquema 1-fijo+2-libres. Permeabilidad entra en R4 como MODELO con caveat.

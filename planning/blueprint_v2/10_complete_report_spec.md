@@ -191,5 +191,9 @@ comparar modelos en igualdad): cap. 0, 1, 3-9, 10.1, 11, 12 (RHOB-NPHI + Pickett
 grafo de metodología + score same-model). El piso FIJO garantiza comparabilidad; la zona libre
 revela capacidad.
 
-> Nota: la asignación [FIJO]/[MODELO] es una propuesta. Se finaliza con el usuario antes de
-> cablearla en `src/agents/report_compose.py` (`_MANDATORY_BODY` / `OPTIONAL_SECTIONS`).
+> **Reparto CONFIRMADO por el usuario (DV2-18, 2026-06-28).** Las analíticas borderline
+> (resistividad, caliper, litología, Rw) van **FIJO** (degradan si falta la curva). La
+> permeabilidad va **MODELO con caveat** "no calibrada (sin núcleo)". El **informe por campo
+> está en alcance** (no diferido), con diseño de experimento **1 pozo fijo (ancla comparable)
+> + 2 pozos de libre elección del modelo**. Se cablea en `report_compose._MANDATORY_BODY` /
+> `OPTIONAL_SECTIONS` conforme R4 construye cada método MODELO.
