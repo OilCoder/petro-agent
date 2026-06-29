@@ -159,6 +159,20 @@ def _run_rock_quality_method(
     return {"mean_value": _mean(arr), "index": method_id, "calibrated": False}
 
 
+def _run_facies_method(method_id: str, ctx: dict[str, Any], args: dict[str, Any]) -> dict[str, Any]:
+    curves = ctx["curves"]
+    cols = []
+    for name in ("GR", "RHOB", "NPHI"):
+        if name in curves:
+            cols.append(np.asarray(curves[name], dtype=float))
+    if "RT" in curves:
+        cols.append(np.log10(np.clip(np.asarray(curves["RT"], dtype=float), 1e-6, None)))
+    feats = np.column_stack(cols)
+    n_facies = int(args.get("n_facies", 4))
+    summary = METHOD_REGISTRY[method_id].fn(feats, n_facies=n_facies)
+    return {**summary, "method": method_id}
+
+
 def _run_lithology_method(
     method_id: str, ctx: dict[str, Any], args: dict[str, Any]
 ) -> dict[str, Any]:
@@ -187,6 +201,26 @@ def _run_eda(tool: str, ctx: dict[str, Any], args: dict[str, Any]) -> dict[str, 
     raise KeyError(tool)
 
 
+def _execute(
+    tool: str, ctx: dict[str, Any], ledger: dict[str, Any], args: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Run one whitelisted tool, routing by registry property. None = not executable."""
+    spec = METHOD_REGISTRY.get(tool)
+    if spec is None:
+        return _run_eda(tool, ctx, args) if tool in _EDA_TOOLS else None
+    runners = {
+        "sw": lambda: _run_sw_method(tool, ctx, args),
+        "vsh": lambda: _run_vsh_method(tool, ctx, ledger, args),
+        "porosity": lambda: _run_porosity_method(tool, ctx, ledger, args),
+        "lithology": lambda: _run_lithology_method(tool, ctx, args),
+        "permeability": lambda: _run_permeability_method(tool, ctx, args),
+        "rock_quality": lambda: _run_rock_quality_method(tool, ctx, args),
+        "facies": lambda: _run_facies_method(tool, ctx, args),
+    }
+    runner = runners.get(spec.property)
+    return runner() if runner else None
+
+
 def dispatch(
     plan: dict[str, Any], ctx: dict[str, Any], ledger: dict[str, Any], graph: MethodologyGraph
 ) -> list[str]:
@@ -195,45 +229,28 @@ def dispatch(
     Returns the list of ledger keys written. Invalid plans write nothing (caller treats the
     validate_plan issues as a MECHANICAL gate). The LLM produced no number here.
     """
-    issues = validate_plan(plan)
-    if issues:
+    if validate_plan(plan):
         return []
     ledger.setdefault("tool_results", {})
     written: list[str] = []
     for call in plan["tool_calls"]:
         tool = call["tool"]
         args = call.get("args", {}) if isinstance(call.get("args"), dict) else {}
-        spec = METHOD_REGISTRY.get(tool)
-        if spec is not None and spec.property == "sw":
-            result = _run_sw_method(tool, ctx, args)
-        elif spec is not None and spec.property == "vsh":
-            result = _run_vsh_method(tool, ctx, ledger, args)
-        elif spec is not None and spec.property == "porosity":
-            result = _run_porosity_method(tool, ctx, ledger, args)
-        elif spec is not None and spec.property == "lithology":
-            result = _run_lithology_method(tool, ctx, args)
-        elif spec is not None and spec.property == "permeability":
-            result = _run_permeability_method(tool, ctx, args)
-        elif spec is not None and spec.property == "rock_quality":
-            result = _run_rock_quality_method(tool, ctx, args)
-        elif tool in _EDA_TOOLS:
-            result = _run_eda(tool, ctx, args)
-        else:
-            # Unknown family: record the skip so a selected tool that produced no result is
-            # signaled in the ledger, never silently dropped.
+        result = _execute(tool, ctx, ledger, args)
+        if result is None:
+            # Not executable: record the skip so a selected tool is signaled, never dropped.
             ledger.setdefault("run", {}).setdefault("tools_not_executed", []).append(tool)
             continue
-        key = tool
         result_hash = _hash(result)
-        ledger["tool_results"][key] = {"value": result, "result_hash": result_hash}
+        ledger["tool_results"][tool] = {"value": result, "result_hash": result_hash}
         graph.add(
             "tool_call",
             {
                 "tool": tool,
                 "args": args,
-                "result_ledger_key": f"ledger:{key}",
+                "result_ledger_key": f"ledger:{tool}",
                 "result_hash": result_hash,
             },
         )
-        written.append(key)
+        written.append(tool)
     return written

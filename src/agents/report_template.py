@@ -566,6 +566,18 @@ def _rock_quality_section(ledger: dict[str, Any]) -> str:
     )
 
 
+def _electrofacies_section(ledger: dict[str, Any]) -> str:
+    v = ledger.get("tool_results", {}).get("electrofacies", {}).get("value", {})
+    if not v or not v.get("n_facies"):
+        return "## Electrofacies\n\n_Not computed — no electrofacies tool result._\n"
+    sizes = ", ".join(f"facies {k}: {n}" for k, n in (v.get("sizes") or {}).items())
+    return (
+        "## Electrofacies\n\n"
+        f"Unsupervised k-means on {v.get('n_samples', '—')} samples into {v['n_facies']} "
+        f"electrofacies (sample counts: {sizes}). Descriptive only — no core labels.\n"
+    )
+
+
 def _limitations(ledger: dict[str, Any]) -> str:
     prov = ledger.get("run", {}).get("curve_provenance", {})
     missing = [c for c in _STD_CURVES if c not in prov]

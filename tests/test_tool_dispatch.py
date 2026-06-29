@@ -133,6 +133,14 @@ def test_dispatch_runs_rock_quality():
     assert "mean_value" in val and val["calibrated"] is False
 
 
+def test_dispatch_runs_electrofacies():
+    plan = {"tool_calls": [{"tool": "electrofacies", "args": {"n_facies": 3}}]}
+    ledger: dict = {}
+    dispatch(plan, CTX, ledger, MethodologyGraph(mode="free", model="m"))
+    val = ledger["tool_results"]["electrofacies"]["value"]
+    assert "n_facies" in val and "sizes" in val
+
+
 def test_validate_plan_rejects_bad_matrix_preset():
     issues = validate_plan(
         {"tool_calls": [{"tool": "phi_sonic_wyllie", "args": {"matrix_preset": "ghost"}}]}
