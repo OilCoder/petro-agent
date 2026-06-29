@@ -47,6 +47,7 @@ def build_leaderboard(per_model: dict[str, dict[str, Any]]) -> dict[str, Any]:
                 "exploration_coverage": obj["exploration_coverage"],
                 "methods_selected": obj["methods_selected"],
                 "optional_sections": obj["optional_sections"],
+                "depth_backed": obj["depth_backed"],
                 "reasoning_depth": obj["reasoning_depth"],
                 "decisions_justified": obj["decisions_justified"],
                 "qual_mean": round(sum(qual.get(d, 3) for d in _QUAL_DIMS) / len(_QUAL_DIMS), 2),
@@ -54,7 +55,12 @@ def build_leaderboard(per_model: dict[str, dict[str, Any]]) -> dict[str, Any]:
         )
     ranked = sorted(
         rows,
-        key=lambda r: (r["honesty_ok"], r["decisions_justified"], r["exploration_coverage"]),
+        key=lambda r: (
+            r["honesty_ok"],
+            r["decisions_justified"],
+            r["exploration_coverage"],
+            r["depth_backed"],
+        ),
         reverse=True,
     )
     return {"rows": rows, "ranked": [r["model"] for r in ranked]}

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.agents.report_compose import OPTIONAL_REQUIRES
 from src.petrophysics.registry import METHOD_REGISTRY
 
 VERSION = "0.1.0"
@@ -44,10 +45,17 @@ def objective_score(ledger: dict[str, Any]) -> dict[str, Any]:
     methods = [n for n in tool_calls if n["payload"].get("tool") in METHOD_REGISTRY]
     justified = [d for d in decisions if str(d["payload"].get("rationale", "")).strip()]
 
+    # Depth = MODELO sections actually backed by a real tool result (not just requested).
+    tool_results = ledger.get("tool_results", {})
+    depth_backed = sum(
+        1 for tools in OPTIONAL_REQUIRES.values() if any(t in tool_results for t in tools)
+    )
+
     return {
         "exploration_coverage": round(len(observations) / available, 3),
         "methods_selected": len(methods),
         "optional_sections": len(analyst.get("optional_sections", [])),
+        "depth_backed": depth_backed,
         "reasoning_depth": _longest_path(nodes),
         "decisions_justified": round(len(justified) / len(decisions), 3) if decisions else 0.0,
         "honesty_ok": _honesty_ok(ledger),

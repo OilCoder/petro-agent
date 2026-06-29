@@ -61,31 +61,32 @@ Done when: `vsh_clavier`, `vsh_steiber`, `phi_density`, `phi_neutron` existen, g
 - [x] Golden tests por método + test de la sección de comparación (2026-06-28)
 - ~~litho_mn~~ (diferido a R4: crossplot [MODELO], requiere DT)
 
-### Phase R4 — Métodos [MODELO] de profundidad + sus secciones
+### Phase R4 — Métodos [MODELO] de profundidad + sus secciones (mostly done)
 Done when: permeabilidad, derivados, electrofacies, rock typing y crossplots extra existen como tools seleccionables, cada uno respaldado por tool_result, con su sección opcional.
-- [ ] src/petrophysics/permeability.py (Timur/Coates, MODELO con caveat "no calibrada, sin núcleo" — DV2-18)
-- [ ] src/petrophysics/rock_quality.py (RQI/FZI/Winland)
-- [ ] src/petrophysics/electrofacies.py (clustering no supervisado)
-- [ ] Crossplots Hingle/Buckles/M-N (src/agents/log_plot.py)
-- [ ] Registry + dispatch + renderers opcionales + golden tests
+- [x] src/petrophysics/permeability.py (Timur/Coates, MODELO con caveat — DV2-18) (2026-06-28)
+- [x] src/petrophysics/rock_quality.py (RQI/FZI/Winland) (2026-06-28)
+- [x] src/petrophysics/electrofacies.py (k-means numpy determinista) (2026-06-28)
+- [x] Registry + dispatch (familias permeability/rock_quality/facies) + secciones opcionales + golden tests (2026-06-28)
+- [ ] Crossplots Hingle/Buckles/M-N (src/agents/log_plot.py) — figuras, baja prioridad (sin visión); diferido
 
-### Phase R5 — Informe de campo / multi-pozo (nativo v2) — REQUERIDO (DV2-18)
+### Phase R5 — Informe de campo / multi-pozo (nativo v2) — REQUERIDO (DV2-18) (COMPLETED)
 Done when: dado un set de LAS se produce un capítulo de campo (estadística cross-well sin sumas, correlación GR, mapa desde coordenadas del header, ranking). Diseño de experimento: 1 pozo fijo (ancla, todos los modelos lo analizan) + 2 pozos de libre elección del modelo.
-- [ ] Nuevo src/agents/field_report.py (reconstruido) + figura de campo + mapa desde LAT/LON del header
-- [ ] Selección 1-fijo + 2-libres (ancla determinista + elección del modelo)
-- [ ] Tests de agregación (never-sum) + render + selección
+- [x] Nuevo src/agents/field_report.py + field_map_plot (LAT/LON ahora extraído por el loader) (2026-06-28)
+- [x] Selección 1-fijo + 2-libres (`select_wells`) (2026-06-28)
+- [x] Tests de agregación (never-sum) + render + selección (2026-06-28)
 
 ### Phase R6 — Cablear el split [FIJO]/[MODELO] definitivo
 Done when: `_MANDATORY_BODY` = [FIJO] acordados; `OPTIONAL_SECTIONS` + `OPTIONAL_REQUIRES` = [MODELO] con su tool de respaldo; modos respetan el split.
 - [x] Reparto [FIJO]/[MODELO] fijado por el usuario (DV2-18, 2026-06-28)
-- [x] Piso FIJO ya cableado en `_MANDATORY_BODY` (R2/R3)
-- [ ] Agregar cada sección [MODELO] a `OPTIONAL_SECTIONS` + `OPTIONAL_REQUIRES` conforme R4 la construya
-- [ ] Ampliar el catálogo del prompt del analista con las IDs nuevas (src/agents/analyst.py)
+- [x] Piso FIJO cableado en `_MANDATORY_BODY` (R2/R3 + Porosidad/Sw) (2026-06-28)
+- [x] Secciones [MODELO] en `OPTIONAL_SECTIONS` + `OPTIONAL_REQUIRES` (shaly/sonic/permeability/rock_quality/electrofacies) (2026-06-28)
+- [x] Catálogo de secciones opcionales expuesto al prompt del analista (src/agents/analyst.py) (2026-06-28)
 
-### Phase R7 — Verificación e2e + medición por modelo + docs
+### Phase R7 — Verificación e2e + medición por modelo + docs (mostly done)
 Done when: corrida e2e produce el informe completo ([FIJO] todas + [MODELO] elegidas con número real); el leaderboard mide profundidad por modelo; specs/manifest/PLAN actualizados.
-- [ ] Métrica de profundidad en el leaderboard (src/evaluation/leaderboard.py)
-- [ ] Regenerar informes de muestra; actualizar DECISIONS_V2/MANIFEST
+- [x] Métrica `depth_backed` (secciones [MODELO] respaldadas) en objective_score + leaderboard (2026-06-28)
+- [x] E2E determinista: modelo elige Simandoux+permeabilidad+rock_quality+electrofacies → 4 secciones con número real, depth_backed=4, claim_verifier PASS (2026-06-28)
+- [ ] Regenerar los 2 informes de muestra con Ollama (requiere modelos levantados)
 
 ## Conventions
 - Cada fórmula nueva entra al registry SOLO con golden test (bounds, monotonía, caso analítico, NaN passthrough).
