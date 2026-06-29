@@ -71,15 +71,39 @@ def test_optional_inserted_after_results():
         LEDGER, {"optional_sections": ["shaly_sand_saturation"]}, FREE, _valid_graph()
     )
     assert (
-        md.index("## 5. Results")
+        md.index("Results")
         < md.index("Shaly-sand saturation")
         < md.index("Uncertainty and sensitivity")
     )
 
 
 def test_numbering_is_sequential():
+    import re
+
     md = compose_report(LEDGER, {"optional_sections": []}, GUIDED, _valid_graph(GUIDED))
-    assert "## 1. Executive summary" in md and "## 2. Methodology" in md
+    assert "## 1. Executive summary" in md
+    nums = [int(n) for n in re.findall(r"^## (\d+)\. ", md, flags=re.MULTILINE)]
+    assert nums == list(range(1, len(nums) + 1))  # 1..N, no gaps
+
+
+def test_r2_mandatory_sections_present():
+    md = compose_report(LEDGER, {"optional_sections": []}, FREE, _valid_graph())
+    for title in (
+        "Data inventory",
+        "LAS quality control",
+        "Standardization",
+        "Interval definition",
+        "Gamma-ray analysis",
+        "Water resistivity (Rw)",
+        "Limitations",
+    ):
+        assert title in md
+
+
+def test_r2_sections_degrade_when_data_absent():
+    md = compose_report(LEDGER, {"optional_sections": []}, FREE, _valid_graph())
+    assert "Not computed — no resistivity" in md  # no RT in curve_provenance
+    assert "needs the RHOB+NPHI" in md  # lithology, no EDA digest
 
 
 def test_invalid_graph_blocks_in_guided():

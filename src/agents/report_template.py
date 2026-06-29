@@ -315,6 +315,190 @@ def _conclusions(narrative: str) -> str:
     return f"## 8. Conclusions\n\n{body}"
 
 
+# ----------------------------------------
+# R2 — LAS-only [FIJO] sections (renderer-only; data already in the ledger/eda)
+# ----------------------------------------
+
+_STD_CURVES = ("GR", "RHOB", "NPHI", "RT", "SP", "DT", "PEF", "CALI", "DCAL")
+
+
+def _fmt_kv(d: Any) -> str:
+    """Render a small dict as compact key=value pairs (for EDA digest summaries)."""
+    if not isinstance(d, dict):
+        return str(d)
+    return ", ".join(f"{k}={v}" for k, v in d.items())
+
+
+def _data_inventory(ledger: dict[str, Any]) -> str:
+    run = ledger.get("run", {})
+    wm = run.get("well_metadata", {})
+    prov = run.get("curve_provenance", {})
+    curves = ", ".join(f"{c}←{m}" for c, m in sorted(prov.items())) or "—"
+    return (
+        "## Data inventory (from LAS)\n\n"
+        f"- Curves present (canonical ← raw): {curves}\n"
+        f"- Logged interval: {wm.get('depth_start_m', '—')}–{wm.get('depth_stop_m', '—')} m\n"
+        f"- Log date: {wm.get('log_date', '—')}\n"
+        f"- Service company: {wm.get('service_company', '—')} · Company: {wm.get('company', '—')}\n"
+        f"- Field: {wm.get('field', '—')}\n"
+        "- Not provided by LAS (out of scope): core, mud logs, pressure tests, production, "
+        "completion, formation tops.\n"
+    )
+
+
+def _las_qc(ledger: dict[str, Any]) -> str:
+    edits = ledger.get("edits", [])
+    rows = ["## LAS quality control\n", "| Edit type | Curve | Detail |", "|---|---|---|"]
+    for e in edits:
+        if e.get("count") is not None:
+            detail = f"count {e['count']}"
+        elif e.get("factor") is not None:
+            detail = f"factor {e['factor']}"
+        else:
+            detail = "—"
+        rows.append(f"| {e.get('type', '—')} | {e.get('curve', '—')} | {detail} |")
+    if not edits:
+        rows.append("| — | — | none |")
+    return "\n".join(rows) + "\n"
+
+
+def _standardization(ledger: dict[str, Any]) -> str:
+    prov = ledger.get("run", {}).get("curve_provenance", {})
+    conv = [e for e in ledger.get("edits", []) if e.get("type") == "unit_conversion"]
+    rows = [
+        "## Standardization\n",
+        "Raw mnemonics mapped to canonical curve names:",
+        "| Canonical | Raw mnemonic |",
+        "|---|---|",
+    ]
+    for c, m in sorted(prov.items()):
+        rows.append(f"| {c} | {m} |")
+    if not prov:
+        rows.append("| — | — |")
+    if conv:
+        rows.append(
+            "\nUnit conversions: "
+            + ", ".join(f"{e.get('curve')}×{e.get('factor')}" for e in conv)
+            + "."
+        )
+    return "\n".join(rows) + "\n"
+
+
+def _curve_qc(ledger: dict[str, Any]) -> str:
+    eda = ledger.get("run", {}).get("eda", {})
+    if not eda:
+        return "## Per-curve log QC\n\n_Not computed — EDA digest not available._\n"
+    rows = ["## Per-curve log QC\n"]
+    gb = eda.get("gr_baseline") or eda.get("gr_baseline_check")
+    if gb:
+        rows.append(f"- GR baseline: {_fmt_kv(gb)}")
+    if eda.get("badhole"):
+        rows.append(f"- Bad-hole: {_fmt_kv(eda['badhole'])}")
+    if eda.get("low_resistivity"):
+        rows.append(f"- Low-resistivity: {_fmt_kv(eda['low_resistivity'])}")
+    if len(rows) == 1:
+        rows.append("_No per-curve flags surfaced._")
+    return "\n".join(rows) + "\n"
+
+
+def _data_prep(ledger: dict[str, Any]) -> str:
+    by_type: dict[str, int] = {}
+    for e in ledger.get("edits", []):
+        t = e.get("type", "?")
+        by_type[t] = by_type.get(t, 0) + 1
+    summary = ", ".join(f"{t}: {n}" for t, n in sorted(by_type.items())) or "none"
+    return f"## Data preparation\n\nEdits applied before compute (by type): {summary}.\n"
+
+
+def _intervals(ledger: dict[str, Any]) -> str:
+    s = ledger.get("summary", {})
+    wm = ledger.get("run", {}).get("well_metadata", {})
+    nz = s.get("n_zones_raw")
+    return (
+        "## Interval definition\n\n"
+        f"- Logged interval: {wm.get('depth_start_m', '—')}–{wm.get('depth_stop_m', '—')} m\n"
+        f"- Gross evaluated interval: {_fmt(s.get('gross_m'), 1)} m\n"
+        f"- Computed net-pay runs (pre-merge): {nz if nz is not None else '—'}\n"
+        "- Zonation is computed by depth (no formation tops in LAS).\n"
+    )
+
+
+def _gr_analysis(ledger: dict[str, Any]) -> str:
+    p = ledger.get("parameters", {})
+    gmin = p.get("gr_min", {}).get("value")
+    gmax = p.get("gr_max", {}).get("value")
+    eda = ledger.get("run", {}).get("eda", {})
+    rows = [
+        "## Gamma-ray analysis\n",
+        f"- Clean baseline gr_min = {_fmt(gmin, 1)} API · shale gr_max = {_fmt(gmax, 1)} API",
+        "- Shale index IGR = (GR − gr_min)/(gr_max − gr_min), the basis for Vsh.",
+    ]
+    gb = eda.get("gr_baseline") or eda.get("gr_baseline_check")
+    if gb:
+        rows.append(f"- GR baseline check: {_fmt_kv(gb)}")
+    return "\n".join(rows) + "\n"
+
+
+def _resistivity_analysis(ledger: dict[str, Any]) -> str:
+    prov = ledger.get("run", {}).get("curve_provenance", {})
+    if "RT" not in prov:
+        return "## Resistivity analysis\n\n_Not computed — no resistivity curve (RT) present._\n"
+    lr = ledger.get("run", {}).get("eda", {}).get("low_resistivity")
+    body = (
+        f"Low-resistivity scan: {_fmt_kv(lr)}."
+        if lr
+        else "Resistivity present; no low-resistivity scan in the EDA digest."
+    )
+    return f"## Resistivity analysis\n\n{body}\n"
+
+
+def _caliper_quality(ledger: dict[str, Any]) -> str:
+    bh = ledger.get("run", {}).get("eda", {}).get("badhole")
+    if not bh:
+        return "## Caliper / hole quality\n\n_Not computed — no bad-hole summary available._\n"
+    return f"## Caliper / hole quality\n\nBad-hole summary (quality classes): {_fmt_kv(bh)}.\n"
+
+
+def _lithology(ledger: dict[str, Any]) -> str:
+    lit = ledger.get("run", {}).get("eda", {}).get("lithology")
+    if not lit:
+        return (
+            "## Lithology interpretation\n\n"
+            "_Not computed — needs the RHOB+NPHI density-neutron crossplot._\n"
+        )
+    return (
+        "## Lithology interpretation\n\n"
+        f"Nearest lithology (density-neutron numeric crossplot): {lit.get('nearest', '—')}. "
+        "Comparison with core/mud log: not available (LAS-only).\n"
+    )
+
+
+def _rw(ledger: dict[str, Any]) -> str:
+    p = ledger.get("parameters", {}).get("Rw", {})
+    swings = ledger.get("uncertainty", {}).get("sensitivity", {}).get("swings_m", {})
+    rw_swing = swings.get("Rw")
+    rows = [
+        "## Water resistivity (Rw)\n",
+        f"- Rw = {_fmt(p.get('value'), 4)} ohm-m · provenance: {p.get('provenance', '—')}",
+        "- Sourced by the engine (Pickett / SP / default); never authored by the LLM.",
+    ]
+    if rw_swing is not None:
+        rows.append(f"- Net-pay sensitivity to Rw: {_fmt(rw_swing, 1)} m swing.")
+    return "\n".join(rows) + "\n"
+
+
+def _limitations(ledger: dict[str, Any]) -> str:
+    prov = ledger.get("run", {}).get("curve_provenance", {})
+    missing = [c for c in _STD_CURVES if c not in prov]
+    return (
+        "## Limitations\n\n"
+        "- LAS-only study: no core calibration, no pressure tests (no true fluid contacts), "
+        "no production, no mud logs, no formation tops (zonation computed by depth).\n"
+        f"- Standard curves absent in this well: {', '.join(missing) or 'none'}.\n"
+        "- Results are uncalibrated; accuracy depends on data not provided.\n"
+    )
+
+
 def _appendix_ledger(ledger: dict[str, Any]) -> str:
     excerpt = {
         "net_pay_total_m": ledger.get("net_pay_total_m"),

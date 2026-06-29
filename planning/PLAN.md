@@ -48,11 +48,11 @@ Done when: el agente puede seleccionar y EJECUTAR métodos de porosity/vsh/litho
 - [x] Presets de matriz/fluido sónico por ID vetado (`MATRIX_PRESETS`, src/petrophysics/registry.py) (2026-06-28)
 - [x] Golden tests del dispatch por familia (tests/test_tool_dispatch.py) (2026-06-28)
 
-### Phase R2 — Secciones [FIJO] renderer-only (el dato ya existe en el ledger)
+### Phase R2 — Secciones [FIJO] renderer-only (el dato ya existe en el ledger) (COMPLETED)
 Done when: el informe incluye las secciones 3,4,5,6,7,8,10.1,10.2,10.4,11,15,34 desde datos ya presentes, con degradación honesta si falta una curva.
-- [ ] Renderers nuevos (src/agents/report_template.py)
-- [ ] Ampliar `_MANDATORY_BODY` + `_render_known` (src/agents/report_compose.py)
-- [ ] Tests de render por sección + degradación (tests/test_report_template.py)
+- [x] 12 renderers nuevos: data_inventory, las_qc, standardization, curve_qc, data_prep, intervals, gr_analysis, resistivity_analysis, caliper_quality, lithology, rw, limitations (src/agents/report_template.py) (2026-06-28)
+- [x] Ampliar `_MANDATORY_BODY` (9→21) + `_render_known` (src/agents/report_compose.py) (2026-06-28)
+- [x] Tests de presencia + degradación honesta (tests/test_report_compose.py) (2026-06-28)
 
 ### Phase R3 — Fórmulas faltantes del catálogo 02 + golden tests
 Done when: `vsh_clavier`, `vsh_steiber`, `phi_density`, `phi_neutron`, `litho_mn` existen, golden-tested, y entran al registry; hay comparación multi-método de Vsh (sección 13).
