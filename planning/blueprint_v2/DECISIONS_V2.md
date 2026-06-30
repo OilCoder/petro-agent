@@ -254,3 +254,25 @@ grafo) — el informe queda limpio sin pensar por el modelo. Mide el modelo PURO
 modelo+andamiaje); `wasted_steps` es una señal de competencia. Expuesto vía `objective_score.
 loop_wasted`. **Verificado:** e2e llama3.1 en el ancla → `wasted_steps=1, recomputes=1,
 fell_back=False`, secciones sin duplicados; suite verde (184 tests).
+
+## DV2-22 (2026-06-29) — OpenRouter como control de techo (instrumento, no runtime)
+**Problema:** el modelo local es inviable (qwen3:30b no entra en 16GB con el monitor 4K) o roza su
+techo (llama3.1:8b se estanca). No podemos cerrar la pregunta de fondo **"¿es el flujo o el modelo?"**
+sin correr el MISMO flujo con un modelo frontier.
+**Decisión (usuario, "Opción A"):** añadir un backend **OpenRouter** (OpenAI-compatible, una API key,
+modelos conmutables por string `vendor/model`) a `make_chat`. **Reconciliación con el invariante:** la
+nube es **instrumento de medición / control de techo**, NUNCA el runtime del informe-producto (que
+sigue local). Los LAS de Kansas son públicos → sin problema de privacidad. Un backend de nube = otra
+forma de fabricar el MISMO `ChatFn = (system, user) -> str`; consumidores, cascada
+`empty→fallback→deterministic`, leaderboard (clave = string del modelo) y `model_digest` (`"unknown"`
+para nube) no se tocan.
+**Diseño:** `make_chat(..., backend="auto")` enruta por `/` en el id (Ollama vs OpenRouter); override
+`backend="ollama"|"openrouter"` para forzar. **Semántica de error (integridad de la medición):** una
+falla de infra (sin API key, no-200, transporte) **corta fuerte** (`RuntimeError`) — NO se confunde
+con incapacidad del modelo; solo un completion 200-vacío devuelve `""` y fluye por la cascada como
+`empty_returns`. `temperature=0.0` + `seed` best-effort en nube (sin promesa bit-a-bit). `httpx` se
+hace dependencia explícita (ya transitiva vía ollama); sin SDK pesado.
+**Verificado:** `tests/test_client.py` (8 casos, sin red: dispatch, payload, no-200/transport/sin-key
+→ raise, 200-vacío → `""`); suite completa verde; mypy/ruff limpios. La corrida e2e de techo se
+dispara con `CEILING_MODEL=<id>` en `debug/gen_field_report.py` (cloud-only, sin fallback local que
+mezcle señal). Pendiente: ejecutarla con la key del usuario y leer las métricas del loop como veredicto.
