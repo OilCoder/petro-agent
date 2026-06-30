@@ -274,5 +274,11 @@ con incapacidad del modelo; solo un completion 200-vacío devuelve `""` y fluye 
 hace dependencia explícita (ya transitiva vía ollama); sin SDK pesado.
 **Verificado:** `tests/test_client.py` (8 casos, sin red: dispatch, payload, no-200/transport/sin-key
 → raise, 200-vacío → `""`); suite completa verde; mypy/ruff limpios. La corrida e2e de techo se
-dispara con `CEILING_MODEL=<id>` en `debug/gen_field_report.py` (cloud-only, sin fallback local que
-mezcle señal). Pendiente: ejecutarla con la key del usuario y leer las métricas del loop como veredicto.
+dispara con `CEILING_MODELS=<ids>` en `debug/gen_field_report.py` (cloud-only, sin fallback local que
+mezcle señal; informes a `outputs/v3` con prefijo `NN_`). Refinamiento posterior: retry acotado con
+backoff (2/5/10/20s) para 429/502/503 + transporte (pools free saturan), 401/404 siguen cortando.
+**Veredicto empírico (n=2 frontier):** nemotron-3-ultra-550b y nemotron-3-super-120b condujeron el
+loop limpio — selección `fell_back=False`, sin stall, sin wasted, `fell_back=False` en todo; super-120b
+hizo 1 recompute deliberado. Informes analíticos honestos (respetan abstención/tier). Contra el local
+(llama3.1 se estanca, qwen3 da 8 pasos/2 recomputes): **el techo era el MODELO, no el flujo** — el
+bucle agente está validado. (gpt-oss-120b/qwen3-next-80b: 429 persistente, infra, no medibles esta vez.)
