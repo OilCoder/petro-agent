@@ -120,13 +120,18 @@ def _report_outline(ledger: dict[str, Any], order: list[str]) -> list[str]:
 
 
 def observation_text(
-    ledger: dict[str, Any], valid: set[str], actions: list[str], order: list[str] | None = None
+    ledger: dict[str, Any],
+    valid: set[str],
+    actions: list[str],
+    order: list[str] | None = None,
+    last_obs: dict[str, Any] | None = None,
 ) -> str:
     """STATE digest + the report-in-progress (so the agent sees the document it is building).
 
     The agent reasons over summarized data (zone/distribution/point on request; never raw arrays)
     AND a compact outline of the sections built so far — concrete grounding for what to add or
-    refine and when to finish.
+    refine and when to finish. ``last_obs`` carries the result of the observation the agent just
+    requested, so a read (e.g. depth_quality) feeds the next decision instead of being discarded.
     """
     cal = ledger.get("calibration", {})
     computed = {
@@ -145,6 +150,7 @@ def observation_text(
     ]
     state = {
         "report_so_far": _report_outline(ledger, order or []),
+        "last_observation": last_obs or "none yet (call an observation to inspect the data)",
         "zone_of_interest": ledger.get("zone_of_interest", "full logged interval (not restricted)"),
         "baseline_complete": not stale,
         "computed": computed,
@@ -155,7 +161,7 @@ def observation_text(
         "hint": "look at report_so_far: add the optionals worth adding, then finish; recompute a "
         "core property only to change its method",
     }
-    return "STATE:\n" + json.dumps(state, indent=1, default=str)[:3500]
+    return "STATE:\n" + json.dumps(state, indent=1, default=str)[:4200]
 
 
 _OPTIONAL_TOOLS: dict[str, set[str]] = {
@@ -208,6 +214,13 @@ def _is_noop(action: str, method: str | None, ledger: dict[str, Any], ctx: dict[
         current = _current_method(PRODUCES[action], ledger)
         return current is not None and chosen == current
     return False
+
+
+def _obs_result(action: str, summary: dict[str, Any]) -> dict[str, Any] | None:
+    """The result to surface next turn if ``action`` was a read-only observation, else None."""
+    if action not in PRODUCES and action != "set_zone_of_interest":
+        return {"action": action, "result": summary}
+    return None
 
 
 def _default_next(valid: set[str], curves: set[str]) -> str | None:
@@ -263,11 +276,12 @@ def run_analyst_loop(
     chats = [(chat, model), (fallback_chat, fallback_model)]
     recent: list[str] = []
     stalled = False
+    last_obs: dict[str, Any] | None = None
     for _ in range(max_steps):
         actions = available_actions(
             valid, curves
         )  # offer everything; no-ops are measured, not hidden
-        obs = observation_text(ledger, valid, actions, order)
+        obs = observation_text(ledger, valid, actions, order, last_obs)
         choice, empty = _decide(obs, actions, valid, curves, chats)
         empty_returns += empty
         action = choice["action"]
@@ -291,6 +305,8 @@ def run_analyst_loop(
         _summary, valid = execute_step(
             action, ctx, ledger, valid, choice.get("method"), choice.get("args")
         )
+        # Feed an observation's result into the next decision (reads are no longer fire-and-forget).
+        last_obs = _obs_result(action, _summary) or last_obs
         graph.add(
             "tool_call",
             {
