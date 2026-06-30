@@ -125,11 +125,16 @@ def _make_openrouter_chat(model: str, seed: int) -> ChatFn:
                 last = f"transport: {e}"
             else:
                 if resp.status_code == 200:
-                    content = resp.json()["choices"][0]["message"]["content"]
-                    return str(content or "")
-                if resp.status_code not in OPENROUTER_RETRY_STATUS:
+                    data = resp.json()
+                    choices = data.get("choices")
+                    if choices:
+                        return str(choices[0]["message"].get("content") or "")
+                    # 200 carrying an error envelope (flaky free pool) — transient, retry
+                    last = f"200 without choices: {str(data)[:200]}"
+                elif resp.status_code not in OPENROUTER_RETRY_STATUS:
                     raise RuntimeError(f"OpenRouter HTTP {resp.status_code}: {resp.text[:200]}")
-                last = f"HTTP {resp.status_code}: {resp.text[:200]}"
+                else:
+                    last = f"HTTP {resp.status_code}: {resp.text[:200]}"
             if attempt < len(OPENROUTER_BACKOFFS):
                 time.sleep(OPENROUTER_BACKOFFS[attempt])
         raise RuntimeError(f"OpenRouter exhausted retries ({last})")

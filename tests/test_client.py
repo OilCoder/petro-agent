@@ -169,3 +169,25 @@ def test_client_openrouter_empty_content_returns_empty(monkeypatch):
     monkeypatch.setattr(httpx, "post", lambda url, **kw: _Resp(200, _completion("")))
     chat = make_chat(model="deepseek/deepseek-r1:free")
     assert chat("s", "u") == ""  # genuine empty flows into the agent cascade
+
+
+def test_client_openrouter_200_without_choices_retries(monkeypatch):
+    monkeypatch.setenv(OPENROUTER_API_KEY_ENV, "k")
+    monkeypatch.setattr("time.sleep", lambda _s: None)
+    # 200 carrying an error envelope (no choices), then a real completion
+    monkeypatch.setattr(
+        httpx,
+        "post",
+        _sequence(_Resp(200, {"error": {"code": 429}}), _Resp(200, _completion("ok"))),
+    )
+    chat = make_chat(model="deepseek/deepseek-r1:free")
+    assert chat("s", "u") == "ok"  # 200-without-choices is retried, not a crash
+
+
+def test_client_openrouter_200_without_choices_exhausts(monkeypatch):
+    monkeypatch.setenv(OPENROUTER_API_KEY_ENV, "k")
+    monkeypatch.setattr("time.sleep", lambda _s: None)
+    monkeypatch.setattr(httpx, "post", lambda url, **kw: _Resp(200, {"error": {"code": 429}}))
+    chat = make_chat(model="deepseek/deepseek-r1:free")
+    with pytest.raises(RuntimeError, match="exhausted"):
+        chat("s", "u")
