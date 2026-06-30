@@ -210,10 +210,12 @@ def observation_text(
         "baseline_complete": not stale,
         "report_so_far": _report_outline(ledger, order or []),
         "eda": ledger.get("run", {}).get("eda", {}),
-        "hint": "check diagnostics FIRST: if an objection flags an implausible value (e.g. PHIE "
-        "too high) or the well did not converge, consider restricting the zone "
-        "(set_zone_of_interest) or recomputing a core property with a better method. Then add the "
-        "optionals worth adding; finish.",
+        "hint": "a MECHANICAL objection MIGHT improve with ONE better method, or overburden with one "
+        "set_zone_of_interest — try that at most once. An IRREDUCIBLE objection is a DATA limit: "
+        "recomputing or re-zoning will NOT fix it, so do NOT retry for it. Once the core reflects "
+        "your chosen methods, ADD the optional analyses you judge useful (lithology, electrofacies, "
+        "permeability, rock_quality, derived_parameters — these characterize the rock and do NOT need "
+        "convergence), then finish.",
     }
     return "STATE:\n" + json.dumps(state, indent=1, default=str)[:5200]
 
