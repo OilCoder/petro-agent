@@ -349,14 +349,19 @@ def _data_inventory(ledger: dict[str, Any]) -> str:
 def _las_qc(ledger: dict[str, Any]) -> str:
     edits = ledger.get("edits", [])
     rows = ["## LAS quality control\n", "| Edit type | Curve | Detail |", "|---|---|---|"]
+    # Edits with a count/factor are informative (one row each); bare per-depth edits (e.g. each
+    # spike removal) are aggregated by type+curve so they don't flood the table with empty rows.
+    bare: dict[tuple[str, str], int] = {}
     for e in edits:
+        etype, curve = e.get("type", "—"), e.get("curve", "—")
         if e.get("count") is not None:
-            detail = f"count {e['count']}"
+            rows.append(f"| {etype} | {curve} | count {e['count']} |")
         elif e.get("factor") is not None:
-            detail = f"factor {e['factor']}"
+            rows.append(f"| {etype} | {curve} | factor {e['factor']} |")
         else:
-            detail = "—"
-        rows.append(f"| {e.get('type', '—')} | {e.get('curve', '—')} | {detail} |")
+            bare[(etype, curve)] = bare.get((etype, curve), 0) + 1
+    for (etype, curve), n in bare.items():
+        rows.append(f"| {etype} | {curve} | {n} edits |" if n > 1 else f"| {etype} | {curve} | — |")
     if not edits:
         rows.append("| — | — | none |")
     return "\n".join(rows) + "\n"
