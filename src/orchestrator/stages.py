@@ -15,22 +15,8 @@ from typing import Any
 import numpy as np
 
 from src.orchestrator.state import CONVERGED, DID_NOT_CONVERGE, PipelineState
-from src.petrophysics.lithology import (
-    estimate_matrix_density,
-    estimate_rw,
-    estimate_shale_points,
-)
+from src.orchestrator.steps import phie_step, sw_step, vsh_step
 from src.petrophysics.netpay import apply_cutoffs
-from src.petrophysics.phie import calc_phie
-from src.petrophysics.sw import calc_sw
-from src.petrophysics.vsh import (
-    OLD_ROCKS,
-    TERTIARY,
-    calc_vsh,
-    vsh_clavier,
-    vsh_linear,
-    vsh_steiber,
-)
 from src.validators.harness import run_validators
 from src.validators.objections import IRREDUCIBLE, MECHANICAL
 from src.validators.physical import net_pay_plausibility
@@ -50,92 +36,29 @@ def _safe_mean(values: Any) -> float:
     return float(np.nanmean(arr))
 
 
-def _vsh_by_method(
-    method_id: str | None, gr: np.ndarray, gr_min: float, gr_max: float, variant: str
-) -> np.ndarray:
-    """Compute Vsh with the agent-selected method id (vetted functions only), default = variant.
-
-    The LLM selects the ID; the number comes from the frozen function. Unknown/absent → the
-    engine's Larionov variant (the safe default), so a missing choice never breaks the chain.
-    """
-    if method_id == "vsh_linear":
-        return vsh_linear(gr, gr_min, gr_max)
-    if method_id == "vsh_clavier":
-        return vsh_clavier(gr, gr_min, gr_max)
-    if method_id == "vsh_steiber":
-        return vsh_steiber(gr, gr_min, gr_max)
-    if method_id == "vsh_larionov_tertiary":
-        return calc_vsh(gr, gr_min, gr_max, TERTIARY)
-    if method_id == "vsh_larionov_old":
-        return calc_vsh(gr, gr_min, gr_max, OLD_ROCKS)
-    return calc_vsh(gr, gr_min, gr_max, variant)
+_PARAM_KEYS = ("rho_fl", "rho_ma", "phie_max", "phi_sh_d", "phi_sh_n", "a", "m", "n", "Rw")
 
 
 def compute(state: PipelineState) -> dict[str, Any]:
-    """Run the three core deterministic computations with data-driven lithology.
+    """Run the three core computations by composing the shared discrete steps in default order.
 
-    Matrix density and the shale endpoints are derived from the curves (deterministic
-    parameter selection) so PHIE is effective porosity of the rock actually logged; the
-    regional defaults are the fallback when there is too little clean/shale rock.
+    The same ``vsh_step``/``phie_step``/``sw_step`` the agentic loop calls one at a time — so the
+    guided pipeline and the free loop produce identical numbers for the same method choices.
     """
     curves = state["curves"]
-    n = state["depth_m"].size
-    nan = np.full(n, np.nan)
-    rhob, nphi = curves.get("RHOB", nan), curves.get("NPHI", nan)
-    rho_fl = _pv(state, "rho_fl")
-
-    vsh = _vsh_by_method(
-        state.get("methods", {}).get("vsh"),
-        curves["GR"],
-        _pv(state, "gr_min"),
-        _pv(state, "gr_max"),
-        state["variant"],
+    p = {k: _pv(state, k) for k in _PARAM_KEYS}
+    methods = state.get("methods", {})
+    vsh, vsh_cal = vsh_step(
+        curves, _pv(state, "gr_min"), _pv(state, "gr_max"), state["variant"], methods.get("vsh")
     )
-
-    # Substep — deterministic parameter selection from the data (replaces dead compute agent)
-    rho_ma, ma_dd = estimate_matrix_density(rhob, vsh, default=_pv(state, "rho_ma"))
-    phi_sh_d, phi_sh_n, sh_dd = estimate_shale_points(
-        rhob,
-        nphi,
-        vsh,
-        rho_ma,
-        rho_fl,
-        _pv(state, "phi_sh_d"),
-        _pv(state, "phi_sh_n"),
-    )
-
-    phie = calc_phie(
-        rhob,
-        nphi,
-        rho_ma,
-        rho_fl,
-        _pv(state, "phie_max"),
-        vsh=vsh,
-        phi_sh_d=phi_sh_d,
-        phi_sh_n=phi_sh_n,
-    )
-    a, m, n = _pv(state, "a"), _pv(state, "m"), _pv(state, "n")
-    rw, rw_dd = estimate_rw(curves["RT"], phie, vsh, a, m, default=_pv(state, "Rw"))
-    sw = calc_sw(curves["RT"], phie, a, m, n, rw)
-    calibration = {
-        "rho_ma": {"value": rho_ma, "data_driven": ma_dd, "regional_default": _pv(state, "rho_ma")},
-        "phi_sh_d": {
-            "value": phi_sh_d,
-            "data_driven": sh_dd,
-            "regional_default": _pv(state, "phi_sh_d"),
-        },
-        "phi_sh_n": {
-            "value": phi_sh_n,
-            "data_driven": sh_dd,
-            "regional_default": _pv(state, "phi_sh_n"),
-        },
-        "Rw": {"value": rw, "data_driven": rw_dd, "regional_default": _pv(state, "Rw")},
-        "vsh_method": {
-            "value": state.get("methods", {}).get("vsh") or f"vsh_larionov_{state['variant']}",
-            "chosen_by_model": bool(state.get("methods", {}).get("vsh")),
-        },
+    phie, phie_cal = phie_step(curves, vsh, p, methods.get("porosity"))
+    sw, sw_cal = sw_step(curves, phie, vsh, p, methods.get("sw"))
+    return {
+        "vsh": vsh,
+        "phie": phie,
+        "sw": sw,
+        "calibration": {**vsh_cal, **phie_cal, **sw_cal},
     }
-    return {"vsh": vsh, "phie": phie, "sw": sw, "calibration": calibration}
 
 
 def validate(state: PipelineState) -> dict[str, Any]:
