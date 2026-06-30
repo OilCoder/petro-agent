@@ -333,6 +333,49 @@ def _exec_zone_of_interest(ctx, ledger, method, args, valid):  # noqa: ANN001
     }, nv
 
 
+def seed_baseline_sections(ledger: dict[str, Any], ctx: dict[str, Any]) -> None:
+    """Populate the [FIJO] Vsh/Porosity/Sw section keys from the pass-0 baseline.
+
+    Those floor sections only got set when the agent RECOMPUTED a property (via _exec_*), so in free
+    mode they rendered "Not computed" if the agent left the baseline as-is. Seed them from the
+    baseline ctx (idempotent: only fills a key when absent, so a later agent recompute overrides).
+    """
+    curves = ctx["curves"]
+    cal = ledger.setdefault("calibration", {})
+    p = ctx["params"]
+    if "GR" in curves and "vsh_comparison" not in ledger:
+        gmin, gmax = float(p["gr_min"].value), float(p["gr_max"].value)
+        ledger["vsh_comparison"] = {
+            "methods": vsh_method_comparison(curves["GR"], gmin, gmax),
+            "selected": cal.get("vsh_method", {}).get("value", f"vsh_larionov_{ctx['variant']}"),
+        }
+    if {"RHOB", "NPHI"} <= set(curves) and "porosity_comparison" not in ledger:
+        pf = _pf(ctx)
+        ledger["porosity_comparison"] = {
+            "methods": porosity_method_comparison(
+                curves.get("RHOB"),
+                curves.get("NPHI"),
+                pf["rho_ma"],
+                pf["rho_fl"],
+                pf["phie_max"],
+                vsh=ctx.get("vsh"),
+                phi_sh_d=pf["phi_sh_d"],
+                phi_sh_n=pf["phi_sh_n"],
+            ),
+            "selected": "phie_density_neutron",
+        }
+    if ctx.get("sw") is not None and "sw_summary" not in ledger:
+        pf = _pf(ctx)
+        ledger["sw_summary"] = {
+            "method": "sw_archie",
+            "mean_sw": _mean(ctx["sw"]),
+            "a": pf["a"],
+            "m": pf["m"],
+            "n": pf["n"],
+            "rw": cal.get("Rw", {}).get("value", pf["Rw"]),
+        }
+
+
 _COMPUTE_RUNNERS = {
     "compute_vsh": _exec_vsh,
     "compute_phie": _exec_phie,

@@ -85,6 +85,22 @@ def test_loop_measures_noop_as_wasted(tmp_path):
     assert al["wasted_steps"] == 1 and al["steps_taken"] == 1
 
 
+def test_loop_floor_sections_render_without_recompute(tmp_path):
+    ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
+    # agent finishes immediately (no recompute) — the [FIJO] Vsh/Porosity/Sw floor must still render
+    res = run_analyst_loop(ledger, ctx, "free", _scripted([{"action": "finish"}]), "m")
+    assert "vsh_comparison" in ledger and "porosity_comparison" in ledger and "sw_summary" in ledger
+    md = compose_report(
+        ledger,
+        res["section_plan"],
+        "free",
+        res["graph"],
+        {"executive_summary": "x", "conclusions": "y"},
+    )
+    assert "Not computed — no GR curve" not in md  # the floor sections render from the baseline
+    assert "Not computed — no RHOB/NPHI curve" not in md
+
+
 def test_loop_surfaces_diagnostics_and_populates_eda(tmp_path):
     from src.agents.analyst_loop import observation_text
     from src.agents.loop_actions import available_actions

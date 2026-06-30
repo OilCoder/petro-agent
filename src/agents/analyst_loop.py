@@ -14,7 +14,12 @@ import re
 from typing import Any
 
 from src.agents.client import ChatFn
-from src.agents.loop_actions import PRODUCES, available_actions, execute_step
+from src.agents.loop_actions import (
+    PRODUCES,
+    available_actions,
+    execute_step,
+    seed_baseline_sections,
+)
 from src.agents.methodology_graph import MethodologyGraph
 from src.eda.explore import build_eda_digest
 from src.validators.physical import cross_tool_consistency
@@ -235,18 +240,28 @@ def _current_method(prop: str, ledger: dict[str, Any]) -> Any:
     return None
 
 
-def _is_noop(action: str, method: str | None, ledger: dict[str, Any], ctx: dict[str, Any]) -> bool:
-    """A no-op: re-adding a done optional, or recomputing a core property with the SAME method.
+def _is_noop(
+    action: str,
+    method: str | None,
+    ledger: dict[str, Any],
+    ctx: dict[str, Any],
+    valid: set[str],
+) -> bool:
+    """A no-op: re-add a done optional, or recompute a VALID core property with the SAME method.
 
-    These are offered (not hidden) so the model's choice is measured; the loop skips + counts them
-    as wasted steps — a competence signal, not scaffolding that does the model's thinking.
+    Offered (not hidden) so the model's choice is measured; the loop skips + counts them as wasted
+    steps — a competence signal, not scaffolding that does the model's thinking. A STALE property
+    (invalidated by an upstream recompute) is never a no-op — it must be recomputed.
     """
     if action in _OPTIONAL_TOOLS and action in _done_optionals(ledger):
         return True
     if action in ("compute_vsh", "compute_phie", "compute_sw"):
+        prop = PRODUCES[action]
+        if prop not in valid:  # stale -> recomputing it is necessary, not wasted
+            return False
         default = _DEFAULT_METHOD.get(action) or f"vsh_larionov_{ctx['variant']}"
         chosen = method or default
-        current = _current_method(PRODUCES[action], ledger)
+        current = _current_method(prop, ledger)
         return current is not None and chosen == current
     return False
 
@@ -307,6 +322,8 @@ def run_analyst_loop(
     order = _seed_order(valid)
     # Build the EDA digest the agent reads (the loop path never populated it -> agent was blind).
     ledger.setdefault("run", {})["eda"] = build_eda_digest(ctx)
+    # Seed the [FIJO] Vsh/Porosity/Sw section keys from the baseline (render without a recompute).
+    seed_baseline_sections(ledger, ctx)
     steps_taken = recomputes = empty_returns = wasted = 0
     finished = False
 
@@ -331,7 +348,7 @@ def run_analyst_loop(
             stalled = True
             break
         # No-op (re-add a done optional / recompute same method): record + skip, keep report clean.
-        if _is_noop(action, choice.get("method"), ledger, ctx):
+        if _is_noop(action, choice.get("method"), ledger, ctx, valid):
             wasted += 1
             graph.add("decision", {"rationale": f"wasted no-op: {action}", "chosen": action})
             continue
