@@ -3,6 +3,8 @@
 import json
 import os
 
+import numpy as np
+
 from src.agents.analyst_loop import run_analyst_loop
 from src.agents.report_compose import compose_report
 from src.orchestrator.graph import run_pipeline
@@ -81,6 +83,29 @@ def test_loop_measures_noop_as_wasted(tmp_path):
     run_analyst_loop(ledger, ctx, "free", _scripted(script), "m")
     al = ledger["run"]["analyst_loop"]
     assert al["wasted_steps"] == 1 and al["steps_taken"] == 1
+
+
+def test_loop_set_zone_of_interest_restricts_and_recomputes(tmp_path):
+    ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
+    default_netpay = ledger["net_pay_total_m"]
+    depth = np.asarray(ctx["depth_m"], dtype=float)
+    top = float(depth[depth.size // 2])  # restrict to the bottom half
+    bottom = float(depth[-1])
+    script = [
+        {"action": "set_zone_of_interest", "args": {"top": top, "bottom": bottom}},
+        {"action": "finish"},
+    ]
+    run_analyst_loop(ledger, ctx, "free", _scripted(script), "m")
+    zoi = ledger["zone_of_interest"]
+    assert zoi["top_m"] == round(top, 1) and zoi["bottom_m"] == round(bottom, 1)
+    # curves above the zone are masked to NaN; the zone keeps real data
+    rhob = np.asarray(ctx["curves"]["RHOB"], dtype=float)
+    assert np.all(np.isnan(rhob[depth < top]))
+    assert np.any(np.isfinite(rhob[depth >= top]))
+    # the baseline was recomputed over the smaller interval -> less net pay
+    assert ledger["net_pay_total_m"] < default_netpay
+    al = ledger["run"]["analyst_loop"]
+    assert al["steps_taken"] == 1 and al["finished_by_agent"] is True
 
 
 def test_loop_stall_guard_stops_repetition(tmp_path):

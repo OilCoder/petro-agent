@@ -40,6 +40,10 @@ A BASELINE interpretation (vsh, phie, sw, net pay, uncertainty) is ALREADY compu
 methods. Each turn you see the STATE and the VALID ACTIONS; choose exactly ONE next action.
 
 Your job, in order:
+0. CHECK the interval first with the "depth_quality" observation. If the top is non-reservoir
+   OVERBURDEN (low RHOB / high frac_rhob_below_2 = not consolidated rock), restrict to the reservoir
+   with set_zone_of_interest, args {"top": <m>, "bottom": <m>} (recomputes the baseline over that
+   zone). Do this BEFORE refining methods.
 1. OPTIONALLY recompute a core property with a BETTER method for this rock (e.g. a shaly-sand Sw
    model when Vsh is high) — at most once per property, only when justified by the data.
 2. ADD the optional analyses that add value (permeability, rock_quality, electrofacies, lithology).
@@ -141,6 +145,7 @@ def observation_text(
     ]
     state = {
         "report_so_far": _report_outline(ledger, order or []),
+        "zone_of_interest": ledger.get("zone_of_interest", "full logged interval (not restricted)"),
         "baseline_complete": not stale,
         "computed": computed,
         "stale_or_pending": stale,

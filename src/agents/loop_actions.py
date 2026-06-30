@@ -67,6 +67,7 @@ DEPENDENCIES: dict[str, tuple[str, ...]] = {
 # Observation actions (read-only): the property/curve they need to be meaningful.
 _OBSERVE_NEEDS: dict[str, tuple[str, ...]] = {
     "zone_stats": ("netpay",),
+    "depth_quality": ("__curves__:RHOB",),  # RHOB-by-depth profile to spot overburden/bad data
     "percentiles": (),  # target chosen at call time (a present curve or computed property)
     "value_at": (),
     "extremes": (),
@@ -104,6 +105,8 @@ def available_actions(valid: set[str], curves: set[str]) -> list[str]:
                 ok = ok and need in valid
         if ok:
             actions.append(obs)
+    # Zone-of-interest selection is always physics-valid (you can always restrict the interval).
+    actions.append("set_zone_of_interest")
     actions.append("finish")
     return actions
 
@@ -260,6 +263,72 @@ def _exec_optional(action, ctx, ledger, method, args, valid):  # noqa: ANN001
     return {"property": action, "tool": tool, "result": result}, nv
 
 
+def depth_quality_profile(curves: dict[str, Any], depth: Any, n_bins: int = 8) -> dict[str, Any]:
+    """Binned RHOB-by-depth summary so the agent can spot overburden / bad data (read-only).
+
+    Returns per-bin depth range + median RHOB + fraction below 2.0 g/cc. Summarized, never the raw
+    array. Low RHOB / high ``frac_rhob_below_2`` flags intervals that are likely not reservoir.
+    """
+    depth_arr = np.asarray(depth, dtype=float)
+    n = depth_arr.size
+    rhob = np.asarray(curves.get("RHOB", np.full(n, np.nan)), dtype=float)
+    edges = np.linspace(float(depth_arr.min()), float(depth_arr.max()), n_bins + 1)
+    bins = []
+    for i in range(n_bins):
+        lo, hi = edges[i], edges[i + 1]
+        sel = (depth_arr >= lo) & (depth_arr <= hi)
+        rf = rhob[sel]
+        rf = rf[np.isfinite(rf)]
+        bins.append(
+            {
+                "top_m": round(float(lo), 0),
+                "bottom_m": round(float(hi), 0),
+                "rhob_p50": round(float(np.median(rf)), 3) if rf.size else None,
+                "frac_rhob_below_2": round(float(np.mean(rf < 2.0)), 2) if rf.size else None,
+            }
+        )
+    return {
+        "bins": bins,
+        "note": "RHOB ~2.4-2.7 = consolidated rock; low RHOB / high frac_rhob_below_2 = likely "
+        "overburden or bad data, not reservoir. Restrict with set_zone_of_interest(top,bottom).",
+    }
+
+
+def _exec_zone_of_interest(ctx, ledger, method, args, valid):  # noqa: ANN001
+    """Restrict the analysis to a depth interval, then recompute the baseline over it.
+
+    The agent chose the interval (analyst judgement); the engine masks curves outside it to NaN and
+    deterministically recomputes vsh→phie→sw→net pay→uncertainty over the zone (the LLM computes
+    nothing). Everything is invalidated then rebuilt, so all sections reflect the restricted rock.
+    """
+    depth = np.asarray(ctx["depth_m"], dtype=float)
+    ctx.setdefault(
+        "curves_full", {k: np.asarray(v, dtype=float).copy() for k, v in ctx["curves"].items()}
+    )
+    lo = float(args.get("top", depth.min()))
+    hi = float(args.get("bottom", depth.max()))
+    if lo > hi:
+        lo, hi = hi, lo
+    lo, hi = max(lo, float(depth.min())), min(hi, float(depth.max()))
+    mask = (depth >= lo) & (depth <= hi)
+    ctx["curves"] = {k: np.where(mask, v, np.nan) for k, v in ctx["curves_full"].items()}
+    ctx["zoi"] = (lo, hi)
+    ledger["zone_of_interest"] = {
+        "top_m": round(lo, 1),
+        "bottom_m": round(hi, 1),
+        "n_samples": int(mask.sum()),
+    }
+    nv: set[str] = set()
+    for runner in (_exec_vsh, _exec_phie, _exec_sw, _exec_cutoffs, _exec_uncertainty):
+        _s, nv = runner(ctx, ledger, None, {}, nv)
+    return {
+        "property": "zone_of_interest",
+        "top_m": round(lo, 1),
+        "bottom_m": round(hi, 1),
+        "n_samples": int(mask.sum()),
+    }, nv
+
+
 _COMPUTE_RUNNERS = {
     "compute_vsh": _exec_vsh,
     "compute_phie": _exec_phie,
@@ -284,6 +353,8 @@ def execute_step(
     point) — never raw arrays — leaving ``valid`` unchanged.
     """
     args = args or {}
+    if action == "set_zone_of_interest":
+        return _exec_zone_of_interest(ctx, ledger, method, args, valid)
     if action in _COMPUTE_RUNNERS:
         return _COMPUTE_RUNNERS[action](ctx, ledger, method, args, valid)
     if action in _OPTIONAL_RUNNERS:
@@ -300,6 +371,8 @@ def observe(
     if action == "zone_stats":
         zones = ledger.get("zones", [])[:15]
         return {"n_zones": len(ledger.get("zones", [])), "zones": zones}
+    if action == "depth_quality":
+        return depth_quality_profile(ctx.get("curves_full", ctx["curves"]), ctx["depth_m"])
     arr = _resolve_target(tgt, ctx)
     if action == "percentiles":
         finite = arr[np.isfinite(arr)] if arr is not None else np.array([])
@@ -330,6 +403,11 @@ def observe(
             "min": round(float(finite.min()), 4),
             "max": round(float(finite.max()), 4),
         }
+    return _observe_eda(action, ctx, tgt)
+
+
+def _observe_eda(action: str, ctx: dict[str, Any], tgt: Any) -> dict[str, Any]:
+    """EDA curve observations (histogram / density-neutron crossplot / low-resistivity scan)."""
     if action == "histogram":
         return (
             explore.histogram_stats(ctx["curves"][tgt])

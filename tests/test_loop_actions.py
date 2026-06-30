@@ -1,6 +1,12 @@
 """Tests for the agentic loop action frontier (physics prereqs + recompute invalidation)."""
 
-from src.agents.loop_actions import available_actions, invalidate_downstream
+import numpy as np
+
+from src.agents.loop_actions import (
+    available_actions,
+    depth_quality_profile,
+    invalidate_downstream,
+)
 
 _FULL = {"GR", "RHOB", "NPHI", "RT"}
 
@@ -35,6 +41,25 @@ def test_missing_curve_blocks_action():
 def test_zone_stats_needs_netpay():
     assert "zone_stats" not in available_actions({"vsh", "phie", "sw"}, _FULL)
     assert "zone_stats" in available_actions({"vsh", "phie", "sw", "netpay"}, _FULL)
+
+
+def test_zone_of_interest_and_depth_quality_available():
+    acts = available_actions(set(), _FULL)
+    assert "set_zone_of_interest" in acts  # always physics-valid (restrict the interval)
+    assert "depth_quality" in acts  # RHOB present
+    # depth_quality needs RHOB; set_zone_of_interest is always offered
+    no_rhob = {"GR", "RT"}
+    assert "depth_quality" not in available_actions(set(), no_rhob)
+    assert "set_zone_of_interest" in available_actions(set(), no_rhob)
+
+
+def test_depth_quality_profile_flags_overburden():
+    depth = np.arange(100, dtype=float)
+    rhob = np.where(depth < 50, 1.8, 2.5)  # low-density top (overburden), real rock below
+    prof = depth_quality_profile({"RHOB": rhob}, depth, n_bins=4)
+    top, bottom = prof["bins"][0], prof["bins"][-1]
+    assert top["rhob_p50"] < 2.0 and top["frac_rhob_below_2"] == 1.0
+    assert bottom["rhob_p50"] > 2.4 and bottom["frac_rhob_below_2"] == 0.0
 
 
 def test_recompute_invalidates_transitive_dependents():
