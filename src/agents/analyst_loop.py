@@ -256,8 +256,10 @@ def _is_noop(
     ledger: dict[str, Any],
     ctx: dict[str, Any],
     valid: set[str],
+    args: dict[str, Any] | None = None,
 ) -> bool:
-    """A no-op: re-add a done optional, or recompute a VALID core property with the SAME method.
+    """A no-op: re-add a done optional, recompute a VALID core property with the SAME method, or
+    re-restrict to the SAME zone of interest.
 
     Offered (not hidden) so the model's choice is measured; the loop skips + counts them as wasted
     steps — a competence signal, not scaffolding that does the model's thinking. A STALE property
@@ -265,6 +267,12 @@ def _is_noop(
     """
     if action in _OPTIONAL_TOOLS and action in _done_optionals(ledger):
         return True
+    if action == "set_zone_of_interest":
+        zoi, a = ctx.get("zoi"), args or {}
+        if zoi is not None and a.get("top") is not None and a.get("bottom") is not None:
+            # re-restricting to the same interval just recomputes the same baseline -> wasted
+            return abs(float(a["top"]) - zoi[0]) < 1.0 and abs(float(a["bottom"]) - zoi[1]) < 1.0
+        return False
     if action in ("compute_vsh", "compute_phie", "compute_sw"):
         prop = PRODUCES[action]
         if prop not in valid:  # stale -> recomputing it is necessary, not wasted
@@ -358,7 +366,7 @@ def run_analyst_loop(
             stalled = True
             break
         # No-op (re-add a done optional / recompute same method): record + skip, keep report clean.
-        if _is_noop(action, choice.get("method"), ledger, ctx, valid):
+        if _is_noop(action, choice.get("method"), ledger, ctx, valid, choice.get("args")):
             wasted += 1
             graph.add("decision", {"rationale": f"wasted no-op: {action}", "chosen": action})
             continue

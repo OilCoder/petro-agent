@@ -169,6 +169,20 @@ def test_loop_optional_bad_method_coerced_not_crash(tmp_path):
     assert ledger["run"]["analyst_loop"]["steps_taken"] == 1
 
 
+def test_loop_rezone_same_interval_is_wasted(tmp_path):
+    ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
+    depth = np.asarray(ctx["depth_m"], dtype=float)
+    top, bottom = float(depth[depth.size // 2]), float(depth[-1])
+    script = [
+        {"action": "set_zone_of_interest", "args": {"top": top, "bottom": bottom}},
+        {"action": "set_zone_of_interest", "args": {"top": top, "bottom": bottom}},  # same zone
+        {"action": "finish"},
+    ]
+    run_analyst_loop(ledger, ctx, "free", _scripted(script), "m")
+    al = ledger["run"]["analyst_loop"]
+    assert al["wasted_steps"] == 1 and al["steps_taken"] == 1  # the re-zone is a no-op
+
+
 def test_loop_stall_guard_stops_repetition(tmp_path):
     ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
     repeat = lambda s, u: json.dumps({"action": "compute_vsh"})  # noqa: E731
