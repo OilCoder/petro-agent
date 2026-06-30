@@ -344,3 +344,19 @@ ocultar el recompute capeado = DV2-21 "midelo"; aflojar rt_sw = deshonesto. Alca
 requiere VOLVE (data que converge) o un modelo que no se fije — ambas, decisión/setup del usuario.
 **Estado del sandbox:** habilita 75% (selección scripteada completa = 26 caps), ofrece las opcionales
 siempre, 6 bugs de flujo cerrados. Suite verde. La medición real del 75% migra a VOLVE (Fase 8).
+
+## DV2-26 (2026-06-30) — Cerrados 2 huecos [FIJO] del sandbox: el 75% ya es alcanzable (pilar 2)
+**Contexto:** DV2-25 cerró el flujo (pilar 3). Faltaba el otro eje del goal — completitud del sandbox
+("si faltan herramientas las ponemos NOSOTROS"). Mapeo renderer-vs-spec: cubría 26/37 caps; el hueco a
+37 son [MODELO] que el agente declina/de campo (no míos) **+ 2 capítulos [FIJO] sin sección**.
+**Decisión:** construir los 2 [FIJO] faltantes — contenido determinista que el motor YA tiene, sólo no
+se renderizaba (no interpretación): (1) **Cutoffs (ch.21):** `_cutoffs` reporta los cutoffs Vsh/PHIE/Sw
+aplicados + procedencia (de `ledger.parameters`) y los criterios net sand/reservoir/pay. (2)
+**Recomendaciones (ch.33):** `_recommendations` templatea "datos a adquirir" desde lo AUSENTE (LAS-only)
++ mapea `sensitivity.dominant_parameter` a su medición de calibración. NO es el ranking de oportunidades
+[MODELO] (ch.28). Ambos son rails [FIJO] forzados (`_MANDATORY_BODY` + `_FREE_TAIL`) → todo informe los
+lleva. Golden tests + suite verde.
+**Efecto medido (gpt-5):** piso PRODUCIDO 21→**23** caps; techo del sandbox 26→**28**. Para un pozo el
+sandbox ofrece **23 forzadas + 5 opcionales = 28 = 75.7%** → el 75% pasó de IMPOSIBLE a **ALCANZABLE**.
+**Frontera (Pilar 1):** el tramo restante 23→28 son las 5 opcionales que el agente ELIGE — su decisión,
+no la toco. El 75% DEMOSTRADO depende del modelo (que elija opcionales) o del dato (VOLVE) — del usuario.
