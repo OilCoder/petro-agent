@@ -24,6 +24,9 @@ REVIEWER_MODEL = "llama3.1:8b"
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 OPENROUTER_API_KEY_ENV = "OPENROUTER_API_KEY"
+# Transient upstream conditions on free model pools — retried with backoff (not hard failures).
+OPENROUTER_RETRY_STATUS = frozenset({429, 502, 503})
+OPENROUTER_BACKOFFS = (2.0, 5.0, 10.0, 20.0)
 
 
 def make_chat(
@@ -81,14 +84,19 @@ def _make_openrouter_chat(model: str, seed: int) -> ChatFn:
     """Build a ChatFn backed by OpenRouter — a ceiling-control instrument only.
 
     Cloud is never the report runtime; it answers "is it the flow or the model?"
-    by running the same loop with a frontier model. Infra failures (non-200,
-    transport) raise loudly so they are never mistaken for model incapability;
-    only a genuine empty completion returns ``""`` (flows into the agent's
-    empty→fallback cascade and is recorded honestly).
+    by running the same loop with a frontier model. Transient upstream conditions
+    (429/502/503, transport errors) are retried with backoff; persistent infra
+    failures and hard errors (e.g. 401/404) raise loudly so they are never
+    mistaken for model incapability. Only a genuine empty completion returns
+    ``""`` (flows into the agent's empty→fallback cascade and is recorded
+    honestly). ``seed``/``temperature`` are best-effort on cloud providers.
 
     Raises:
-        RuntimeError: If the API key is unset, or the request fails / non-200.
+        RuntimeError: If the API key is unset, a hard error is returned, or the
+            retries are exhausted on transient conditions.
     """
+    import time
+
     import httpx
 
     api_key = os.environ.get(OPENROUTER_API_KEY_ENV)
@@ -96,26 +104,34 @@ def _make_openrouter_chat(model: str, seed: int) -> ChatFn:
         raise RuntimeError(f"{OPENROUTER_API_KEY_ENV} is unset (OpenRouter backend)")
 
     def chat(system: str, user: str) -> str:
-        try:
-            resp = httpx.post(
-                OPENROUTER_URL,
-                headers={"Authorization": f"Bearer {api_key}"},
-                json={
-                    "model": model,
-                    "messages": [
-                        {"role": "system", "content": system},
-                        {"role": "user", "content": user},
-                    ],
-                    "temperature": 0.0,
-                    "seed": seed,
-                },
-                timeout=120.0,
-            )
-        except httpx.HTTPError as e:  # transport: infra failure, not model incapability
-            raise RuntimeError(f"OpenRouter request failed: {e}") from e
-        if resp.status_code != 200:
-            raise RuntimeError(f"OpenRouter HTTP {resp.status_code}: {resp.text[:200]}")
-        content = resp.json()["choices"][0]["message"]["content"]
-        return str(content or "")
+        last = ""
+        for attempt in range(len(OPENROUTER_BACKOFFS) + 1):
+            try:
+                resp = httpx.post(
+                    OPENROUTER_URL,
+                    headers={"Authorization": f"Bearer {api_key}"},
+                    json={
+                        "model": model,
+                        "messages": [
+                            {"role": "system", "content": system},
+                            {"role": "user", "content": user},
+                        ],
+                        "temperature": 0.0,
+                        "seed": seed,
+                    },
+                    timeout=180.0,
+                )
+            except httpx.HTTPError as e:  # transport: transient infra, retry
+                last = f"transport: {e}"
+            else:
+                if resp.status_code == 200:
+                    content = resp.json()["choices"][0]["message"]["content"]
+                    return str(content or "")
+                if resp.status_code not in OPENROUTER_RETRY_STATUS:
+                    raise RuntimeError(f"OpenRouter HTTP {resp.status_code}: {resp.text[:200]}")
+                last = f"HTTP {resp.status_code}: {resp.text[:200]}"
+            if attempt < len(OPENROUTER_BACKOFFS):
+                time.sleep(OPENROUTER_BACKOFFS[attempt])
+        raise RuntimeError(f"OpenRouter exhausted retries ({last})")
 
     return chat

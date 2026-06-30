@@ -27,6 +27,19 @@ def _completion(content: str) -> dict:
     return {"choices": [{"message": {"content": content}}]}
 
 
+def _sequence(*items):
+    """Return a fake httpx.post yielding the given responses/exceptions in order."""
+    it = iter(items)
+
+    def fake_post(url, **kw):
+        item = next(it)
+        if isinstance(item, Exception):
+            raise item
+        return item
+
+    return fake_post
+
+
 # ----------------------------------------
 # Step 1 — backend dispatch
 # ----------------------------------------
@@ -104,23 +117,50 @@ def test_client_openrouter_missing_key_raises(monkeypatch):
         make_chat(model="deepseek/deepseek-r1:free")
 
 
-def test_client_openrouter_non200_raises(monkeypatch):
+def test_client_openrouter_hardfail_raises_immediately(monkeypatch):
     monkeypatch.setenv(OPENROUTER_API_KEY_ENV, "k")
+    calls = {"n": 0}
+
+    def fake_post(url, **kw):
+        calls["n"] += 1
+        return _Resp(404, text="model not found")
+
+    monkeypatch.setattr(httpx, "post", fake_post)
+    chat = make_chat(model="deepseek/deepseek-r1:free")
+    with pytest.raises(RuntimeError, match="404"):
+        chat("s", "u")
+    assert calls["n"] == 1  # 404 is a hard error: no retry
+
+
+def test_client_openrouter_retries_then_succeeds(monkeypatch):
+    monkeypatch.setenv(OPENROUTER_API_KEY_ENV, "k")
+    monkeypatch.setattr("time.sleep", lambda _s: None)
+    monkeypatch.setattr(
+        httpx, "post", _sequence(_Resp(429, text="busy"), _Resp(200, _completion("late ok")))
+    )
+    chat = make_chat(model="deepseek/deepseek-r1:free")
+    assert chat("s", "u") == "late ok"
+
+
+def test_client_openrouter_exhausts_retries_raises(monkeypatch):
+    monkeypatch.setenv(OPENROUTER_API_KEY_ENV, "k")
+    monkeypatch.setattr("time.sleep", lambda _s: None)
     monkeypatch.setattr(httpx, "post", lambda url, **kw: _Resp(429, text="rate limited"))
     chat = make_chat(model="deepseek/deepseek-r1:free")
-    with pytest.raises(RuntimeError, match="429"):
+    with pytest.raises(RuntimeError, match="exhausted"):
         chat("s", "u")
 
 
-def test_client_openrouter_transport_error_raises(monkeypatch):
+def test_client_openrouter_transport_error_retries_then_raises(monkeypatch):
     monkeypatch.setenv(OPENROUTER_API_KEY_ENV, "k")
+    monkeypatch.setattr("time.sleep", lambda _s: None)
 
     def boom(url, **kw):
-        raise httpx.ConnectTimeout("timeout")
+        raise httpx.ConnectTimeout("t")
 
     monkeypatch.setattr(httpx, "post", boom)
     chat = make_chat(model="deepseek/deepseek-r1:free")
-    with pytest.raises(RuntimeError, match="failed"):
+    with pytest.raises(RuntimeError, match="exhausted"):
         chat("s", "u")
 
 
