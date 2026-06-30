@@ -25,6 +25,10 @@ VERSION = "0.1.0"
 GOOD, DEGRADED, EXCLUDED = "GOOD", "DEGRADED", "EXCLUDED"
 ABORT_THRESHOLD = 0.80
 SPIKE_CURVES = ("GR", "RHOB", "NPHI", "RT")
+# Mechanical floor: RHOB below this (g/cc) is non-physical for rock matrix (even ~40% porosity gives
+# ~2.0) — a sensor error / washout. We flag those depths DEGRADED (a quality signal); we do NOT mask
+# the value or decide it is non-reservoir — that interpretive call belongs to the agent.
+RHOB_MIN_PLAUSIBLE = 1.5
 
 
 @dataclass
@@ -73,9 +77,16 @@ def _build_quality_map(
     rt_bad = np.isnan(rt) if rt is not None else np.ones(n, bool)
     rhob_bad = np.isnan(rhob) if rhob is not None else np.ones(n, bool)
     nphi_bad = np.isnan(nphi) if nphi is not None else np.ones(n, bool)
+    # Mechanical floor (objective): RHOB present but non-physically low -> the depth is DEGRADED
+    # quality. The value is kept (the agent still sees and judges it); we only flag, never decide.
+    rhob_low = (
+        (~rhob_bad) & (np.asarray(rhob, dtype=float) < RHOB_MIN_PLAUSIBLE)
+        if rhob is not None
+        else np.zeros(n, bool)
+    )
 
     excluded = gr_bad | rt_bad  # need GR and RT to compute anything
-    degraded = (~excluded) & (rhob_bad | nphi_bad)
+    degraded = (~excluded) & (rhob_bad | nphi_bad | rhob_low)
     if bad_hole is not None:
         degraded = degraded | ((~excluded) & bad_hole)
 

@@ -22,6 +22,19 @@ def _clean_curves(n=20):
     }
 
 
+def test_rhob_below_floor_marks_degraded_keeps_value():
+    n = 20
+    curves = _clean_curves(n)
+    curves["RHOB"] = np.linspace(2.0, 2.7, n)  # realistic spread so spike-removal IQR > 0
+    curves["RHOB"][:4] = 1.2  # non-physical for rock matrix (sensor error/washout)
+    res = qc_gate(_well(curves, n))
+    assert (res.quality_map[:4] == DEGRADED).all()  # low RHOB flagged, not GOOD
+    assert res.quality_map[10] == GOOD
+    assert not np.isnan(
+        res.curves["RHOB"][:4]
+    ).any()  # value kept; only quality flagged (agent judges)
+
+
 def test_detect_units_nphi_percent():
     out, edits = detect_units({"NPHI": np.array([18.0, 22.0])})
     assert out["NPHI"][0] == pytest.approx(0.18)
