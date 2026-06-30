@@ -145,6 +145,8 @@ def run_pipeline(
             "depth_m": well.depth_m,
             "step_m": float(well.step_m),
             "quality_map": qc.quality_map,
+            "params": params,  # resolved ParamValues, for the agentic loop's recompute steps
+            "variant": variant,
         }
         return ledger, ctx
     return ledger
