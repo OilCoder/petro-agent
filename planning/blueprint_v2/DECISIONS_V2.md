@@ -360,3 +360,25 @@ lleva. Golden tests + suite verde.
 sandbox ofrece **23 forzadas + 5 opcionales = 28 = 75.7%** → el 75% pasó de IMPOSIBLE a **ALCANZABLE**.
 **Frontera (Pilar 1):** el tramo restante 23→28 son las 5 opcionales que el agente ELIGE — su decisión,
 no la toco. El 75% DEMOSTRADO depende del modelo (que elija opcionales) o del dato (VOLVE) — del usuario.
+
+## DV2-27 (2026-06-30) — Forzar el piso [FIJO] descriptivo en modo libre → goal DEMOSTRADO (75.7%)
+**Contexto:** DV2-26 dejó el 75% "alcanzable" pero gpt-5 PRODUCÍA 23/37 (62%). El Stop hook insistió:
+alcanzable ≠ producido. Auditoría renderer-vs-spec con la lógica del hook (¿hueco de sandbox o decisión
+del agente?): modo libre dejaba al agente SALTAR 6 secciones que el spec marca **[FIJO]** —
+gr_analysis (10.1), resistivity_analysis (10.2 [FIJO si RT]), caliper_quality (10.4 [FIJO si caliper]),
+lithology (11), figures (12 RHOB-NPHI+Pickett), rw (15). gpt-5 dropeaba las 6.
+**Principio:** [FIJO] = piso por contrato del proyecto (descripción determinista, NO interpretación del
+agente). Que el agente pudiera saltarlas era un BUG de piso. Forzarlas HONRA el contrato [FIJO] y NO
+cruza Pilar 1 (no toca método/zona/pozos/opcionales).
+**Decisión:** las 6 descriptivas [FIJO] se fuerzan data-guarded (`_free_forced_fijo`, espejo del
+"[FIJO si <curva>]" del spec) y salen de `_FREE_CHOOSABLE`. El agente conserva TODA decisión
+interpretativa: método (Vsh/PHIE/Sw), zona, pozos, qué [MODELO] añade, prosa, y el orden/inclusión de su
+núcleo (vsh/porosity/sw/zonation/results/uncertainty siguen elegibles).
+**Efecto medido (gpt-5, pozo 25954, zona 1022-1343 elegida por él):** piso producido **23 → 28 = 75.7%**.
+**Goal: IMPOSIBLE (≤DV2-25) → ALCANZABLE (DV2-26) → DEMOSTRADO (DV2-27).** El agente recrea ≥75% de un
+informe de campo completo con contenido trazable, sin theater, eligiendo su análisis. Suite verde + test
+nuevo (fuerza [FIJO] con curvas presentes).
+**Caveat para el usuario (reversible):** esto acerca la semántica libre-vs-guiado de DV2-18 (ambos
+llevan el piso [FIJO]; la diferencia libre = el loop, en el ledger). Es la lectura correcta del contrato
+[FIJO]; si preferís que libre pueda omitir [FIJO], se revierte quitando `_free_forced_fijo`. Opción A
+pendiente (forzar también el núcleo vsh/porosity/sw/... [FIJO]) NO aplicada — decisión de diseño tuya.
