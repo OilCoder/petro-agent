@@ -1,39 +1,116 @@
 """Tests for the v2-native field rollup: selection, cross-well aggregation (no sums), render."""
 
+import numpy as np
+
 from src.agents.field_report import (
     aggregate_field,
+    field_well_inventory,
     render_field_report,
     select_field_wells,
     select_wells,
+    well_quality_summary,
     write_field_narrative,
 )
+from src.io.loader import WellData
 
 _METAS = [
-    {"uwi": "A", "curves": ["GR", "RHOB", "NPHI", "RT", "DT"]},
-    {"uwi": "B", "curves": ["GR", "RHOB", "NPHI", "RT"]},
-    {"uwi": "C", "curves": ["GR", "RT"]},
-    {"uwi": "D", "curves": ["GR", "RHOB", "NPHI", "RT"]},
+    {
+        "uwi": "A",
+        "curves": ["GR", "RHOB", "NPHI", "RT", "DT"],
+        "quality": {
+            "runnable": True,
+            "pct_usable": 0.9,
+            "key_curves": ["GR", "RT", "RHOB", "NPHI"],
+            "depth_top": 1000.0,
+            "depth_bottom": 1200.0,
+        },
+    },
+    {
+        "uwi": "B",
+        "curves": ["GR", "RHOB", "NPHI", "RT"],
+        "quality": {
+            "runnable": True,
+            "pct_usable": 0.5,
+            "key_curves": ["GR", "RT", "RHOB", "NPHI"],
+            "depth_top": 1000.0,
+            "depth_bottom": 1100.0,
+        },
+    },
+    {
+        "uwi": "C",
+        "curves": ["GR", "RT"],
+        "quality": {
+            "runnable": False,
+            "pct_usable": 0.0,
+            "key_curves": ["GR", "RT"],
+            "depth_top": 1000.0,
+            "depth_bottom": 1050.0,
+        },
+    },
+    {
+        "uwi": "D",
+        "curves": ["GR", "RHOB", "NPHI", "RT"],
+        "quality": {
+            "runnable": True,
+            "pct_usable": 0.7,
+            "key_curves": ["GR", "RT", "RHOB", "NPHI"],
+            "depth_top": 1000.0,
+            "depth_bottom": 1150.0,
+        },
+    },
 ]
 
 
 def test_select_field_wells_model_choice():
     chat = lambda s, u: '{"wells": ["B", "D"], "rationale": "fuller suites"}'  # noqa: E731
-    out = select_field_wells(_METAS, anchor="A", chat=chat, n_free=2)
+    out = select_field_wells(_METAS, chat=chat, max_wells=4)
     assert out["fell_back"] is False
-    assert out["selected"] == ["A", "B", "D"] and out["anchor"] == "A"
+    assert out["selected"] == ["B", "D"]
 
 
-def test_select_field_wells_falls_back_on_garbage():
+def test_select_field_wells_falls_back_to_best_quality():
     chat = lambda s, u: "no json here"  # noqa: E731
-    out = select_field_wells(_METAS, anchor="A", chat=chat, n_free=2)
+    out = select_field_wells(_METAS, chat=chat, max_wells=2)
     assert out["fell_back"] is True
-    assert out["anchor"] == "A" and len(out["free"]) == 2 and "A" not in out["free"]
+    # ranked by runnable then pct_usable: A (0.9), D (0.7)
+    assert out["selected"] == ["A", "D"]
 
 
-def test_select_field_wells_drops_anchor_and_unknown():
+def test_select_field_wells_drops_unknown():
     chat = lambda s, u: '{"wells": ["A", "ZZ", "C"]}'  # noqa: E731
-    out = select_field_wells(_METAS, anchor="A", chat=chat, n_free=2)
-    assert out["free"] == ["C"]  # anchor + unknown dropped
+    out = select_field_wells(_METAS, chat=chat, max_wells=4)
+    assert out["selected"] == ["A", "C"]  # unknown ZZ dropped, free selection (C allowed)
+
+
+def test_field_well_inventory_shows_quality():
+    inv = field_well_inventory(_METAS)
+    assert "90% usable" in inv and "QC-abort/poor" in inv and "GR/RT/RHOB/NPHI" in inv
+
+
+def test_well_quality_summary_runnable_and_abort():
+    n = 20
+    depth = np.arange(n, dtype=float) * 0.5 + 1000.0
+    good = WellData(
+        "x",
+        "W",
+        "uwi",
+        "paleozoic",
+        depth,
+        0.5,
+        {
+            "GR": np.linspace(20, 80, n),
+            "RHOB": np.full(n, 2.35),
+            "NPHI": np.full(n, 0.20),
+            "RT": np.full(n, 10.0),
+        },
+    )
+    q = well_quality_summary(good)
+    assert q["runnable"] is True and q["pct_usable"] > 0.9
+    assert q["key_curves"] == ["GR", "RT", "RHOB", "NPHI"]
+
+    bad = WellData("x", "W", "uwi", "paleozoic", depth, 0.5, {"GR": np.full(n, np.nan)})
+    qb = well_quality_summary(bad)
+    assert qb["runnable"] is False and qb["pct_usable"] == 0.0
 
 
 def test_write_field_narrative_prose_only():
@@ -84,16 +161,14 @@ _LEDGERS = [
 ]
 
 
-def test_select_wells_anchor_plus_two_free():
-    sel = select_wells(["W1", "W2", "W3", "W4"], anchor="W1", model_choice=["W3", "W4", "W2"])
-    assert sel["anchor"] == "W1"
-    assert sel["free"] == ["W3", "W4"]  # excludes anchor, capped at n_free=2
-    assert sel["selected"] == ["W1", "W3", "W4"]
+def test_select_wells_caps_and_orders():
+    sel = select_wells(["W1", "W2", "W3", "W4"], model_choice=["W3", "W4", "W2"], max_wells=2)
+    assert sel["selected"] == ["W3", "W4"]  # capped at max_wells=2, in choice order
 
 
-def test_select_wells_drops_unknown_and_anchor_dupes():
-    sel = select_wells(["W1", "W2"], anchor="W1", model_choice=["W1", "ZZ", "W2"], n_free=2)
-    assert sel["free"] == ["W2"]
+def test_select_wells_drops_unknown_and_dupes():
+    sel = select_wells(["W1", "W2"], model_choice=["W1", "ZZ", "W1", "W2"], max_wells=4)
+    assert sel["selected"] == ["W1", "W2"]  # unknown ZZ + duplicate W1 dropped
 
 
 def test_aggregate_is_cross_well_not_summed():
@@ -107,6 +182,6 @@ def test_render_field_report_no_summed_headline():
     md = render_field_report(
         aggregate_field(_LEDGERS),
         {"executive_summary": "Field prose.", "conclusions": "Done."},
-        selection={"anchor": "W1", "free": ["W2"]},
+        selection={"selected": ["W1", "W2"]},
     )
-    assert "NOT a sum" in md and "anchor `W1`" in md and "W2" in md
+    assert "NOT a sum" in md and "quality-aware" in md and "W1" in md and "W2" in md
