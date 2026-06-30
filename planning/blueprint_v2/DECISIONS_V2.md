@@ -240,3 +240,17 @@ mide. **Pendiente (follow-up):** propagar el método de Sw/porosidad al Monte Ca
 completo); re-correr el harness de validadores completo tras un recompute del núcleo (hoy las
 objeciones/tier son de la pasada-0). Verificado: golden loop-default == pipeline; recompute cambia
 net pay; el loop compone un informe con las secciones que el agente eligió.
+
+## DV2-21 (2026-06-29) — El agente ve el informe-en-progreso + no-ops medidos, no ocultados
+**Hallazgo (usuario):** "pensé que no ver el informe es lo que genera problemas". Validado: al
+inyectar `report_so_far` (un outline compacto del documento construido hasta ahora) en la
+observación, llama3.1:8b pasó de estancarse en 2 pasos a 9 pasos productivos (agregó 4 opcionales).
+El agente necesita VER el documento que construye para decidir qué falta y cuándo terminar.
+**Decisión (usuario, "midelo"):** dejar de OCULTAR los opcionales ya hechos de `available_actions`.
+Antes el no-repetir era andamiaje NUESTRO (le quitábamos la opción), no juicio del modelo. Ahora se
+ofrece TODO; el orquestador detecta no-ops (re-agregar un opcional ya hecho, o recomputar un núcleo
+con su método actual), los **cuenta como `wasted_steps`** y los salta (nodo "wasted no-op" en el
+grafo) — el informe queda limpio sin pensar por el modelo. Mide el modelo PURO (modelo, no
+modelo+andamiaje); `wasted_steps` es una señal de competencia. Expuesto vía `objective_score.
+loop_wasted`. **Verificado:** e2e llama3.1 en el ancla → `wasted_steps=1, recomputes=1,
+fell_back=False`, secciones sin duplicados; suite verde (184 tests).
