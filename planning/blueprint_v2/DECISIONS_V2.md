@@ -282,3 +282,21 @@ loop limpio — selección `fell_back=False`, sin stall, sin wasted, `fell_back=
 hizo 1 recompute deliberado. Informes analíticos honestos (respetan abstención/tier). Contra el local
 (llama3.1 se estanca, qwen3 da 8 pasos/2 recomputes): **el techo era el MODELO, no el flujo** — el
 bucle agente está validado. (gpt-oss-120b/qwen3-next-80b: 429 persistente, infra, no medibles esta vez.)
+
+## DV2-23 (2026-06-29) — Selección de pozos libre + consciente de calidad (sin ancla fija)
+**Hallazgo (usuario):** con la corrida cross-familia (nemotron/gpt-5/gemini) **todos los informes
+salieron iguales** — mismos pozos, mismos números, misma abstención. Causas: (1) los números son
+deterministas (invariante, correcto); (2) **el ancla `26002` estaba forzada y es un pozo que se
+abstiene** → metido a la fuerza en cada informe; (3) **el agente elegía a ciegas** (el prompt solo
+mostraba `uwi + curvas`, no la calidad del dato) → no podía evitar pozos que abortan/se abstienen.
+Sin margen interpretativo, todo modelo honesto converge al mismo "abstención + conseguir core".
+**Decisión (usuario, opción A):** el analista **selecciona sus propios pozos, libre**, desde un
+**inventario consciente de calidad** = la "base mínima de información" ([FIJO], en línea con
+DV2-18/19/20: piso forzado + libertad encima). El piso ya NO es un pozo, es *información*: `%usable`
+(vía `qc_gate`, pre-pase barato), curvas clave, intervalo. El ancla forzada se elimina.
+**Diseño:** `well_quality_summary(well)` (QC gate → fracción GOOD; abort → no runnable);
+`field_well_inventory` muestra calidad; `select_field_wells(metas, chat, max_wells=4)` sin ancla
+(elige 1..max que le sirvan); fallback determinista = mejores pozos por `%usable`. La selección pasa
+a ser **competencia medida** (¿eligió interpretables? ¿evitó la basura?). **Trade-off aceptado:** se
+pierde el A/B estricto sobre el mismo pozo, pero elegir el dataset ES parte del trabajo del analista.
+**Verificado:** suite verde (mypy/ruff limpios). Pendiente: re-correr para ver informes que SÍ difieren.
