@@ -61,10 +61,19 @@ def test_loop_recompute_default_method_matches_pipeline(tmp_path):
 
 def test_loop_hits_max_steps(tmp_path):
     ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
-    never_finish = lambda s, u: json.dumps({"action": "compute_vsh"})  # noqa: E731
-    run_analyst_loop(ledger, ctx, "free", never_finish, "m", max_steps=3)
+    seq = iter(["compute_vsh", "compute_phie"] * 10)  # alternate so the stall guard never fires
+    alternating = lambda s, u: json.dumps({"action": next(seq)})  # noqa: E731
+    run_analyst_loop(ledger, ctx, "free", alternating, "m", max_steps=4)
     al = ledger["run"]["analyst_loop"]
-    assert al["steps_taken"] == 3 and al["hit_max_steps"] is True
+    assert al["steps_taken"] == 4 and al["hit_max_steps"] is True
+
+
+def test_loop_stall_guard_stops_repetition(tmp_path):
+    ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
+    repeat = lambda s, u: json.dumps({"action": "compute_vsh"})  # noqa: E731
+    run_analyst_loop(ledger, ctx, "free", repeat, "m", max_steps=20)
+    al = ledger["run"]["analyst_loop"]
+    assert al["stalled"] is True and al["steps_taken"] < 20
 
 
 def test_loop_garbage_falls_back_and_finishes(tmp_path):

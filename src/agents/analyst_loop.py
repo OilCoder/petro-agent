@@ -35,15 +35,20 @@ _PROP_SECTIONS: dict[str, tuple[str, ...]] = {
 # Canonical default order for the per-step fallback (a competent baseline interpretation).
 _DEFAULT_ORDER = ("compute_vsh", "compute_phie", "compute_sw", "apply_cutoffs", "run_uncertainty")
 
-_LOOP_SYSTEM = """You are a senior petrophysical ANALYST building a well report STEP BY STEP.
-Each turn you see the STATE (what is computed so far) and the VALID ACTIONS. Choose exactly ONE
-next action, like a real analyst reacting to the data. You never compute a number — the engine
-does; you decide the method and the order.
+_LOOP_SYSTEM = """You are a senior petrophysical ANALYST refining a well report STEP BY STEP.
+A BASELINE interpretation (vsh, phie, sw, net pay, uncertainty) is ALREADY computed with default
+methods. Each turn you see the STATE and the VALID ACTIONS; choose exactly ONE next action.
 
-Output ONLY a JSON object: {"action": "<id>", "method": "<optional method id>",
-"args": {<optional>}}. Use an action id from VALID ACTIONS (and a real method id when relevant).
-Pick "finish" when the report is complete. You may RECOMPUTE a property with a different method if
-the data warrants it (downstream is recomputed). Never write a number; never invent an id."""
+Your job, in order:
+1. OPTIONALLY recompute a core property with a BETTER method for this rock (e.g. a shaly-sand Sw
+   model when Vsh is high) — at most once per property, only when justified by the data.
+2. ADD the optional analyses that add value (permeability, rock_quality, electrofacies, lithology).
+3. Then pick "finish".
+
+Output ONLY a JSON object: {"action": "<id>", "method": "<optional method id>", "args": {}}.
+Use an id from VALID ACTIONS only. Do NOT repeat the same action; do NOT recompute a property you
+already chose a method for. Prefer "finish" once your choices are made. You never compute a number —
+the engine does; you decide the method and the order. Never write a number; never invent an id."""
 
 _OBJ = re.compile(r"\{.*\}", re.DOTALL)
 
@@ -94,13 +99,30 @@ def observation_text(ledger: dict[str, Any], valid: set[str], actions: list[str]
         "uncertainty": {"in": "uncertainty" in valid},
     }
     stale = [p for p in ("phie", "sw", "netpay", "uncertainty") if p not in valid]
+    done_tools = set(ledger.get("tool_results", {}))
+    optionals_available = [
+        a
+        for a in ("permeability", "rock_quality", "electrofacies", "lithology")
+        if a in actions and not (done_tools & _OPTIONAL_TOOLS.get(a, set()))
+    ]
     state = {
+        "baseline_complete": not stale,
         "computed": computed,
         "stale_or_pending": stale,
+        "optionals_not_yet_added": optionals_available,
         "eda": ledger.get("run", {}).get("eda", {}),
         "valid_actions": actions,
+        "hint": "recompute a core property only to change its method; else add optionals or finish",
     }
     return "STATE:\n" + json.dumps(state, indent=1, default=str)[:3000]
+
+
+_OPTIONAL_TOOLS: dict[str, set[str]] = {
+    "permeability": {"perm_timur", "perm_coates"},
+    "rock_quality": {"rqi", "fzi", "winland_r35"},
+    "electrofacies": {"electrofacies"},
+    "lithology": {"litho_nd_crossplot"},
+}
 
 
 def _default_next(valid: set[str], curves: set[str]) -> str | None:
@@ -154,6 +176,8 @@ def run_analyst_loop(
     finished = False
 
     chats = [(chat, model), (fallback_chat, fallback_model)]
+    recent: list[str] = []
+    stalled = False
     for _ in range(max_steps):
         actions = available_actions(valid, curves)
         obs = observation_text(ledger, valid, actions)
@@ -162,6 +186,11 @@ def run_analyst_loop(
         action = choice["action"]
         if action == "finish":
             finished = True
+            break
+        # Orchestrator-owned anti-stall: 3 identical actions in a row = unproductive loop -> stop.
+        recent.append(action)
+        if len(recent) >= 3 and len(set(recent[-3:])) == 1:
+            stalled = True
             break
 
         graph.add("decision", {"rationale": f"step: {action}", "chosen": action})
@@ -198,7 +227,8 @@ def run_analyst_loop(
     ledger.setdefault("run", {})["analyst_loop"] = {
         "steps_taken": steps_taken,
         "finished_by_agent": finished,
-        "hit_max_steps": steps_taken >= max_steps and not finished,
+        "hit_max_steps": steps_taken >= max_steps and not finished and not stalled,
+        "stalled": stalled,
         "recomputes": recomputes,
         "empty_returns": empty_returns,
     }
