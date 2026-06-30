@@ -94,21 +94,35 @@ _FREE_TAIL = [
     "limitations",
     "conclusions",
 ]
-# Analysis sections the agent may choose (and order) in FREE mode — including the optional ones.
+# [FIJO] descriptive sections (spec ch.10-12, 15): data-description floor, NOT the agent's
+# interpretive choice. The spec tags these "[FIJO si <curve>]", so they always render when their
+# backing curve exists — the agent never decides whether to include the deterministic floor.
+_FREE_FIJO_DESCRIPTIVE: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("gr_analysis", ("GR",)),  # 10.1 IGR baselines
+    ("resistivity_analysis", ("RT",)),  # 10.2 [FIJO si RT]
+    ("caliper_quality", ("CALI",)),  # 10.4 [FIJO si caliper]
+    ("lithology", ("RHOB", "NPHI")),  # 11 rule/crossplot lithology
+    ("rw", ()),  # 15 Rw value used (engine-sourced; always reported)
+)
+# Analysis sections the agent may choose (and order) in FREE mode — core interpretation it builds
+# plus the optional [MODELO] sections. The [FIJO] descriptive floor above is forced, not chosen.
 _FREE_CHOOSABLE: tuple[str, ...] = (
-    "gr_analysis",
-    "resistivity_analysis",
-    "caliper_quality",
-    "lithology",
     "vsh",
     "porosity",
     "sw",
-    "rw",
     "zonation",
     "results",
     "uncertainty",
-    "figures",
 ) + OPTIONAL_SECTIONS
+
+
+def _free_forced_fijo(ledger: dict[str, Any]) -> list[str]:
+    """The [FIJO] descriptive sections that must render given the data present (spec 10-12,15)."""
+    prov = ledger.get("run", {}).get("curve_provenance", {})
+    forced = [sid for sid, needs in _FREE_FIJO_DESCRIPTIVE if all(c in prov for c in needs)]
+    if ledger.get("figures"):  # 12 crossplots (RHOB-NPHI, Pickett) [FIJO]
+        forced.append("figures")
+    return forced
 
 
 def _strip_number(block: str) -> str:
@@ -208,9 +222,10 @@ def _free_body(section_plan: dict[str, Any], ledger: dict[str, Any]) -> list[str
     The agent's ``sections`` (ordered) drive the body; optional sections survive only when a
     backing tool result exists (no theater). Picking nothing yields a minimal but honest report.
     """
+    forced_fijo = _free_forced_fijo(ledger)
     raw = list(section_plan.get("sections", []))
     raw += [s for s in section_plan.get("optional_sections", []) if s not in raw]
-    seen: set[str] = set()
+    seen: set[str] = set(forced_fijo)
     chosen: list[str] = []
     for s in raw:
         if s not in _FREE_CHOOSABLE or s in seen:
@@ -219,7 +234,7 @@ def _free_body(section_plan: dict[str, Any], ledger: dict[str, Any]) -> list[str
             continue
         seen.add(s)
         chosen.append(s)
-    return _FREE_HEAD + chosen + _FREE_TAIL
+    return _FREE_HEAD + forced_fijo + chosen + _FREE_TAIL
 
 
 def _ordered_body(section_plan: dict[str, Any], mode: str, ledger: dict[str, Any]) -> list[str]:

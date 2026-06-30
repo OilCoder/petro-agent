@@ -92,6 +92,20 @@ def test_free_mode_agent_chooses_sections():
     assert "Data inventory" in md and "Parameters and provenance" in md and "Limitations" in md
 
 
+def test_free_forces_fijo_descriptive_sections_when_curves_present():
+    # [FIJO] descriptive sections (spec ch.10-12,15) are floor, not the agent's choice: they render
+    # whenever their curve exists, even if the agent's plan omits them.
+    ledger = {
+        **LEDGER,
+        "run": {**LEDGER["run"], "curve_provenance": {"GR": "GR", "RT": "RT"}},
+    }
+    md = compose_report(ledger, {"sections": []}, FREE, _valid_graph())
+    assert "Gamma-ray analysis" in md  # forced by GR present
+    assert "Resistivity analysis" in md  # forced by RT present
+    assert "Water resistivity (Rw)" in md  # Rw always reported (engine-sourced)
+    assert "Caliper / hole quality" not in md  # no CALI -> not forced
+
+
 def test_numbering_is_sequential():
     import re
 
