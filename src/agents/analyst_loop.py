@@ -53,7 +53,8 @@ Your job, in order:
    zone). Do this BEFORE refining methods.
 1. OPTIONALLY recompute a core property with a BETTER method for this rock (e.g. a shaly-sand Sw
    model when Vsh is high) — at most once per property, only when justified by the data.
-2. ADD the optional analyses that add value (permeability, rock_quality, electrofacies, lithology).
+2. ADD the optional analyses that add value (permeability, rock_quality, electrofacies, lithology,
+   derived_parameters).
 3. Then pick "finish".
 
 Output ONLY a JSON object: {"action": "<id>", "method": "<optional method id>", "args": {}}.
