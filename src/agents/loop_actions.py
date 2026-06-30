@@ -256,7 +256,11 @@ _OPTIONAL_DEFAULT_TOOL = {
 
 def _exec_optional(action, ctx, ledger, method, args, valid):  # noqa: ANN001
     tool = method or _OPTIONAL_DEFAULT_TOOL[action]
-    result = _OPTIONAL_RUNNERS[action](tool, ctx, args)
+    try:
+        result = _OPTIONAL_RUNNERS[action](tool, ctx, args)
+    except KeyError:  # hallucinated/unknown method -> coerce to the action's default (signaled)
+        tool = _OPTIONAL_DEFAULT_TOOL[action]
+        result = _OPTIONAL_RUNNERS[action](tool, ctx, args)
     ledger.setdefault("tool_results", {})[tool] = {"value": result, "result_hash": _hash(result)}
     nv = set(valid)
     nv.add(action)

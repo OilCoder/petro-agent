@@ -108,6 +108,18 @@ def test_loop_set_zone_of_interest_restricts_and_recomputes(tmp_path):
     assert al["steps_taken"] == 1 and al["finished_by_agent"] is True
 
 
+def test_loop_optional_bad_method_coerced_not_crash(tmp_path):
+    ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
+    # a hallucinated optional method must coerce to the default, not crash with KeyError
+    script = [
+        {"action": "permeability", "method": "tiksgaard"},
+        {"action": "finish"},
+    ]
+    run_analyst_loop(ledger, ctx, "free", _scripted(script), "m")
+    assert "perm_timur" in ledger.get("tool_results", {})  # coerced to the default tool
+    assert ledger["run"]["analyst_loop"]["steps_taken"] == 1
+
+
 def test_loop_stall_guard_stops_repetition(tmp_path):
     ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
     repeat = lambda s, u: json.dumps({"action": "compute_vsh"})  # noqa: E731
