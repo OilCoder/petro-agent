@@ -148,6 +148,11 @@ def _diagnostics(ledger: dict[str, Any]) -> dict[str, Any]:
     }
     return {
         "objections": objs or "none",
+        "objections_legend": (
+            "type 'irreducible' = a DATA limitation no method/zone can fix — note it and MOVE ON; "
+            "'mechanical' = may improve with a better method (try ONCE); 'support' = informational. "
+            "Do NOT loop trying to resolve an irreducible objection."
+        ),
         "net_pay_summary": summary or "not computed yet",
         "convergence": {
             "status": run.get("convergence_status"),
