@@ -83,6 +83,19 @@ def test_run_pipeline_emits_ledger(tmp_path):
     assert json.loads(out.read_text())["run"]["uwi"] == ledger["run"]["uwi"]
 
 
+def test_vsh_method_override_propagates_to_net_pay(tmp_path):
+    # the agent's Vsh-method choice changes Vsh -> PHIE -> Sw -> net pay (full chain)
+    base = run_pipeline(FIXTURE, out_dir=str(tmp_path), uncertainty=False)
+    linear = run_pipeline(
+        FIXTURE, out_dir=str(tmp_path), uncertainty=False, method_overrides={"vsh": "vsh_linear"}
+    )
+    assert base["calibration"]["vsh_method"]["chosen_by_model"] is False
+    assert linear["calibration"]["vsh_method"]["value"] == "vsh_linear"
+    assert linear["calibration"]["vsh_method"]["chosen_by_model"] is True
+    # linear overestimates Vsh vs Larionov -> a different net pay (the choice has consequences)
+    assert base["net_pay_total_m"] != linear["net_pay_total_m"]
+
+
 def test_circuit_breaker_fires_on_persistent_objection(tmp_path):
     n = 20
     # Dirty rock (GR 75 -> vsh > 0.3) so data-driven Rw falls back to the default 0.04;

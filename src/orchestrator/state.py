@@ -20,6 +20,7 @@ class PipelineState(TypedDict, total=False):
     params: dict[str, Any]  # key -> ParamValue
     variant: str
     variant_degraded: bool
+    methods: dict[str, Any]  # agent-selected method ids (e.g. {"vsh": "vsh_clavier"}); optional
     depth_m: Any
     step_m: float
     quality_map: Any

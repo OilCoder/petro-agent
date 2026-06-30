@@ -70,6 +70,7 @@ def run_pipeline(
     config_path: str | None = None,
     uncertainty: bool = True,
     return_ctx: bool = False,
+    method_overrides: dict[str, str] | None = None,
 ) -> Any:
     """Run the full deterministic pipeline on a LAS file and return the ledger dict.
 
@@ -94,6 +95,7 @@ def run_pipeline(
         "params": params,
         "variant": variant,
         "variant_degraded": degraded,
+        "methods": method_overrides or {},
         "depth_m": well.depth_m,
         "step_m": well.step_m,
         "quality_map": qc.quality_map,

@@ -23,7 +23,14 @@ from src.petrophysics.lithology import (
 from src.petrophysics.netpay import apply_cutoffs
 from src.petrophysics.phie import calc_phie
 from src.petrophysics.sw import calc_sw
-from src.petrophysics.vsh import calc_vsh
+from src.petrophysics.vsh import (
+    OLD_ROCKS,
+    TERTIARY,
+    calc_vsh,
+    vsh_clavier,
+    vsh_linear,
+    vsh_steiber,
+)
 from src.validators.harness import run_validators
 from src.validators.objections import IRREDUCIBLE, MECHANICAL
 from src.validators.physical import net_pay_plausibility
@@ -43,6 +50,27 @@ def _safe_mean(values: Any) -> float:
     return float(np.nanmean(arr))
 
 
+def _vsh_by_method(
+    method_id: str | None, gr: np.ndarray, gr_min: float, gr_max: float, variant: str
+) -> np.ndarray:
+    """Compute Vsh with the agent-selected method id (vetted functions only), default = variant.
+
+    The LLM selects the ID; the number comes from the frozen function. Unknown/absent → the
+    engine's Larionov variant (the safe default), so a missing choice never breaks the chain.
+    """
+    if method_id == "vsh_linear":
+        return vsh_linear(gr, gr_min, gr_max)
+    if method_id == "vsh_clavier":
+        return vsh_clavier(gr, gr_min, gr_max)
+    if method_id == "vsh_steiber":
+        return vsh_steiber(gr, gr_min, gr_max)
+    if method_id == "vsh_larionov_tertiary":
+        return calc_vsh(gr, gr_min, gr_max, TERTIARY)
+    if method_id == "vsh_larionov_old":
+        return calc_vsh(gr, gr_min, gr_max, OLD_ROCKS)
+    return calc_vsh(gr, gr_min, gr_max, variant)
+
+
 def compute(state: PipelineState) -> dict[str, Any]:
     """Run the three core deterministic computations with data-driven lithology.
 
@@ -56,7 +84,13 @@ def compute(state: PipelineState) -> dict[str, Any]:
     rhob, nphi = curves.get("RHOB", nan), curves.get("NPHI", nan)
     rho_fl = _pv(state, "rho_fl")
 
-    vsh = calc_vsh(curves["GR"], _pv(state, "gr_min"), _pv(state, "gr_max"), state["variant"])
+    vsh = _vsh_by_method(
+        state.get("methods", {}).get("vsh"),
+        curves["GR"],
+        _pv(state, "gr_min"),
+        _pv(state, "gr_max"),
+        state["variant"],
+    )
 
     # Substep — deterministic parameter selection from the data (replaces dead compute agent)
     rho_ma, ma_dd = estimate_matrix_density(rhob, vsh, default=_pv(state, "rho_ma"))
@@ -96,6 +130,10 @@ def compute(state: PipelineState) -> dict[str, Any]:
             "regional_default": _pv(state, "phi_sh_n"),
         },
         "Rw": {"value": rw, "data_driven": rw_dd, "regional_default": _pv(state, "Rw")},
+        "vsh_method": {
+            "value": state.get("methods", {}).get("vsh") or f"vsh_larionov_{state['variant']}",
+            "chosen_by_model": bool(state.get("methods", {}).get("vsh")),
+        },
     }
     return {"vsh": vsh, "phie": phie, "sw": sw, "calibration": calibration}
 
