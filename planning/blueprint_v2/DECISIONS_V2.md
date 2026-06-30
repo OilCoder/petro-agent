@@ -300,3 +300,25 @@ DV2-18/19/20: piso forzado + libertad encima). El piso ya NO es un pozo, es *inf
 a ser **competencia medida** (¿eligió interpretables? ¿evitó la basura?). **Trade-off aceptado:** se
 pierde el A/B estricto sobre el mismo pozo, pero elegir el dataset ES parte del trabajo del analista.
 **Verificado:** suite verde (mypy/ruff limpios). Pendiente: re-correr para ver informes que SÍ difieren.
+
+## DV2-24 (2026-06-30) — Selección de zona-de-interés del agente (DV2-23 al eje de profundidad)
+**Hallazgo:** la corrida de 7 familias dio informes "vacíos" (todo se abstiene). Investigación
+(`debug/dbg_phie_inflation.py`): PHIE 0.31 viene de RHOB ~1.75 g/cc en los **2/3 superiores** del pozo
+(sobrecarga/dato no consolidado); el **tercio profundo (reservorio) tiene RHOB ~2.49 → PHIE sana**.
+El motor promedia TODA la columna logueada → PHIE irreal → los validadores la marcan → abstención.
+NO es bug de cálculo/unidades (correctos); el RHOB bajo viene del LAS crudo.
+**La tensión (usuario):** "detesto esto, estamos resolviendo el problema que el agente debe resolver".
+Excluir la sobrecarga / elegir el reservorio ES juicio de analista. Hard-codear "restringí a la zona"
+o "flag RHOB<2" sería el andamiaje que venimos sacando. **Confirmado:** el agente HOY no puede excluir
+la sobrecarga aunque quiera — nunca le dimos la herramienta (`zonate` es zonación de net-pay aguas
+abajo, sobre toda la columna).
+**Decisión:** darle la capacidad — extensión de DV2-23 al **eje de profundidad**. Piso de información
+([FIJO]): observación `depth_quality` (perfil RHOB por tramo + `frac_rhob_below_2`, resumido, nunca
+array crudo). Juicio ([MODELO]): acción `set_zone_of_interest(top,bottom)` que enmascara curvas fuera
+del intervalo a NaN y **recomputa el baseline determinista sobre la zona** (el agente eligió el
+intervalo; el motor computa — invariante intacto). Excluir sobrecarga pasa a ser **competencia
+medida**. El único parche legítimo nuestro sería un piso mecánico (RHOB < ~1.5 = error de sensor); "1.75
+es bajo para esta litología" es del agente.
+**Verificado e2e:** restringir 25954 a 915–1343 m baja PHIE 0.229→**0.089** y net pay 296→**40 m**
+(físicamente sano), sin que el LLM calcule nada. Suite verde (mypy/ruff limpios); tests nuevos de
+`depth_quality_profile`, disponibilidad de acciones, y restrict+recompute e2e.
