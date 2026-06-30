@@ -55,6 +55,7 @@ OPTIONAL_SECTIONS = (
     "permeability",
     "rock_quality",
     "electrofacies",
+    "derived_parameters",
 )
 # Each optional section is backed by a named tool result; the section is emitted ONLY when that
 # result exists, so "section present ⇒ a real tool number backs it" always holds (no theater).
@@ -64,6 +65,7 @@ OPTIONAL_REQUIRES: dict[str, tuple[str, ...]] = {
     "permeability": ("perm_timur", "perm_coates"),
     "rock_quality": ("rqi", "fzi", "winland_r35"),
     "electrofacies": ("electrofacies",),
+    "derived_parameters": ("bvw",),
 }
 # Optional sections allowed when the run abstains (diagnostic only — never confident analysis).
 ABSTENTION_SAFE: tuple[str, ...] = ()
@@ -160,6 +162,7 @@ def _render_known(section_id: str, ledger: dict[str, Any], narrative: dict[str, 
         "permeability": lambda: v1._permeability_section(ledger),
         "rock_quality": lambda: v1._rock_quality_section(ledger),
         "electrofacies": lambda: v1._electrofacies_section(ledger),
+        "derived_parameters": lambda: v1._derived_parameters_section(ledger),
     }
     if section_id not in renderers:
         raise KeyError(section_id)

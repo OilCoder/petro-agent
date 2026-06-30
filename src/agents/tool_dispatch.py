@@ -180,6 +180,15 @@ def _run_lithology_method(
     return {"nearest_litho": cp.get("nearest"), "method": method_id}
 
 
+def _run_derived_method(
+    method_id: str, ctx: dict[str, Any], args: dict[str, Any]
+) -> dict[str, Any]:
+    # Derived volumetrics over the computed PHIE/Sw (deterministic arithmetic, not a new equation).
+    spec = METHOD_REGISTRY[method_id]
+    arr = spec.fn(ctx["phie"], ctx["sw"])
+    return {"mean_bvw": _mean(arr), "method": method_id}
+
+
 def _run_eda(tool: str, ctx: dict[str, Any], args: dict[str, Any]) -> dict[str, Any]:
     curves = ctx["curves"]
     if tool == "curve_inventory":
@@ -214,6 +223,7 @@ def _execute(
         "permeability": lambda: _run_permeability_method(tool, ctx, args),
         "rock_quality": lambda: _run_rock_quality_method(tool, ctx, args),
         "facies": lambda: _run_facies_method(tool, ctx, args),
+        "derived": lambda: _run_derived_method(tool, ctx, args),
     }
     runner = runners.get(spec.property)
     return runner() if runner else None

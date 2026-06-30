@@ -14,6 +14,7 @@ import numpy as np
 
 from src.agents.tool_dispatch import (
     _hash,
+    _run_derived_method,
     _run_facies_method,
     _run_lithology_method,
     _run_permeability_method,
@@ -39,6 +40,7 @@ PRODUCES: dict[str, str] = {
     "rock_quality": "rock_quality",
     "electrofacies": "electrofacies",
     "lithology": "lithology",
+    "derived_parameters": "derived",
 }
 
 # Compute action -> (prerequisite properties that must be VALID, required curves present).
@@ -52,6 +54,7 @@ _REQUIRES: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
     "rock_quality": (("phie", "sw"), ()),
     "electrofacies": ((), ("GR", "RHOB", "NPHI")),
     "lithology": ((), ("RHOB", "NPHI")),
+    "derived_parameters": (("phie", "sw"), ()),
 }
 
 # Dependency graph (property -> the properties it directly depends on), for recompute invalidation.
@@ -62,6 +65,7 @@ DEPENDENCIES: dict[str, tuple[str, ...]] = {
     "uncertainty": ("netpay",),
     "permeability": ("phie", "sw"),
     "rock_quality": ("phie", "sw"),
+    "derived": ("phie", "sw"),
 }
 
 # Observation actions (read-only): the property/curve they need to be meaningful.
@@ -245,12 +249,14 @@ _OPTIONAL_RUNNERS = {
     "rock_quality": _run_rock_quality_method,
     "electrofacies": _run_facies_method,
     "lithology": _run_lithology_method,
+    "derived_parameters": _run_derived_method,
 }
 _OPTIONAL_DEFAULT_TOOL = {
     "permeability": "perm_timur",
     "rock_quality": "rqi",
     "electrofacies": "electrofacies",
     "lithology": "litho_nd_crossplot",
+    "derived_parameters": "bvw",
 }
 
 

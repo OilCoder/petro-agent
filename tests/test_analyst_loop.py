@@ -85,6 +85,23 @@ def test_loop_measures_noop_as_wasted(tmp_path):
     assert al["wasted_steps"] == 1 and al["steps_taken"] == 1
 
 
+def test_loop_derived_parameters_optional_renders(tmp_path):
+    ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
+    # the agent can now select the [MODELO] derived-parameters section (bvw)
+    script = [{"action": "derived_parameters", "method": "bvw"}, {"action": "finish"}]
+    res = run_analyst_loop(ledger, ctx, "free", _scripted(script), "m")
+    assert "bvw" in ledger.get("tool_results", {})  # the vetted tool ran (no theater)
+    assert "derived_parameters" in res["section_plan"]["sections"]
+    md = compose_report(
+        ledger,
+        res["section_plan"],
+        "free",
+        res["graph"],
+        {"executive_summary": "x", "conclusions": "y"},
+    )
+    assert "Bulk-volume water" in md  # the section renders with a real value
+
+
 def test_loop_floor_sections_render_without_recompute(tmp_path):
     ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
     # agent finishes immediately (no recompute) — the [FIJO] Vsh/Porosity/Sw floor must still render

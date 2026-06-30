@@ -14,7 +14,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from src.petrophysics import electrofacies, permeability, rock_quality, sonic, sw, vsh
+from src.petrophysics import electrofacies, permeability, rock_quality, sonic, sw, volumetrics, vsh
 from src.petrophysics.phie import calc_phie, phi_density, phi_neutron
 from src.validators.model_mismatch import neutron_density_crossplot
 
@@ -127,6 +127,13 @@ METHOD_REGISTRY: dict[str, MethodSpec] = {
         electrofacies.electrofacies_summary,
         ("GR", "RHOB", "NPHI"),
         "Unsupervised k-means electrofacies (no core labels)",
+    ),
+    "bvw": MethodSpec(
+        "bvw",
+        "derived",
+        volumetrics.bvw,
+        ("RHOB", "NPHI", "RT"),
+        "Bulk-volume water = PHIE*Sw (Asquith 1985)",
     ),
 }
 

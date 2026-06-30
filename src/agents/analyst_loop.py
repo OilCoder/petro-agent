@@ -37,6 +37,7 @@ _PROP_SECTIONS: dict[str, tuple[str, ...]] = {
     "rock_quality": ("rock_quality",),
     "electrofacies": ("electrofacies",),
     "lithology": ("lithology",),
+    "derived": ("derived_parameters",),
 }
 # Canonical default order for the per-step fallback (a competent baseline interpretation).
 _DEFAULT_ORDER = ("compute_vsh", "compute_phie", "compute_sw", "apply_cutoffs", "run_uncertainty")
@@ -116,6 +117,7 @@ def _report_outline(ledger: dict[str, Any], order: list[str]) -> list[str]:
         "rock_quality": lambda: "Rock quality (uncalibrated)",
         "electrofacies": lambda: "Electrofacies (k-means)",
         "lithology": lambda: "Lithology",
+        "derived_parameters": lambda: "Derived parameters (BVW)",
     }
     for i, sid in enumerate(order, 1):
         fn = summaries.get(sid)
@@ -180,7 +182,13 @@ def observation_text(
     done_tools = set(ledger.get("tool_results", {}))
     optionals_available = [
         a
-        for a in ("permeability", "rock_quality", "electrofacies", "lithology")
+        for a in (
+            "permeability",
+            "rock_quality",
+            "electrofacies",
+            "lithology",
+            "derived_parameters",
+        )
         if a in actions and not (done_tools & _OPTIONAL_TOOLS.get(a, set()))
     ]
     # Order matters: critical fields FIRST so the 5200-char cap only ever trims the verbose tail
@@ -209,6 +217,7 @@ _OPTIONAL_TOOLS: dict[str, set[str]] = {
     "rock_quality": {"rqi", "fzi", "winland_r35"},
     "electrofacies": {"electrofacies"},
     "lithology": {"litho_nd_crossplot"},
+    "derived_parameters": {"bvw"},
 }
 
 
@@ -410,5 +419,6 @@ def _optionals_in(order: list[str]) -> list[str]:
         "permeability",
         "rock_quality",
         "electrofacies",
+        "derived_parameters",
     }
     return [s for s in order if s in opt]
