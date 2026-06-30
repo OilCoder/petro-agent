@@ -171,9 +171,38 @@ def _seed_order(valid: set[str]) -> list[str]:
 
 
 def _done_optionals(ledger: dict[str, Any]) -> frozenset[str]:
-    """Optional actions whose tool result already exists (so they are not offered again)."""
+    """Optional actions whose tool result already exists."""
     done = set(ledger.get("tool_results", {}))
     return frozenset(a for a, tools in _OPTIONAL_TOOLS.items() if done & tools)
+
+
+_DEFAULT_METHOD = {"compute_phie": "phie_density_neutron", "compute_sw": "sw_archie"}
+
+
+def _current_method(prop: str, ledger: dict[str, Any]) -> Any:
+    if prop == "vsh":
+        return ledger.get("calibration", {}).get("vsh_method", {}).get("value")
+    if prop == "phie":
+        return ledger.get("porosity_comparison", {}).get("selected")
+    if prop == "sw":
+        return ledger.get("sw_summary", {}).get("method")
+    return None
+
+
+def _is_noop(action: str, method: str | None, ledger: dict[str, Any], ctx: dict[str, Any]) -> bool:
+    """A no-op: re-adding a done optional, or recomputing a core property with the SAME method.
+
+    These are offered (not hidden) so the model's choice is measured; the loop skips + counts them
+    as wasted steps — a competence signal, not scaffolding that does the model's thinking.
+    """
+    if action in _OPTIONAL_TOOLS and action in _done_optionals(ledger):
+        return True
+    if action in ("compute_vsh", "compute_phie", "compute_sw"):
+        default = _DEFAULT_METHOD.get(action) or f"vsh_larionov_{ctx['variant']}"
+        chosen = method or default
+        current = _current_method(PRODUCES[action], ledger)
+        return current is not None and chosen == current
+    return False
 
 
 def _default_next(valid: set[str], curves: set[str]) -> str | None:
@@ -223,14 +252,16 @@ def run_analyst_loop(
     curves = set(ctx["curves"])
     valid = _initial_valid(ctx, ledger)
     order = _seed_order(valid)
-    steps_taken = recomputes = empty_returns = 0
+    steps_taken = recomputes = empty_returns = wasted = 0
     finished = False
 
     chats = [(chat, model), (fallback_chat, fallback_model)]
     recent: list[str] = []
     stalled = False
     for _ in range(max_steps):
-        actions = available_actions(valid, curves, _done_optionals(ledger))
+        actions = available_actions(
+            valid, curves
+        )  # offer everything; no-ops are measured, not hidden
         obs = observation_text(ledger, valid, actions, order)
         choice, empty = _decide(obs, actions, valid, curves, chats)
         empty_returns += empty
@@ -243,6 +274,11 @@ def run_analyst_loop(
         if len(recent) >= 3 and len(set(recent[-3:])) == 1:
             stalled = True
             break
+        # No-op (re-add a done optional / recompute same method): record + skip, keep report clean.
+        if _is_noop(action, choice.get("method"), ledger, ctx):
+            wasted += 1
+            graph.add("decision", {"rationale": f"wasted no-op: {action}", "chosen": action})
+            continue
 
         graph.add("decision", {"rationale": f"step: {action}", "chosen": action})
         if PRODUCES.get(action) in valid:
@@ -281,6 +317,7 @@ def run_analyst_loop(
         "hit_max_steps": steps_taken >= max_steps and not finished and not stalled,
         "stalled": stalled,
         "recomputes": recomputes,
+        "wasted_steps": wasted,
         "empty_returns": empty_returns,
     }
     ledger["run"]["methodology_graph"] = graph.to_json()

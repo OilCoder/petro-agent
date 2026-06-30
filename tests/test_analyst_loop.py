@@ -62,11 +62,25 @@ def test_loop_recompute_default_method_matches_pipeline(tmp_path):
 
 def test_loop_hits_max_steps(tmp_path):
     ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
-    seq = iter(["compute_vsh", "compute_phie"] * 10)  # alternate so the stall guard never fires
-    alternating = lambda s, u: json.dumps({"action": next(seq)})  # noqa: E731
-    run_analyst_loop(ledger, ctx, "free", alternating, "m", max_steps=4)
+    # four distinct PRODUCTIVE optional actions (no no-ops, no 3-in-a-row stall)
+    seq = iter(["permeability", "rock_quality", "electrofacies", "lithology"] * 3)
+    productive = lambda s, u: json.dumps({"action": next(seq)})  # noqa: E731
+    run_analyst_loop(ledger, ctx, "free", productive, "m", max_steps=4)
     al = ledger["run"]["analyst_loop"]
     assert al["steps_taken"] == 4 and al["hit_max_steps"] is True
+
+
+def test_loop_measures_noop_as_wasted(tmp_path):
+    ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
+    # add permeability, then try to add it AGAIN (a no-op) -> measured as wasted, not re-executed
+    script = [
+        {"action": "permeability", "method": "perm_timur"},
+        {"action": "permeability", "method": "perm_timur"},
+        {"action": "finish"},
+    ]
+    run_analyst_loop(ledger, ctx, "free", _scripted(script), "m")
+    al = ledger["run"]["analyst_loop"]
+    assert al["wasted_steps"] == 1 and al["steps_taken"] == 1
 
 
 def test_loop_stall_guard_stops_repetition(tmp_path):

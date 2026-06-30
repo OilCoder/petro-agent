@@ -61,6 +61,7 @@ def objective_score(ledger: dict[str, Any]) -> dict[str, Any]:
         "depth_backed": depth_backed,
         "loop_steps": loop.get("steps_taken", 0),
         "loop_recomputes": loop.get("recomputes", 0),
+        "loop_wasted": loop.get("wasted_steps", 0),
         "loop_finished_by_agent": loop.get("finished_by_agent", False),
         "reasoning_depth": _longest_path(nodes),
         "decisions_justified": round(len(justified) / len(decisions), 3) if decisions else 0.0,

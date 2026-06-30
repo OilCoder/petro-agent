@@ -76,27 +76,22 @@ _OBSERVE_NEEDS: dict[str, tuple[str, ...]] = {
 }
 
 
-_OPTIONAL_ACTIONS = ("permeability", "rock_quality", "electrofacies", "lithology")
-
-
-def available_actions(
-    valid: set[str], curves: set[str], done_optionals: frozenset[str] = frozenset()
-) -> list[str]:
+def available_actions(valid: set[str], curves: set[str]) -> list[str]:
     """Return the action ids valid right now (compute + observation + FINISH).
+
+    Only PHYSICS gates the frontier (PHIE needs Vsh, …). Already-done optionals and same-method
+    recomputes are STILL offered — picking one is a no-op the loop records as a wasted step (a
+    measured competence signal), rather than hidden (which would mask the model's judgement).
 
     Args:
         valid: properties already computed AND not stale (e.g. {"vsh", "phie"}).
         curves: canonical curves present in the well.
-        done_optionals: optional actions already added (excluded — adding them again is a no-op;
-            only core properties are meaningfully recomputable).
 
     Returns:
-        Sorted-by-category list of available action ids; always includes ``finish``.
+        List of available action ids; always includes ``finish``.
     """
     actions: list[str] = []
     for action, (deps, need_curves) in _REQUIRES.items():
-        if action in done_optionals:
-            continue
         if all(d in valid for d in deps) and all(c in curves for c in need_curves):
             actions.append(action)
     # observation actions
