@@ -88,8 +88,42 @@ def _initial_valid(ctx: dict[str, Any], ledger: dict[str, Any]) -> set[str]:
     return valid
 
 
-def observation_text(ledger: dict[str, Any], valid: set[str], actions: list[str]) -> str:
-    """Compact STATE digest for the agent (zone/distribution/point on request; never raw arrays)."""
+def _report_outline(ledger: dict[str, Any], order: list[str]) -> list[str]:
+    """A compact, document-like view of the report built SO FAR (one line per section)."""
+    cal = ledger.get("calibration", {})
+    tr = ledger.get("tool_results", {})
+    lines: list[str] = ["[prep + honesty rails are added automatically]"]
+    summaries = {
+        "vsh": lambda: f"Shale volume: {cal.get('vsh_method', {}).get('value', '?')}",
+        "porosity": lambda: (
+            f"Porosity: {ledger.get('porosity_comparison', {}).get('selected', '?')}"
+        ),
+        "sw": lambda: f"Water saturation: {ledger.get('sw_summary', {}).get('method', '?')}",
+        "zonation": lambda: f"Zonation: {len(ledger.get('zones', []))} net-pay intervals",
+        "results": lambda: f"Results: net pay {ledger.get('net_pay_total_m', '?')} m",
+        "uncertainty": lambda: "Uncertainty: Monte Carlo P10/P50/P90",
+        "permeability": lambda: f"Permeability: {[k for k in tr if k.startswith('perm_')]}",
+        "rock_quality": lambda: "Rock quality (uncalibrated)",
+        "electrofacies": lambda: "Electrofacies (k-means)",
+        "lithology": lambda: "Lithology",
+    }
+    for i, sid in enumerate(order, 1):
+        fn = summaries.get(sid)
+        lines.append(f"{i}. {fn() if fn else sid}")
+    if not order:
+        lines.append("(no analysis sections built yet)")
+    return lines
+
+
+def observation_text(
+    ledger: dict[str, Any], valid: set[str], actions: list[str], order: list[str] | None = None
+) -> str:
+    """STATE digest + the report-in-progress (so the agent sees the document it is building).
+
+    The agent reasons over summarized data (zone/distribution/point on request; never raw arrays)
+    AND a compact outline of the sections built so far — concrete grounding for what to add or
+    refine and when to finish.
+    """
     cal = ledger.get("calibration", {})
     computed = {
         "vsh": {"in": "vsh" in valid, "method": cal.get("vsh_method", {}).get("value")},
@@ -106,15 +140,17 @@ def observation_text(ledger: dict[str, Any], valid: set[str], actions: list[str]
         if a in actions and not (done_tools & _OPTIONAL_TOOLS.get(a, set()))
     ]
     state = {
+        "report_so_far": _report_outline(ledger, order or []),
         "baseline_complete": not stale,
         "computed": computed,
         "stale_or_pending": stale,
         "optionals_not_yet_added": optionals_available,
         "eda": ledger.get("run", {}).get("eda", {}),
         "valid_actions": actions,
-        "hint": "recompute a core property only to change its method; else add optionals or finish",
+        "hint": "look at report_so_far: add the optionals worth adding, then finish; recompute a "
+        "core property only to change its method",
     }
-    return "STATE:\n" + json.dumps(state, indent=1, default=str)[:3000]
+    return "STATE:\n" + json.dumps(state, indent=1, default=str)[:3500]
 
 
 _OPTIONAL_TOOLS: dict[str, set[str]] = {
@@ -123,6 +159,21 @@ _OPTIONAL_TOOLS: dict[str, set[str]] = {
     "electrofacies": {"electrofacies"},
     "lithology": {"litho_nd_crossplot"},
 }
+
+
+def _seed_order(valid: set[str]) -> list[str]:
+    """Seed the section order with the baseline sections (the report the agent starts to refine)."""
+    order: list[str] = []
+    for prop in ("vsh", "phie", "sw", "netpay", "uncertainty"):
+        if prop in valid:
+            order.extend(s for s in _PROP_SECTIONS.get(prop, ()) if s not in order)
+    return order
+
+
+def _done_optionals(ledger: dict[str, Any]) -> frozenset[str]:
+    """Optional actions whose tool result already exists (so they are not offered again)."""
+    done = set(ledger.get("tool_results", {}))
+    return frozenset(a for a, tools in _OPTIONAL_TOOLS.items() if done & tools)
 
 
 def _default_next(valid: set[str], curves: set[str]) -> str | None:
@@ -171,7 +222,7 @@ def run_analyst_loop(
     graph = MethodologyGraph(mode=mode, model=model)
     curves = set(ctx["curves"])
     valid = _initial_valid(ctx, ledger)
-    order: list[str] = []
+    order = _seed_order(valid)
     steps_taken = recomputes = empty_returns = 0
     finished = False
 
@@ -179,8 +230,8 @@ def run_analyst_loop(
     recent: list[str] = []
     stalled = False
     for _ in range(max_steps):
-        actions = available_actions(valid, curves)
-        obs = observation_text(ledger, valid, actions)
+        actions = available_actions(valid, curves, _done_optionals(ledger))
+        obs = observation_text(ledger, valid, actions, order)
         choice, empty = _decide(obs, actions, valid, curves, chats)
         empty_returns += empty
         action = choice["action"]
