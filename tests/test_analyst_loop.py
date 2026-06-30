@@ -169,6 +169,19 @@ def test_loop_optional_bad_method_coerced_not_crash(tmp_path):
     assert ledger["run"]["analyst_loop"]["steps_taken"] == 1
 
 
+def test_loop_second_refinement_of_property_is_wasted(tmp_path):
+    ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
+    # refining Sw once is allowed; a second compute_sw (any method) is wasted (prompt: at most once)
+    script = [
+        {"action": "compute_sw", "method": "sw_simandoux"},  # first refinement -> executes
+        {"action": "compute_sw", "method": "sw_indonesia"},  # second -> wasted (already refined)
+        {"action": "finish"},
+    ]
+    run_analyst_loop(ledger, ctx, "free", _scripted(script), "m")
+    al = ledger["run"]["analyst_loop"]
+    assert al["wasted_steps"] == 1 and al["steps_taken"] == 1
+
+
 def test_loop_rezone_same_interval_is_wasted(tmp_path):
     ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
     depth = np.asarray(ctx["depth_m"], dtype=float)

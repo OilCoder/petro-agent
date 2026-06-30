@@ -280,7 +280,12 @@ def _is_noop(
         default = _DEFAULT_METHOD.get(action) or f"vsh_larionov_{ctx['variant']}"
         chosen = method or default
         current = _current_method(prop, ledger)
-        return current is not None and chosen == current
+        if current is None:
+            return False
+        # No-op if the same method, OR the property was already refined off its default — the prompt
+        # allows refining a core property AT MOST ONCE, so a second refinement is wasted (it also
+        # stops capable models from rabbit-holing on a data-driven objection no method can fix).
+        return chosen == current or current != default
     return False
 
 
@@ -369,6 +374,12 @@ def run_analyst_loop(
         if _is_noop(action, choice.get("method"), ledger, ctx, valid, choice.get("args")):
             wasted += 1
             graph.add("decision", {"rationale": f"wasted no-op: {action}", "chosen": action})
+            # Tell the agent its choice had no effect so it stops repeating it (was looping blind).
+            last_obs = {
+                "action": action,
+                "result": f"NO-OP: '{action}' had no effect — already done, same method, or same "
+                "zone. Pick a DIFFERENT action (an optional analysis) or finish.",
+            }
             continue
 
         graph.add("decision", {"rationale": f"step: {action}", "chosen": action})
