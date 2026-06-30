@@ -322,3 +322,25 @@ es bajo para esta litología" es del agente.
 **Verificado e2e:** restringir 25954 a 915–1343 m baja PHIE 0.229→**0.089** y net pay 296→**40 m**
 (físicamente sano), sin que el LLM calcule nada. Suite verde (mypy/ruff limpios); tests nuevos de
 `depth_quality_profile`, disponibilidad de acciones, y restrict+recompute e2e.
+
+## DV2-25 (2026-06-30) — El piso es comportamiento del modelo, no hueco de flujo (veredicto LOCKED)
+**Contexto:** tras DV2-24 el objetivo era ≥75% de un informe completo PRODUCIDO por el agente. Los
+modelos reales producen sólo el piso (~21 caps/~57%) y no agregan las secciones [MODELO] opcionales.
+Antes de concluir, agoté las palancas legítimas de claridad (pilar 3).
+**Lo que se arregló (todos honestos, sin forzar):** (1) digest EDA poblado en el loop; (2) diagnostics
+en el STATE con objeciones tipadas (irreducible/mechanical/support) + `objections_legend` que dice
+"note it and MOVE ON; Do NOT loop"; (3) **6º bug de flujo, MÍO:** mi hint decía "si no convergió,
+recomputá el core" → arrastraba a gpt-5 a un loop infinito de recompute sobre una objeción irreducible
+(rt_sw). Reescrito para distinguir mecánica (intentar 1×) de irreducible (no reintentar) y aclarar que
+las opcionales no necesitan convergencia (a81339b).
+**Prueba decisiva (instrumentada, `dbg_decision_context.py` + `dbg_real_coverage.py`):** con el flujo
+limpio y el hint corregido, gpt-5 cicla `compute_sw`↔`depth_quality` 12 pasos, re-eligiendo compute_sw
+7× para "arreglar" una objeción ya tipada irreducible — **sin tocar UNA opcional**, aunque las 5 se
+ofrecen en CADA paso. El loop infinito se cortó (recomp=1) pero la elección no cambió: 0 opcionales.
+**Decisión:** el piso es **comportamiento del modelo** (fijación en el core / ignora el feedback de
+no-op), no un hueco de sandbox ni de comunicación. **Se deja de ingenierizar el flujo.** Las 3 palancas
+restantes están vedadas por principio: nudgear hacia opcionales = Pilar 1 (decidir por el agente);
+ocultar el recompute capeado = DV2-21 "midelo"; aflojar rt_sw = deshonesto. Alcanzar 75% PRODUCIDO
+requiere VOLVE (data que converge) o un modelo que no se fije — ambas, decisión/setup del usuario.
+**Estado del sandbox:** habilita 75% (selección scripteada completa = 26 caps), ofrece las opcionales
+siempre, 6 bugs de flujo cerrados. Suite verde. La medición real del 75% migra a VOLVE (Fase 8).
