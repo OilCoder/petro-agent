@@ -40,11 +40,13 @@ _MANDATORY_BODY = [
     "sw",
     "parameters",
     "rw",
+    "cutoffs",
     "zonation",
     "results",
     "uncertainty",
     "data_quality",
     "figures",
+    "recommendations",
     "limitations",
     "conclusions",
 ]
@@ -83,7 +85,15 @@ _FREE_HEAD = [
     "intervals",
     "methodology",
 ]
-_FREE_TAIL = ["parameters", "data_quality", "__methodology_graph__", "limitations", "conclusions"]
+_FREE_TAIL = [
+    "parameters",
+    "cutoffs",
+    "data_quality",
+    "__methodology_graph__",
+    "recommendations",
+    "limitations",
+    "conclusions",
+]
 # Analysis sections the agent may choose (and order) in FREE mode — including the optional ones.
 _FREE_CHOOSABLE: tuple[str, ...] = (
     "gr_analysis",
@@ -156,6 +166,8 @@ def _render_known(section_id: str, ledger: dict[str, Any], narrative: dict[str, 
         "porosity": lambda: v1._porosity(ledger),
         "sw": lambda: v1._sw(ledger),
         "rw": lambda: v1._rw(ledger),
+        "cutoffs": lambda: v1._cutoffs(ledger),
+        "recommendations": lambda: v1._recommendations(ledger),
         "limitations": lambda: v1._limitations(ledger),
         "shaly_sand_saturation": lambda: _shaly_sand(ledger),
         "sonic_porosity": lambda: _sonic_porosity(ledger),

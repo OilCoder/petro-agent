@@ -5,8 +5,10 @@ These tests exercise the shared section helpers directly (the composer reuses th
 """
 
 from src.agents.report_template import (
+    _cutoffs,
     _header,
     _parameters,
+    _recommendations,
     _results,
     _uncertainty,
     merge_zones,
@@ -27,6 +29,9 @@ _LEDGER = {
         "m": {"value": 2.0, "unit": "-", "provenance": "default"},
         "Rw": {"value": 0.04, "unit": "ohm-m", "provenance": "default"},
         "gr_min": {"value": 20.0, "unit": "API", "provenance": "default"},
+        "vsh_cutoff": {"value": 0.5, "unit": "-", "provenance": "default"},
+        "phie_cutoff": {"value": 0.08, "unit": "-", "provenance": "default"},
+        "sw_cutoff": {"value": 0.6, "unit": "-", "provenance": "regional"},
     },
     "zones": [
         {
@@ -123,3 +128,18 @@ def test_uncertainty_surfaces_dominant_driver():
 def test_uncertainty_degrades_when_absent():
     ledger = {k: v for k, v in _LEDGER.items() if k != "uncertainty"}
     assert "not run" in _uncertainty(ledger)
+
+
+def test_cutoffs_renders_applied_values_and_provenance():
+    md = _cutoffs(_LEDGER)
+    # The three cutoff values come straight from the ledger parameters (engine, not LLM).
+    assert "0.500" in md and "0.080" in md and "0.600" in md
+    assert "regional" in md  # sw_cutoff provenance surfaced
+    assert "**m**" in md  # dominant-uncertainty pointer
+
+
+def test_recommendations_targets_dominant_uncertainty():
+    md = _recommendations(_LEDGER)
+    # Dominant parameter 'm' maps to the calibrating measurement, deterministically.
+    assert "cementation exponent m" in md
+    assert "Core (routine + SCAL)" in md  # LAS-only standing recommendation

@@ -594,6 +594,66 @@ def _electrofacies_section(ledger: dict[str, Any]) -> str:
     )
 
 
+def _cutoffs(ledger: dict[str, Any]) -> str:
+    """Net sand/reservoir/pay criteria and the Vsh/PHIE/Sw cutoff values actually applied."""
+    params = ledger.get("parameters", {})
+    vc = params.get("vsh_cutoff", {})
+    pc = params.get("phie_cutoff", {})
+    sc = params.get("sw_cutoff", {})
+    rows = [
+        "## Petrophysical cutoffs\n",
+        "Boundary-inclusive criteria applied by the engine (`netpay`) to flag reservoir:\n",
+        "| Stage | Criterion | Cutoff | Provenance |",
+        "|---|---|---|---|",
+    ]
+    for stage, crit, p in (
+        ("Net sand", "Vsh ≤ cutoff", vc),
+        ("Net reservoir", "+ PHIE ≥ cutoff", pc),
+        ("Net pay", "+ Sw ≤ cutoff", sc),
+    ):
+        rows.append(
+            f"| {stage} | {crit} | {_fmt(p.get('value'), 3)} | {p.get('provenance', '—')} |"
+        )
+    dom = ledger.get("uncertainty", {}).get("sensitivity", {}).get("dominant_parameter")
+    if dom:
+        rows.append(
+            f"\n> Cutoff values are engine parameters (never LLM-authored); the dominant net-pay "
+            f"uncertainty is **{dom}** — see Uncertainty for the swing."
+        )
+    return "\n".join(rows) + "\n"
+
+
+# Maps the dominant Archie parameter to the measurement that calibrates it.
+_CALIBRATES = {
+    "Rw": "produced-water salinity or a Pickett/SP Rw calibration",
+    "m": "core SCAL — cementation exponent m",
+    "n": "core SCAL — saturation exponent n",
+    "a": "core SCAL — tortuosity factor a",
+}
+
+
+def _recommendations(ledger: dict[str, Any]) -> str:
+    """Data to acquire to calibrate the study and reduce the dominant uncertainty (LAS-only)."""
+    prov = ledger.get("run", {}).get("curve_provenance", {})
+    missing = [c for c in _STD_CURVES if c not in prov]
+    dom = ledger.get("uncertainty", {}).get("sensitivity", {}).get("dominant_parameter")
+    rows = [
+        "## Recommendations\n",
+        "To calibrate this LAS-only interpretation and reduce its dominant uncertainty, acquire:\n",
+        "- Core (routine + SCAL): porosity/permeability and Archie m, n, a — anchors PHIE and Sw.",
+        "- Pressure tests (RFT/MDT): true fluid contacts and gradients (here only log-based).",
+        "- Production/flow data: validates the net-pay flag against deliverability.",
+    ]
+    if dom:
+        rows.append(
+            f"- Priority — the dominant net-pay driver is **{dom}**: "
+            f"acquire {_CALIBRATES.get(dom, 'core calibration')}."
+        )
+    if missing:
+        rows.append(f"- Missing standard curves to log next: {', '.join(missing)}.")
+    return "\n".join(rows) + "\n"
+
+
 def _limitations(ledger: dict[str, Any]) -> str:
     prov = ledger.get("run", {}).get("curve_provenance", {})
     missing = [c for c in _STD_CURVES if c not in prov]
