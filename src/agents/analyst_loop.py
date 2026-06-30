@@ -16,6 +16,7 @@ from typing import Any
 from src.agents.client import ChatFn
 from src.agents.loop_actions import PRODUCES, available_actions, execute_step
 from src.agents.methodology_graph import MethodologyGraph
+from src.eda.explore import build_eda_digest
 from src.validators.physical import cross_tool_consistency
 
 VERSION = "0.1.0"
@@ -119,6 +120,35 @@ def _report_outline(ledger: dict[str, Any], order: list[str]) -> list[str]:
     return lines
 
 
+def _diagnostics(ledger: dict[str, Any]) -> dict[str, Any]:
+    """The red-flag signals the analyst must see: validator objections, net-pay summary, status.
+
+    All already computed by pass-0 (validate/zonate/gating) — surfaced, not recomputed.
+    """
+    run = ledger.get("run", {})
+    objs = [
+        {
+            "validator": o.get("validator_id"),
+            "type": o.get("type") or o.get("objection_type"),
+            "detail": o.get("detail"),
+        }
+        for o in ledger.get("objections", [])
+    ][:6]
+    s = ledger.get("summary", {})
+    summary = {
+        k: s[k] for k in ("gross_m", "ntg", "avg_phie", "avg_sw", "avg_vsh") if s.get(k) is not None
+    }
+    return {
+        "objections": objs or "none",
+        "net_pay_summary": summary or "not computed yet",
+        "convergence": {
+            "status": run.get("convergence_status"),
+            "abstain": run.get("abstain"),
+            "reasons": run.get("abstain_reasons", []),
+        },
+    }
+
+
 def observation_text(
     ledger: dict[str, Any],
     valid: set[str],
@@ -148,20 +178,25 @@ def observation_text(
         for a in ("permeability", "rock_quality", "electrofacies", "lithology")
         if a in actions and not (done_tools & _OPTIONAL_TOOLS.get(a, set()))
     ]
+    # Order matters: critical fields FIRST so the 5200-char cap only ever trims the verbose tail
+    # (report_so_far, eda) — never valid_actions or the diagnostics the agent decides on.
     state = {
-        "report_so_far": _report_outline(ledger, order or []),
+        "valid_actions": actions,
+        "diagnostics": _diagnostics(ledger),
         "last_observation": last_obs or "none yet (call an observation to inspect the data)",
-        "zone_of_interest": ledger.get("zone_of_interest", "full logged interval (not restricted)"),
-        "baseline_complete": not stale,
         "computed": computed,
         "stale_or_pending": stale,
         "optionals_not_yet_added": optionals_available,
+        "zone_of_interest": ledger.get("zone_of_interest", "full logged interval (not restricted)"),
+        "baseline_complete": not stale,
+        "report_so_far": _report_outline(ledger, order or []),
         "eda": ledger.get("run", {}).get("eda", {}),
-        "valid_actions": actions,
-        "hint": "look at report_so_far: add the optionals worth adding, then finish; recompute a "
-        "core property only to change its method",
+        "hint": "check diagnostics FIRST: if an objection flags an implausible value (e.g. PHIE "
+        "too high) or the well did not converge, consider restricting the zone "
+        "(set_zone_of_interest) or recomputing a core property with a better method. Then add the "
+        "optionals worth adding; finish.",
     }
-    return "STATE:\n" + json.dumps(state, indent=1, default=str)[:4200]
+    return "STATE:\n" + json.dumps(state, indent=1, default=str)[:5200]
 
 
 _OPTIONAL_TOOLS: dict[str, set[str]] = {
@@ -270,6 +305,8 @@ def run_analyst_loop(
     curves = set(ctx["curves"])
     valid = _initial_valid(ctx, ledger)
     order = _seed_order(valid)
+    # Build the EDA digest the agent reads (the loop path never populated it -> agent was blind).
+    ledger.setdefault("run", {})["eda"] = build_eda_digest(ctx)
     steps_taken = recomputes = empty_returns = wasted = 0
     finished = False
 

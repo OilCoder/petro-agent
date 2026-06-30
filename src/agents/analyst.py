@@ -25,9 +25,9 @@ from src.agents.report_compose import (
     heuristic_section_plan,
 )
 from src.agents.tool_dispatch import ALLOWED_TOOLS, dispatch, validate_plan
-from src.eda import explore
+from src.eda.explore import build_eda_digest
 from src.petrophysics.phie import porosity_method_comparison
-from src.petrophysics.registry import ELECTRICAL_PRESETS, MATRIX_PRESETS, available_methods
+from src.petrophysics.registry import ELECTRICAL_PRESETS, MATRIX_PRESETS
 from src.petrophysics.vsh import vsh_method_comparison
 from src.validators.physical import cross_tool_consistency
 
@@ -54,23 +54,6 @@ ABSOLUTE RULES:
   of the VALID args listed. If unsure, omit args (a safe default is applied).
 - Never write a number — the engine computes; you select and compose.
 - Keep the rationale to plain words (no decimals); reference what the data shows, not values."""
-
-
-def build_eda_digest(ctx: dict[str, Any]) -> dict[str, Any]:
-    """Pre-compute the compact EDA observations (the agent observes, never computes)."""
-    curves = ctx["curves"]
-    digest: dict[str, Any] = {
-        "curves_present": sorted(curves),
-        "available_methods": available_methods(curves),
-        "badhole": explore.badhole_summary(ctx["quality_map"]),
-    }
-    if "RT" in curves and "phie" in ctx:
-        digest["low_resistivity"] = explore.low_resistivity_scan(
-            curves["RT"], ctx["depth_m"], ctx["phie"]
-        )
-    if "RHOB" in curves and "NPHI" in curves:
-        digest["lithology"] = explore.crossplot_density_neutron(curves["RHOB"], curves["NPHI"])
-    return digest
 
 
 def _eda_findings(digest: dict[str, Any]) -> list[tuple[str, str]]:

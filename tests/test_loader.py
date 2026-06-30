@@ -32,6 +32,21 @@ def test_load_synthetic_curves():
     assert well.curves["RHOB"][4] == pytest.approx(2.60)
 
 
+def test_load_records_unmapped_curves(tmp_path):
+    rows = "\n".join(f"{1000.0 + i * 0.5:.1f} 50.0 1.0" for i in range(12))
+    las = (
+        "~Version\nVERS. 2.0:\nWRAP. NO:\n"
+        "~Well\nSTRT.M 1000.0:\nSTOP.M 1005.5:\nSTEP.M 0.5:\nNULL. -999.25:\n"
+        "~Curve\nDEPT.M:\nGR.GAPI:\nFOOBAR.XX:\n"
+        "~ASCII\n" + rows + "\n"
+    )
+    p = tmp_path / "w.las"
+    p.write_text(las)
+    well = load_las(str(p))
+    assert "FOOBAR" in well.unmapped  # unrecognized curve recorded (transparency)
+    assert "GR" in well.curves and "DEPT" not in well.unmapped  # depth not flagged as unmapped
+
+
 def test_load_synthetic_curve_length():
     well = load_las(FIXTURE)
     for arr in well.curves.values():

@@ -30,6 +30,9 @@ def test_build_eda_digest_is_compact_and_structured():
     d = build_eda_digest(CTX)
     assert "available_methods" in d and "lithology" in d and "low_resistivity" in d
     assert isinstance(d["curves_present"], list)
+    # per-curve coverage stats + depth coverage are now part of the digest the agent reads
+    assert "curve_inventory" in d and "depth_coverage" in d
+    assert "gr_baseline" in d  # GR present in the fixture -> baseline endpoints surfaced
 
 
 def test_parse_plan_tolerant():

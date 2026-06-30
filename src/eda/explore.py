@@ -13,6 +13,8 @@ from typing import Any
 
 import numpy as np
 
+from src.petrophysics.registry import available_methods
+
 VERSION = "0.1.0"
 
 # Reference matrix densities for the N-D lithology screen (g/cc).
@@ -154,3 +156,27 @@ def badhole_summary(quality_map: np.ndarray) -> dict[str, Any]:
         tier: round(float(np.count_nonzero(q == tier)) / n, 3)
         for tier in ("GOOD", "DEGRADED", "EXCLUDED")
     }
+
+
+def build_eda_digest(ctx: dict[str, Any]) -> dict[str, Any]:
+    """Pre-compute the compact EDA observations the agent reads (it observes, never computes).
+
+    Summarized data only (per-curve stats, coverage, GR baseline, badhole, litho/low-res screens) —
+    never the raw arrays. Used by both the single-shot path and the agentic loop.
+    """
+    curves = ctx["curves"]
+    depth = ctx["depth_m"]
+    digest: dict[str, Any] = {
+        "curves_present": sorted(curves),
+        "curve_inventory": curve_inventory(curves, depth),
+        "depth_coverage": depth_coverage(curves, depth, ctx.get("step_m", 0.5)),
+        "badhole": badhole_summary(ctx["quality_map"]),
+        "available_methods": available_methods(curves),
+    }
+    if "GR" in curves:
+        digest["gr_baseline"] = gr_baseline_check(curves["GR"])
+    if "RT" in curves and "phie" in ctx:
+        digest["low_resistivity"] = low_resistivity_scan(curves["RT"], depth, ctx["phie"])
+    if "RHOB" in curves and "NPHI" in curves:
+        digest["lithology"] = crossplot_density_neutron(curves["RHOB"], curves["NPHI"])
+    return digest

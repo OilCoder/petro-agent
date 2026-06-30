@@ -85,6 +85,22 @@ def test_loop_measures_noop_as_wasted(tmp_path):
     assert al["wasted_steps"] == 1 and al["steps_taken"] == 1
 
 
+def test_loop_surfaces_diagnostics_and_populates_eda(tmp_path):
+    from src.agents.analyst_loop import observation_text
+    from src.agents.loop_actions import available_actions
+
+    ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
+    run_analyst_loop(ledger, ctx, "free", _scripted([{"action": "finish"}]), "m")
+    # the loop path now builds the EDA digest (it used to leave the agent's "eda" empty)
+    eda = ledger["run"]["eda"]
+    assert eda.get("curves_present") and "curve_inventory" in eda and "depth_coverage" in eda
+    # observation_text surfaces the diagnostics, and valid_actions comes before the verbose tail
+    valid = {"vsh", "phie", "sw", "netpay"}
+    obs = observation_text(ledger, valid, available_actions(valid, set(ctx["curves"])), ["vsh"])
+    assert "diagnostics" in obs and "net_pay_summary" in obs and "convergence" in obs
+    assert obs.index("valid_actions") < obs.index("report_so_far")  # critical field not truncated
+
+
 def test_loop_set_zone_of_interest_restricts_and_recomputes(tmp_path):
     ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
     default_netpay = ledger["net_pay_total_m"]
