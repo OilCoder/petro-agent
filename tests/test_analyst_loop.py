@@ -4,6 +4,7 @@ import json
 import os
 
 from src.agents.analyst_loop import run_analyst_loop
+from src.agents.report_compose import compose_report
 from src.orchestrator.graph import run_pipeline
 
 FIXTURE = os.path.join(os.path.dirname(__file__), "fixtures", "synthetic_oldrocks.las")
@@ -82,3 +83,24 @@ def test_loop_garbage_falls_back_and_finishes(tmp_path):
     al = ledger["run"]["analyst_loop"]
     # everything is valid from pass-0, so the default fallback finishes immediately
     assert al["finished_by_agent"] is True
+
+
+def test_loop_output_composes_a_report(tmp_path):
+    ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
+    script = [
+        {"action": "compute_sw", "method": "sw_simandoux"},
+        {"action": "permeability", "method": "perm_timur"},
+        {"action": "finish"},
+    ]
+    res = run_analyst_loop(ledger, ctx, "free", _scripted(script), "m")
+    md = compose_report(
+        ledger,
+        res["section_plan"],
+        "free",
+        res["graph"],
+        {"executive_summary": "Bracketed; defaults.", "conclusions": "Calibrate Rw."},
+    )
+    assert "Water saturation" in md  # the Sw section the agent built (Simandoux)
+    assert "Permeability (uncalibrated)" in md  # the optional the agent added
+    assert "Methodology (decision graph)" in md  # the step-by-step trace
+    assert "Limitations" in md and "Parameters and provenance" in md  # forced rails always present
