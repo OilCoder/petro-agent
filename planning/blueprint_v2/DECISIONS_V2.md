@@ -219,3 +219,24 @@ liberar la SELECCIÓN DE MÉTODO de cómputo (que el Vsh elegido propague a PHIE
 pipeline; hoy el agente elige qué método destacar de la comparación, no recomputa la cadena.
 **Verificado:** llama3.1 en modo libre compone su propia lista de secciones (fell_back=False);
 56 source files, suite verde.
+
+## DV2-20 (2026-06-29) — Bucle agente: el agente compone el informe paso a paso (loop construido)
+**Decisión (usuario):** el informe del modo libre se genera por un BUCLE continuo (observar→decidir→
+computar→observar), no de un disparo. El agente ve los datos que el motor computa y decide el
+siguiente paso mientras construye el informe — la interpretación EMERGE de sus decisiones, pero el
+LLM nunca calcula (invariante intacto). Reconcilia la tensión: no le damos el pipeline armado, pero
+tampoco le pedimos inventar matemática. Decisiones: **recompute permitido** (rehacer una propiedad
+con otro método invalida aguas abajo) y **scope completo** (cadena + opcionales + observación
+on-demand de zona/distribución/punto, nunca arrays crudos).
+**Construido (Fases 1-5):** `orchestrator/steps.py` (vsh/phie/sw discretos; `compute()` delega →
+guiado y loop una sola fuente de verdad); `agents/loop_actions.py` (frontera de acciones por física
++ invalidación por recompute + `execute_step` reusando steps/zonate/MC/dispatch + observación);
+`agents/analyst_loop.py` (`run_analyst_loop`: observar→decidir→ejecutar, fallback por paso, guard
+anti-stall del orquestador, métricas `steps_taken/recomputes/finished/stalled`). El grafo de
+metodología es la traza paso-a-paso. Modo guiado intacto (single-pass, baseline comparable).
+**Hallazgo (techo honesto):** llama3.1:8b se estanca (repite acciones, no termina) — el orquestador
+corta el desperdicio (anti-stall); es exactamente la limitación del modelo local que el experimento
+mide. **Pendiente (follow-up):** propagar el método de Sw/porosidad al Monte Carlo (Vsh ya propaga
+completo); re-correr el harness de validadores completo tras un recompute del núcleo (hoy las
+objeciones/tier son de la pasada-0). Verificado: golden loop-default == pipeline; recompute cambia
+net pay; el loop compone un informe con las secciones que el agente eligió.

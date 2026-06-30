@@ -1,5 +1,8 @@
 # v2 · 11 — Bucle agente (observar→decidir→computar→observar)
 
+> **Estado: CONSTRUIDO (2026-06-29, DV2-20).** Fases 1-5 hechas: `orchestrator/steps.py`,
+> `agents/loop_actions.py`, `agents/analyst_loop.py`. El doc abajo es el diseño de referencia.
+
 El informe se genera mediante un **bucle continuo**: el agente ve los datos que el motor
 calcula y, a medida que construye el informe, decide el siguiente paso. Reemplaza el diseño de
 "un disparo" (`run_analyst`). Resuelve la incompatibilidad de fondo: **no le damos el pipeline
