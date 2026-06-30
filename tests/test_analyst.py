@@ -82,12 +82,13 @@ def test_analyst_signaled_deterministic_fallback_when_all_fail():
     assert a["empty_returns"] == 1  # qwen empty; llama produced (invalid) text
 
 
-def test_analyst_rejects_out_of_whitelist_tool():
+def test_analyst_drops_out_of_whitelist_tool():
+    # an invented tool is DROPPED (never dispatched), but the agent's section composition is honored
     bad = (
-        '{"optional_sections": [], '
+        '{"sections": ["vsh", "results"], '
         '"tool_calls": [{"tool": "sw_invented", "args": {}}], "rationale": "x"}'
     )
     ledger: dict = {}
-    out = run_analyst(ledger, CTX, "guided", lambda s, u: bad, "m")
-    # invalid plan -> falls back; nothing from the bad tool dispatched
-    assert out["fell_back"] is True and "sw_invented" not in ledger.get("tool_results", {})
+    out = run_analyst(ledger, CTX, "free", lambda s, u: bad, "m")
+    assert "sw_invented" not in ledger.get("tool_results", {})
+    assert out["fell_back"] is False and out["section_plan"]["sections"] == ["vsh", "results"]

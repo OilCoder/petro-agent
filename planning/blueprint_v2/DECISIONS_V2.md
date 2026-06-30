@@ -203,3 +203,19 @@ campo desde coords) — gaps de implementación futuros.
 **Efecto en el roadmap:** R6 desbloqueado (el FIJO ya está en `_MANDATORY_BODY`; las MODELO se
 agregan a `OPTIONAL_SECTIONS` conforme R4 las construya). R5 (field report) pasa de opcional a
 requerido, con el esquema 1-fijo+2-libres. Permeabilidad entra en R4 como MODELO con caveat.
+
+## DV2-19 (2026-06-29) — Modo libre: el agente compone el informe (solo prep+rieles forzados)
+**Decisión (usuario):** el modo LIBRE deja de forzar las 24 secciones. Ahora solo se fuerza el
+**piso de preparación de datos** (metadatos, inventario, QC LAS, estandarización, QC por curva,
+prep, intervalos, metodología) + los **rieles de honestidad** (parámetros/procedencia, validadores
++claim verifier, grafo de metodología, limitaciones, conclusiones). **Todo el cuerpo de análisis
+lo decide el agente** vía un campo `sections` ordenado (gr/resistividad/caliper/litología/vsh/
+porosidad/sw/rw/zonación/resultados/incertidumbre/figuras + las 5 opcionales). El modo GUIADO
+queda idéntico (baseline comparable con el piso completo). **Por qué:** "casi todo lo obligábamos";
+el experimento del modo libre debe medir si el LLM sabe componer un informe, no rellenar un molde.
+**Robustez:** tool_calls fuera de la whitelist se descartan (no tumban el plan) — los modelos a
+veces listan secciones como tools; el plan del agente se honra igual. **Pendiente (follow-up):**
+liberar la SELECCIÓN DE MÉTODO de cómputo (que el Vsh elegido propague a PHIE→Sw→net pay) toca el
+pipeline; hoy el agente elige qué método destacar de la comparación, no recomputa la cadena.
+**Verificado:** llama3.1 en modo libre compone su propia lista de secciones (fell_back=False);
+56 source files, suite verde.

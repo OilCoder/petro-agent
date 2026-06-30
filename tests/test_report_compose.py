@@ -67,14 +67,29 @@ def test_heuristic_plan_adds_shaly_sand():
 
 
 def test_optional_inserted_after_results():
+    # GUIDED: the full floor is forced; optionals are inserted right after Results
     md = compose_report(
-        LEDGER, {"optional_sections": ["shaly_sand_saturation"]}, FREE, _valid_graph()
+        LEDGER, {"optional_sections": ["shaly_sand_saturation"]}, GUIDED, _valid_graph(GUIDED)
     )
     assert (
         md.index("Results")
         < md.index("Shaly-sand saturation")
         < md.index("Uncertainty and sensitivity")
     )
+
+
+def test_free_mode_agent_chooses_sections():
+    # FREE: only prep head + honesty rails are forced; the agent's `sections` drive the body
+    ledger = {
+        **LEDGER,
+        "run": dict(LEDGER["run"]),
+        "vsh_comparison": {"methods": {"vsh_larionov_old": 0.15}, "selected": "vsh_larionov_old"},
+    }
+    md = compose_report(ledger, {"sections": ["vsh", "results"]}, FREE, _valid_graph())
+    assert "Shale volume (Vsh)" in md and "Results" in md  # chosen sections present
+    assert "Gamma-ray analysis" not in md  # not chosen -> absent
+    # forced head + rails always present regardless of the agent's choice
+    assert "Data inventory" in md and "Parameters and provenance" in md and "Limitations" in md
 
 
 def test_numbering_is_sequential():
@@ -87,7 +102,7 @@ def test_numbering_is_sequential():
 
 
 def test_r2_mandatory_sections_present():
-    md = compose_report(LEDGER, {"optional_sections": []}, FREE, _valid_graph())
+    md = compose_report(LEDGER, {"optional_sections": []}, GUIDED, _valid_graph(GUIDED))
     for title in (
         "Data inventory",
         "LAS quality control",
@@ -101,7 +116,7 @@ def test_r2_mandatory_sections_present():
 
 
 def test_r2_sections_degrade_when_data_absent():
-    md = compose_report(LEDGER, {"optional_sections": []}, FREE, _valid_graph())
+    md = compose_report(LEDGER, {"optional_sections": []}, GUIDED, _valid_graph(GUIDED))
     assert "Not computed — no resistivity" in md  # no RT in curve_provenance
     assert "needs the RHOB+NPHI" in md  # lithology, no EDA digest
 
@@ -123,7 +138,7 @@ def test_porosity_and_sw_sections_render():
             "rw": 0.04,
         },
     }
-    md = compose_report(ledger, {"optional_sections": []}, FREE, _valid_graph())
+    md = compose_report(ledger, {"optional_sections": []}, GUIDED, _valid_graph(GUIDED))
     assert "## " in md and "Porosity" in md and "phie_density_neutron" in md
     assert "Water saturation" in md and "Mean Sw (Archie)" in md
 
@@ -137,7 +152,7 @@ def test_vsh_comparison_section_renders_with_selection():
             "selected": "vsh_larionov_old",
         },
     }
-    md = compose_report(ledger, {"optional_sections": []}, FREE, _valid_graph())
+    md = compose_report(ledger, {"optional_sections": []}, GUIDED, _valid_graph(GUIDED))
     assert "Shale volume (Vsh)" in md and "vsh_larionov_old" in md and "✓" in md
 
 

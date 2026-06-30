@@ -18,8 +18,13 @@ import numpy as np
 
 from src.agents.client import ChatFn
 from src.agents.methodology_graph import MethodologyGraph
-from src.agents.report_compose import OPTIONAL_REQUIRES, heuristic_section_plan
-from src.agents.tool_dispatch import dispatch, validate_plan
+from src.agents.report_compose import (
+    _FREE_CHOOSABLE,
+    OPTIONAL_REQUIRES,
+    OPTIONAL_SECTIONS,
+    heuristic_section_plan,
+)
+from src.agents.tool_dispatch import ALLOWED_TOOLS, dispatch, validate_plan
 from src.eda import explore
 from src.petrophysics.phie import porosity_method_comparison
 from src.petrophysics.registry import ELECTRICAL_PRESETS, MATRIX_PRESETS, available_methods
@@ -28,21 +33,26 @@ from src.validators.physical import cross_tool_consistency
 
 VERSION = "0.1.0"
 
-_SYSTEM = """You are a senior petrophysical ANALYST choosing how to complete a well report.
-From the FACTS (pre-computed observations) and AVAILABLE METHODS, decide which optional
-analyses add completeness.
+_SYSTEM = """You are a senior petrophysical ANALYST deciding how to COMPOSE a well report.
+From the FACTS (pre-computed observations) and AVAILABLE METHODS, decide which analysis sections
+the report should contain and in what order — a real analyst's judgement, not a fixed template.
+Data preparation and the honesty rails (parameters, validators, methodology graph, limitations)
+are added automatically; you choose the ANALYSIS body.
 
 ABSOLUTE RULES:
 - Output ONLY a JSON object with this shape (a concrete example, copy the structure not the
   values):
-  {"optional_sections": ["shaly_sand_saturation"],
+  {"sections": ["gr_analysis", "lithology", "vsh", "porosity", "sw", "zonation", "results",
+                "uncertainty", "shaly_sand_saturation"],
    "tool_calls": [{"tool": "sw_simandoux", "args": {"electrical_preset": "carbonate_default"}}],
-   "rationale": "dirty rock so a shaly-sand model is appropriate"}
-- Use REAL ids from AVAILABLE METHODS and the section catalog. NEVER copy angle-bracket
-  placeholders like <id> or <preset_id> — substitute a real value or omit the arg.
+   "rationale": "dolomitic shaly section, so include lithology and a shaly-sand saturation"}
+- "sections" is your ORDERED choice of analysis sections (from the SECTION CATALOG). Most
+  sections need NO tool_call — list them in "sections" only. tool_calls are ONLY for the OPTIONAL
+  sections (each needs its backing method id from the catalog), never for regular section ids.
+- Use REAL ids only. NEVER copy angle-bracket placeholders like <id> or <preset_id>.
 - For sw_* methods set args.electrical_preset; for sonic methods set args.matrix_preset; use one
   of the VALID args listed. If unsure, omit args (a safe default is applied).
-- Never write a number — the engine computes; you select.
+- Never write a number — the engine computes; you select and compose.
 - Keep the rationale to plain words (no decimals); reference what the data shows, not values."""
 
 
@@ -84,11 +94,15 @@ def _eda_findings(digest: dict[str, Any]) -> list[tuple[str, str]]:
 
 
 def _section_catalog() -> str:
-    """The optional-section menu: each section id + the tool that must back it, plus valid args."""
-    items = [f"{sec} (call one of: {', '.join(tools)})" for sec, tools in OPTIONAL_REQUIRES.items()]
+    """The section menu the agent composes from: choosable analysis sections + optional backings."""
+    optional = [
+        f"{sec} (call one of: {', '.join(tools)})" for sec, tools in OPTIONAL_REQUIRES.items()
+    ]
     return (
-        "OPTIONAL SECTIONS — to add one, put its id in optional_sections AND call its backing "
-        "tool (it is dropped if no result backs it):\n- " + "\n- ".join(items) + "\n\n"
+        "SECTION CATALOG — pick and order any of these in 'sections':\n"
+        f"{', '.join(_FREE_CHOOSABLE)}\n\n"
+        "Of those, these OPTIONAL sections also need their backing tool in tool_calls (else "
+        "dropped):\n- " + "\n- ".join(optional) + "\n\n"
         f"VALID args: electrical_preset ∈ {list(ELECTRICAL_PRESETS)}; "
         f"matrix_preset ∈ {list(MATRIX_PRESETS)}."
     )
@@ -115,14 +129,22 @@ def _parse_plan(raw: str) -> dict[str, Any] | None:
         return None
     if not isinstance(data, dict):
         return None
+    data.setdefault("sections", [])
     data.setdefault("optional_sections", [])
     data.setdefault("tool_calls", [])
     data.setdefault("rationale", "")
     if not isinstance(data["tool_calls"], list) or not isinstance(data["optional_sections"], list):
         return None
+    if not isinstance(data["sections"], list):
+        return None
     # coerce to clean types (a real model may return dicts where strings are expected)
+    data["sections"] = [s for s in data["sections"] if isinstance(s, str)]
     data["optional_sections"] = [s for s in data["optional_sections"] if isinstance(s, str)]
-    data["tool_calls"] = [c for c in data["tool_calls"] if isinstance(c, dict)]
+    # keep only whitelisted tool_calls — models often list section ids as tools; dropping those
+    # (instead of rejecting the whole plan) preserves the agent's real section composition.
+    data["tool_calls"] = [
+        c for c in data["tool_calls"] if isinstance(c, dict) and c.get("tool") in ALLOWED_TOOLS
+    ]
     data["rationale"] = str(data.get("rationale", ""))
     return data
 
@@ -245,16 +267,20 @@ def run_analyst(
             for o in cross_objs
         )
 
+    sections = list(plan.get("sections", []))
+    optional = [s for s in sections if s in OPTIONAL_SECTIONS]
+    optional += [s for s in plan.get("optional_sections", []) if s not in optional]
     ledger["run"]["analyst"] = {
         "model_used": used,
         "empty_returns": empty_returns,
         "fell_back_to_deterministic": fell_back,
-        "optional_sections": list(plan.get("optional_sections", [])),
+        "sections": sections,
+        "optional_sections": optional,
         "n_observations_available": len(_eda_findings(digest)),
     }
     ledger["run"]["methodology_graph"] = graph.to_json()
     return {
-        "section_plan": {"optional_sections": plan.get("optional_sections", [])},
+        "section_plan": {"sections": sections, "optional_sections": optional},
         "graph": graph,
         "fell_back": fell_back,
     }

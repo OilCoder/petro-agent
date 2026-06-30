@@ -21,7 +21,7 @@ VERSION = "0.1.0"
 
 GUIDED, FREE = "guided", "free"
 
-# Mandatory body sections (numbered, in order). Header/legend are preamble; appendices trail.
+# GUIDED mode: the full mandatory floor (numbered, in order) — the comparable baseline.
 _MANDATORY_BODY = [
     "executive_summary",
     "data_inventory",
@@ -67,6 +67,36 @@ OPTIONAL_REQUIRES: dict[str, tuple[str, ...]] = {
 }
 # Optional sections allowed when the run abstains (diagnostic only — never confident analysis).
 ABSTENTION_SAFE: tuple[str, ...] = ()
+
+# FREE mode: only data preparation + the honesty rails are forced; the agent decides the analysis.
+# Forced head (data prep foundation + the headline) and trailing rails (provenance, validators +
+# claim verifier, methodology graph, limitations, conclusions). Everything else is the agent's.
+_FREE_HEAD = [
+    "executive_summary",
+    "data_inventory",
+    "las_qc",
+    "standardization",
+    "curve_qc",
+    "data_prep",
+    "intervals",
+    "methodology",
+]
+_FREE_TAIL = ["parameters", "data_quality", "__methodology_graph__", "limitations", "conclusions"]
+# Analysis sections the agent may choose (and order) in FREE mode — including the optional ones.
+_FREE_CHOOSABLE: tuple[str, ...] = (
+    "gr_analysis",
+    "resistivity_analysis",
+    "caliper_quality",
+    "lithology",
+    "vsh",
+    "porosity",
+    "sw",
+    "rw",
+    "zonation",
+    "results",
+    "uncertainty",
+    "figures",
+) + OPTIONAL_SECTIONS
 
 
 def _strip_number(block: str) -> str:
@@ -151,23 +181,46 @@ def heuristic_section_plan(ledger: dict[str, Any]) -> dict[str, Any]:
         optional.append("shaly_sand_saturation")
     if "DT" in ledger.get("run", {}).get("curve_provenance", {}):
         optional.append("sonic_porosity")
-    return {"optional_sections": optional}
+    # the fallback yields a COMPLETE analysis body (so a model-unavailable run is still useful);
+    # only a real model's choice produces a tailored, possibly-thinner report.
+    core = [s for s in _FREE_CHOOSABLE if s not in OPTIONAL_SECTIONS]
+    return {"sections": core + optional, "optional_sections": optional}
+
+
+def _free_body(section_plan: dict[str, Any], ledger: dict[str, Any]) -> list[str]:
+    """FREE mode: forced prep head + the agent's chosen analysis sections + forced honesty rails.
+
+    The agent's ``sections`` (ordered) drive the body; optional sections survive only when a
+    backing tool result exists (no theater). Picking nothing yields a minimal but honest report.
+    """
+    raw = list(section_plan.get("sections", []))
+    raw += [s for s in section_plan.get("optional_sections", []) if s not in raw]
+    seen: set[str] = set()
+    chosen: list[str] = []
+    for s in raw:
+        if s not in _FREE_CHOOSABLE or s in seen:
+            continue
+        if s in OPTIONAL_SECTIONS and not _optional_supported(s, ledger):
+            continue
+        seen.add(s)
+        chosen.append(s)
+    return _FREE_HEAD + chosen + _FREE_TAIL
 
 
 def _ordered_body(section_plan: dict[str, Any], mode: str, ledger: dict[str, Any]) -> list[str]:
+    if mode == FREE:
+        return _free_body(section_plan, ledger)
+    # GUIDED: the full mandatory floor (comparable baseline), optionals inserted after results.
     abstain = bool(ledger.get("run", {}).get("abstain"))
     requested = [s for s in section_plan.get("optional_sections", []) if s in OPTIONAL_SECTIONS]
     requested = [s for s in requested if _optional_supported(s, ledger)]
     if abstain:
-        # in guided, only abstention-safe optionals survive; confident analysis is dropped
-        requested = [s for s in requested if s in ABSTENTION_SAFE] if mode == GUIDED else requested
+        requested = [s for s in requested if s in ABSTENTION_SAFE]
     ids: list[str] = []
     for sid in _MANDATORY_BODY:
         ids.append(sid)
         if sid == "results":
             ids.extend(requested)
-        if sid == "data_quality" and mode == FREE:
-            ids.append("__methodology_graph__")  # mandatory in free
     return ids
 
 
