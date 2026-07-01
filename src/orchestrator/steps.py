@@ -26,6 +26,7 @@ from src.petrophysics.vsh import (
     calc_vsh,
     vsh_clavier,
     vsh_linear,
+    vsh_neutron_density,
     vsh_steiber,
 )
 
@@ -36,10 +37,25 @@ def vsh_step(
     gr_max: float,
     variant: str,
     method: str | None = None,
+    pf: dict[str, float] | None = None,
 ) -> tuple[np.ndarray, dict[str, Any]]:
-    """Compute Vsh with the selected vetted method (default = the engine's Larionov variant)."""
+    """Compute Vsh with the selected vetted method (default = the engine's Larionov variant).
+
+    ``pf`` (param floats) is required only for the non-GR ``vsh_neutron_density`` method.
+    """
     gr = curves["GR"]
-    if method == "vsh_linear":
+    nd_ok = method == "vsh_neutron_density" and pf is not None and {"RHOB", "NPHI"} <= set(curves)
+    if nd_ok:
+        assert pf is not None  # narrowed by nd_ok
+        arr = vsh_neutron_density(
+            curves["NPHI"],
+            curves["RHOB"],
+            pf["rho_ma"],
+            pf["rho_fl"],
+            pf["phi_sh_n"],
+            pf["phi_sh_d"],
+        )
+    elif method == "vsh_linear":
         arr = vsh_linear(gr, gr_min, gr_max)
     elif method == "vsh_clavier":
         arr = vsh_clavier(gr, gr_min, gr_max)

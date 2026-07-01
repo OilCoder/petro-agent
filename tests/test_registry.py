@@ -20,6 +20,7 @@ def test_available_methods_filters_by_curves():
     # only GR + RT present -> vsh (GR) and sw (RT) available; no porosity (needs RHOB/NPHI/DT)
     avail = available_methods({"GR": None, "RT": None})
     assert "vsh_linear" in avail.get("vsh", [])
+    assert "vsh_neutron_density" not in avail.get("vsh", [])  # needs RHOB+NPHI
     assert "sw_simandoux" in avail.get("sw", [])
     assert "porosity" not in avail  # no RHOB/NPHI/DT
 
@@ -29,6 +30,7 @@ def test_available_methods_full_suite():
     assert "phie_density_neutron" in avail["porosity"]
     assert "phi_sonic_wyllie" in avail["porosity"]  # DT present
     assert "litho_nd_crossplot" in avail["lithology"]
+    assert "vsh_neutron_density" in avail["vsh"]  # non-GR method now selectable (RHOB+NPHI present)
 
 
 def test_registry_ids_self_consistent():

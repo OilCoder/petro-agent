@@ -171,7 +171,7 @@ def _vsh_cmp(ctx: dict[str, Any], gmin: float, gmax: float) -> dict[str, float]:
 def _exec_vsh(ctx, ledger, method, args, valid):  # noqa: ANN001
     p = ctx["params"]
     gmin, gmax = float(p["gr_min"].value), float(p["gr_max"].value)
-    vsh, cal = vsh_step(ctx["curves"], gmin, gmax, ctx["variant"], method)
+    vsh, cal = vsh_step(ctx["curves"], gmin, gmax, ctx["variant"], method, pf=_pf(ctx))
     ctx["vsh"] = vsh
     ledger.setdefault("calibration", {}).update(cal)
     ledger["vsh_comparison"] = {

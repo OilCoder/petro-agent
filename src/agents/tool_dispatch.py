@@ -104,9 +104,19 @@ def _run_vsh_method(
     method_id: str, ctx: dict[str, Any], ledger: dict[str, Any], args: dict[str, Any]
 ) -> dict[str, Any]:
     spec = METHOD_REGISTRY[method_id]
-    gr = ctx["curves"]["GR"]
-    gmin, gmax = _pv(ledger, "gr_min", 20.0), _pv(ledger, "gr_max", 120.0)
-    arr = spec.fn(gr, gmin, gmax, **spec.fixed_kwargs)
+    curves = ctx["curves"]
+    if method_id == "vsh_neutron_density":  # non-GR clay indicator: different signature
+        arr = spec.fn(
+            curves["NPHI"],
+            curves["RHOB"],
+            _pv(ledger, "rho_ma", 2.71),
+            _pv(ledger, "rho_fl", 1.0),
+            _pv(ledger, "phi_sh_n", 0.35),
+            _pv(ledger, "phi_sh_d", 0.10),
+        )
+    else:
+        gmin, gmax = _pv(ledger, "gr_min", 20.0), _pv(ledger, "gr_max", 120.0)
+        arr = spec.fn(curves["GR"], gmin, gmax, **spec.fixed_kwargs)
     return {"mean_vsh": _mean(arr), "method": method_id}
 
 

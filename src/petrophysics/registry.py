@@ -60,6 +60,13 @@ METHOD_REGISTRY: dict[str, MethodSpec] = {
     "vsh_steiber": MethodSpec(
         "vsh_steiber", "vsh", vsh.vsh_steiber, ("GR",), "Steiber 1970 (non-linear)"
     ),
+    "vsh_neutron_density": MethodSpec(
+        "vsh_neutron_density",
+        "vsh",
+        vsh.vsh_neutron_density,
+        ("RHOB", "NPHI"),
+        "Neutron-density separation (non-GR clay indicator)",
+    ),
     "phie_density_neutron": MethodSpec(
         "phie_density_neutron",
         "porosity",

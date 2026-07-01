@@ -46,6 +46,19 @@ def test_vsh_method_choice_is_traced_and_changes_result():
     assert float(np.nanmean(linear)) != float(np.nanmean(default))  # the choice has consequences
 
 
+def test_agent_can_select_non_gr_neutron_density_vsh():
+    # the non-GR method is now selectable (was engine-internal); needs pf for its params
+    default, _ = vsh_step(CURVES, 20.0, 120.0, "old_rocks")
+    nd, cal = vsh_step(CURVES, 20.0, 120.0, "old_rocks", "vsh_neutron_density", pf=P)
+    assert (
+        cal["vsh_method"]["value"] == "vsh_neutron_density" and cal["vsh_method"]["chosen_by_model"]
+    )
+    assert _in_bounds(nd, 0.0, 1.0)
+    assert float(np.nanmean(nd)) != float(
+        np.nanmean(default)
+    )  # a genuinely different (non-GR) read
+
+
 def test_sw_method_choice_changes_result():
     vsh, _ = vsh_step(CURVES, 20.0, 120.0, "old_rocks")
     phie, _ = phie_step(CURVES, vsh, P)
