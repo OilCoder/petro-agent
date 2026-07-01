@@ -59,23 +59,28 @@ _ACTION_LEDGER_KEY: dict[str, str] = {
     "derived_parameters": "tool_results",
 }
 
-_LOOP_SYSTEM = """You are a senior petrophysical ANALYST refining a well report STEP BY STEP.
-A BASELINE interpretation (vsh, phie, sw, net pay, uncertainty) is ALREADY computed with default
-methods. Each turn you see the STATE and the VALID ACTIONS; choose exactly ONE next action.
-
-The actions available to you (use them in whatever order your reading of the data warrants):
-- OBSERVE the data (e.g. depth_quality, distributions, scans) to inform your decisions;
+_LOOP_SYSTEM = """You are a senior petrophysical ANALYST composing a well report STEP BY STEP.
+The engine has computed a CORE interpretation (vsh, phie, sw, net pay, uncertainty) with DEFAULT
+methods — treat it as a STARTING POINT, not a finished report. Your job is to compose the most
+complete, defensible analysis the DATA justify: choose the methods and optional analyses your own
+reading of the data supports, and finish ONLY when the analysis is genuinely complete for this well
+— not merely because a baseline exists. Each turn you see the STATE and the VALID ACTIONS; choose
+exactly ONE next action:
+- OBSERVE the data (depth_quality, distributions, scans, crossplot, examine_figures) to inform your
+  judgement;
 - RESTRICT the analysis to a depth interval with set_zone_of_interest, args {"top": <m>,
-  "bottom": <m>} (recomputes the baseline over that zone) if the data warrant it;
+  "bottom": <m>} (recomputes over that zone) if your reading of the data warrants it;
 - RECOMPUTE a core property with a different vetted method (at most once per property) when the
   data justify it;
-- ADD optional analyses (permeability, rock_quality, electrofacies, lithology, derived_parameters);
-- pick "finish" when your choices are made.
+- ADD an optional analysis (permeability, rock_quality, electrofacies, lithology,
+  derived_parameters) that the data support and that adds value to the report;
+- pick "finish" ONLY when the analysis is genuinely complete for this well.
 
 Output ONLY a JSON object: {"action": "<id>", "method": "<optional method id>", "args": {}}.
 Use an id from VALID ACTIONS only. Do NOT repeat the same action; do NOT recompute a property you
-already chose a method for. You never compute a number — the engine does; you decide which method,
-whether to restrict the interval, and in what order. Never write a number; never invent an id."""
+already chose a method for. You never compute a number — the engine does; you decide WHICH method,
+WHETHER to restrict the interval, WHICH analyses to include, and in what order. Never write a
+number; never invent an id. NEVER add an analysis the data do not support just to lengthen it."""
 
 _OBJ = re.compile(r"\{.*\}", re.DOTALL)
 
@@ -220,7 +225,8 @@ def observation_text(
         "last_observation": last_obs or "none yet (call an observation to inspect the data)",
         "computed": computed,
         "stale_or_pending": stale,
-        "optionals_not_yet_added": optionals_available,
+        # factual affordance: what each still-available optional COMPUTES (never a nudge to add it)
+        "optionals_not_yet_added": {a: _OPTIONAL_DESC.get(a, a) for a in optionals_available},
         "zone_of_interest": ledger.get("zone_of_interest", "full logged interval (not restricted)"),
         "baseline_complete": not stale,
         "report_so_far": _report_outline(ledger, order or []),
@@ -232,6 +238,15 @@ def observation_text(
     }
     return "STATE:\n" + json.dumps(state, indent=1, default=str)[:5200]
 
+
+# Factual one-liners: WHAT each optional computes + its inputs (an affordance, not a nudge).
+_OPTIONAL_DESC: dict[str, str] = {
+    "permeability": "Timur/Coates permeability from PHIE+Sw (uncalibrated screen, no core)",
+    "rock_quality": "RQI/FZI/Winland rock-quality indices from PHIE+permeability",
+    "electrofacies": "unsupervised k-means facies from GR/RHOB/NPHI",
+    "lithology": "density-neutron crossplot matrix point-shares",
+    "derived_parameters": "bulk-volume water (BVW = PHIE*Sw)",
+}
 
 _OPTIONAL_TOOLS: dict[str, set[str]] = {
     "permeability": {"perm_timur", "perm_coates"},
@@ -355,6 +370,59 @@ def _record_step(graph: MethodologyGraph, action: str, from_default: bool) -> No
     graph.add("decision", {"rationale": f"{tag}: {action}", "chosen": action})
 
 
+def _extend_order(order: list[str], action: str) -> None:
+    """Append (in order, no duplicates) the report section ids the action's property produces."""
+    prop = PRODUCES.get(action)
+    if not prop:
+        return
+    for sid in _PROP_SECTIONS.get(prop, ()):
+        if sid not in order:
+            order.append(sid)
+
+
+def _is_stalled(recent: list[str]) -> bool:
+    """Anti-stall signal: the last 3 chosen actions are identical (an unproductive loop)."""
+    return len(recent) >= 3 and len(set(recent[-3:])) == 1
+
+
+def _completeness_critique(ledger: dict[str, Any], actions: list[str]) -> dict[str, Any] | None:
+    """A NEUTRAL completeness surface shown ONCE when the agent tries to finish.
+
+    States, factually, which applicable optional analyses are not yet added and which core
+    properties still use the DEFAULT method — so the agent reconsiders whether the report is
+    genuinely complete. It never says WHICH to add or which method to use (that is the analyst's).
+    Returns None when nothing applicable is left undone.
+    """
+    done = set(ledger.get("tool_results", {}))
+    unadded = [
+        a
+        for a in (
+            "permeability",
+            "rock_quality",
+            "electrofacies",
+            "lithology",
+            "derived_parameters",
+        )
+        if a in actions and not (done & _OPTIONAL_TOOLS.get(a, set()))
+    ]
+    default_core = []
+    if not ledger.get("calibration", {}).get("vsh_method", {}).get("chosen_by_model"):
+        default_core.append("vsh")
+    if ledger.get("porosity_comparison", {}).get("method_source") != "agent":
+        default_core.append("phie")
+    if ledger.get("sw_summary", {}).get("method_source") != "agent":
+        default_core.append("sw")
+    if not unadded and not default_core:
+        return None
+    return {
+        "action": "completeness_check",
+        "note": "Before finishing — a factual completeness check (NOT a directive): applicable "
+        f"analyses not yet added: {unadded or 'none'}; core properties still on the DEFAULT "
+        f"method: {default_core or 'none'}. Decide whether the analysis is genuinely complete "
+        "for this well — add what the DATA support, or finish.",
+    }
+
+
 def _record_tool_call(graph: MethodologyGraph, action: str, args: dict[str, Any]) -> None:
     """Add the tool_call node, pointing result_ledger_key at the REAL ledger key it wrote.
 
@@ -400,6 +468,7 @@ def run_analyst_loop(
     chats = [(chat, model), (fallback_chat, fallback_model)]
     recent: list[str] = []
     stalled = False
+    critiqued = False
     last_obs: dict[str, Any] | None = None
     for _ in range(max_steps):
         actions = available_actions(
@@ -410,11 +479,17 @@ def run_analyst_loop(
         empty_returns += empty
         action = choice["action"]
         if action == "finish":
+            # Self-critique (once): a neutral completeness surface — reconsider before finishing.
+            crit = None if critiqued else _completeness_critique(ledger, actions)
+            critiqued = True
+            if crit is not None:
+                last_obs = crit
+                continue
             finished = True
             break
         # Orchestrator-owned anti-stall: 3 identical actions in a row = unproductive loop -> stop.
         recent.append(action)
-        if len(recent) >= 3 and len(set(recent[-3:])) == 1:
+        if _is_stalled(recent):
             stalled = True
             break
         # No-op (re-add a done optional / recompute same method): record + skip, keep report clean.
@@ -440,11 +515,7 @@ def run_analyst_loop(
         # Feed an observation's result into the next decision (reads are no longer fire-and-forget).
         last_obs = _obs_result(action, _summary) or last_obs
         _record_tool_call(graph, action, choice.get("args", {}))
-        prop = PRODUCES.get(action)
-        if prop:
-            for sid in _PROP_SECTIONS.get(prop, ()):
-                if sid not in order:
-                    order.append(sid)
+        _extend_order(order, action)
         steps_taken += 1
 
     # Finalize: cross-tool consistency of the agent's optional results vs the core (a contradiction

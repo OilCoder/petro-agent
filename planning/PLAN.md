@@ -132,6 +132,22 @@ Done when: se corrigen los glitches destapados por VOLVE/v5 (provenance del graf
 - [x] Loader: flip de profundidad invertida (deepest-first) + unidades pulgada/0.1-in — 198/198 Schaben cargan (era 197); + test (src/io/loader.py) (2026-07-01)
 - [x] VSH multi-mineral: `vsh_multimineral` (solve 2-mineral matriz+arcilla+porosidad desde RHOB+NPHI) formalizado — función vetada + golden tests + registry (seleccionable) + 2 dispatchers + banda + §14. Cobertura VSH 72%→**79%** (nominal 80%); las 3 propiedades calibradas (VSH 79 / PHIE 99 / SW 95) (2026-07-01)
 
+### Phase R12 — Subir la destreza [MODELO] del agente (sin fugar)
+Done when: `interpretive_choices` sube como destreza REAL (respaldada por número, no relleno) sin reintroducir fuga; medido y re-auditado. Baseline: ~1 choice/pozo, 0 opcionales (v3/v4/v5).
+- [x] A1 — Reencuadrar `_LOOP_SYSTEM`: "baseline ya computado" → invitar a componer el análisis completo que el dato justifique (meta, no interpretación) (2026-07-01)
+- [x] A2 — Afordances neutras: catálogo de opcionales con qué computa + curvas requeridas (factual) en `observation_text` (`_OPTIONAL_DESC`) (2026-07-01)
+- [x] A3 — Re-auditar los strings cambiados contra el invariante de 7-focos (los 3 cambios son meta/factual, sin fuga) (2026-07-01)
+- [x] B — Self-critique step neutral antes de `finish` (`_completeness_critique`: opcionales aplicables no añadidos + métodos en default), one-shot (2026-07-01)
+- [!] C — Evaluación A/B (NEW r12 vs OLD pre-r12): A/B local qwen3:30b hecho → invariante-seguro, sin daño al informe (tool_results vacío ambos), pero SIN ganancia de destreza (esperado: destreza es model-bound, DV2-22). Validación de nube DIFERIDA (BLOCKED 2026-07-01: gate de corridas de pago, ver [[ask-before-paid-runs]]) — el Done-when de destreza real solo es demostrable en modelo capaz de nube
+- [x] Guardarraíl: cada cambio re-auditado; anti-filler + 3 tests nuevos del critique verdes; medido en Ollama local (2026-07-01)
+
+### Phase R13 — Crítico auto-adversarial same-model (nudge de un disparo al finish)
+Done when: al pedir `finish`, el MISMO modelo hace un pase escéptico que intenta refutar las ELECCIONES del analista (método/zona/opcionales/conclusiones, nunca los números) usando la evidencia del ledger; sus objeciones se le devuelven una vez y reconsidera; determinista el orquestador (LLM no decide compuertas), sin cruzar modelos ([[no-cross-model-critic]]).
+- [ ] `_skeptic_pass` en analyst_loop.py: pase same-model que refuta elecciones (meta, no dirige; no toca números), one-shot antes de `finish`
+- [ ] Integrarlo junto al `_completeness_critique` en el manejo de `finish` (ambos one-shot, sin loop)
+- [ ] Guardarraíl anti-fuga: el escéptico cuestiona ("¿lo justifica el dato?"), no prescribe método/conclusión; re-auditar vs 7-focos
+- [ ] Tests deterministas (chat scripted): dispara ≤1 vez, deja reconsiderar, no bloquea la terminación
+
 ## Conventions
 - Cada fórmula nueva entra al registry SOLO con golden test (bounds, monotonía, caso analítico, NaN passthrough).
 - Una sección [MODELO] aparece SOLO si existe su tool_result de respaldo (sin theater).

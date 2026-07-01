@@ -212,6 +212,61 @@ def test_loop_garbage_falls_back_and_finishes(tmp_path):
     assert al["finished_by_agent"] is True
 
 
+def test_loop_self_critique_fires_once_before_finish(tmp_path):
+    # R12-B: on 'finish', a NEUTRAL completeness surface is shown once, letting the agent reconsider
+    ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
+    seen: list[str] = []
+    script = iter(
+        [
+            {"action": "finish"},  # first finish -> triggers the completeness critique
+            {"action": "permeability", "method": "perm_timur"},  # agent reconsiders, adds analysis
+            {"action": "finish"},  # finishes for real (critique does not fire again)
+        ]
+    )
+
+    def chat(system, user):
+        seen.append(user)
+        try:
+            return json.dumps(next(script))
+        except StopIteration:
+            return json.dumps({"action": "finish"})
+
+    run_analyst_loop(ledger, ctx, "free", chat, "m")
+    al = ledger["run"]["analyst_loop"]
+    # the neutral completeness surface reached the agent, who then reconsidered before finishing
+    assert any("completeness check" in u for u in seen)
+    assert al["finished_by_agent"] is True and al["steps_taken"] == 1
+    assert "perm_timur" in ledger.get("tool_results", {})  # the reconsideration added a real tool
+
+
+def test_completeness_critique_flags_undone_work():
+    from src.agents.analyst_loop import _completeness_critique
+
+    crit = _completeness_critique(
+        {"calibration": {}, "tool_results": {}}, ["permeability", "finish"]
+    )
+    assert crit is not None and "permeability" in crit["note"] and "vsh" in crit["note"]
+
+
+def test_completeness_critique_none_when_complete():
+    from src.agents.analyst_loop import _completeness_critique
+
+    ledger = {
+        "tool_results": {
+            "perm_timur": {},
+            "rqi": {},
+            "electrofacies": {},
+            "litho_nd_crossplot": {},
+            "bvw": {},
+        },
+        "calibration": {"vsh_method": {"chosen_by_model": True}},
+        "porosity_comparison": {"method_source": "agent"},
+        "sw_summary": {"method_source": "agent"},
+    }
+    actions = ["permeability", "rock_quality", "electrofacies", "lithology", "derived_parameters"]
+    assert _completeness_critique(ledger, actions) is None  # nothing applicable left undone
+
+
 def test_loop_output_composes_a_report(tmp_path):
     ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
     script = [

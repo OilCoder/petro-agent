@@ -41,12 +41,18 @@ def _vsh_by_method(
     pf: dict[str, float] | None,
 ) -> np.ndarray:
     """Run the selected vetted Vsh method (GR family + non-GR N-D / multi-mineral)."""
-    if method in ("vsh_neutron_density", "vsh_multimineral") and pf and {"RHOB", "NPHI"} <= set(
-        curves
+    if (
+        method in ("vsh_neutron_density", "vsh_multimineral")
+        and pf
+        and {"RHOB", "NPHI"} <= set(curves)
     ):
         if method == "vsh_neutron_density":
             return vsh_neutron_density(
-                curves["NPHI"], curves["RHOB"], pf["rho_ma"], pf["rho_fl"], pf["phi_sh_n"],
+                curves["NPHI"],
+                curves["RHOB"],
+                pf["rho_ma"],
+                pf["rho_fl"],
+                pf["phi_sh_n"],
                 pf["phi_sh_d"],
             )
         return vsh_multimineral(curves["RHOB"], curves["NPHI"], pf["rho_ma"], pf["rho_fl"])
