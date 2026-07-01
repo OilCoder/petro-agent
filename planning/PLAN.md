@@ -141,12 +141,12 @@ Done when: `interpretive_choices` sube como destreza REAL (respaldada por númer
 - [!] C — Evaluación A/B (NEW r12 vs OLD pre-r12): A/B local qwen3:30b hecho → invariante-seguro, sin daño al informe (tool_results vacío ambos), pero SIN ganancia de destreza (esperado: destreza es model-bound, DV2-22). Validación de nube DIFERIDA (BLOCKED 2026-07-01: gate de corridas de pago, ver [[ask-before-paid-runs]]) — el Done-when de destreza real solo es demostrable en modelo capaz de nube
 - [x] Guardarraíl: cada cambio re-auditado; anti-filler + 3 tests nuevos del critique verdes; medido en Ollama local (2026-07-01)
 
-### Phase R13 — Crítico auto-adversarial same-model (nudge de un disparo al finish)
+### Phase R13 — Crítico auto-adversarial same-model (nudge de un disparo al finish) (COMPLETED)
 Done when: al pedir `finish`, el MISMO modelo hace un pase escéptico que intenta refutar las ELECCIONES del analista (método/zona/opcionales/conclusiones, nunca los números) usando la evidencia del ledger; sus objeciones se le devuelven una vez y reconsidera; determinista el orquestador (LLM no decide compuertas), sin cruzar modelos ([[no-cross-model-critic]]).
-- [ ] `_skeptic_pass` en analyst_loop.py: pase same-model que refuta elecciones (meta, no dirige; no toca números), one-shot antes de `finish`
-- [ ] Integrarlo junto al `_completeness_critique` en el manejo de `finish` (ambos one-shot, sin loop)
-- [ ] Guardarraíl anti-fuga: el escéptico cuestiona ("¿lo justifica el dato?"), no prescribe método/conclusión; re-auditar vs 7-focos
-- [ ] Tests deterministas (chat scripted): dispara ≤1 vez, deja reconsiderar, no bloquea la terminación
+- [x] `_skeptic_pass` + `_choices_digest` + `_skeptic_evidence` + `_parse_objections` en analyst_loop.py: pase same-model que refuta elecciones (meta, no dirige; no toca números) (2026-07-01)
+- [x] `_finish_review` integra `_completeness_critique` + `_skeptic_pass` en el manejo de `finish` (ambos one-shot vía flag `reviewed`, sin loop) (2026-07-01)
+- [x] Guardarraíl anti-fuga: `_SKEPTIC_SYSTEM` cuestiona ("¿lo justifica el dato?"), no prescribe método/conclusión; re-auditado vs 7-focos — sin fuga (2026-07-01)
+- [x] Tests deterministas (4): dispara ≤1 vez, surface de objeciones alcanza al agente, reconsidera, no bloquea terminación; +unit de `_skeptic_pass`/`_finish_review` (2026-07-01)
 
 ## Conventions
 - Cada fórmula nueva entra al registry SOLO con golden test (bounds, monotonía, caso analítico, NaN passthrough).

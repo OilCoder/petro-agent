@@ -16,6 +16,10 @@ def _scripted(script):
     it = iter(script)
 
     def chat(system, user):
+        if (
+            "SKEPTICAL" in system
+        ):  # R13 same-model skeptic pass -> no objections (do not eat script)
+            return json.dumps({"objections": []})
         try:
             return json.dumps(next(it))
         except StopIteration:
@@ -225,6 +229,8 @@ def test_loop_self_critique_fires_once_before_finish(tmp_path):
     )
 
     def chat(system, user):
+        if "SKEPTICAL" in system:  # skeptic pass -> no objections (isolate the completeness path)
+            return json.dumps({"objections": []})
         seen.append(user)
         try:
             return json.dumps(next(script))
@@ -265,6 +271,71 @@ def test_completeness_critique_none_when_complete():
     }
     actions = ["permeability", "rock_quality", "electrofacies", "lithology", "derived_parameters"]
     assert _completeness_critique(ledger, actions) is None  # nothing applicable left undone
+
+
+def test_loop_skeptic_surfaces_objections_and_agent_reconsiders(tmp_path):
+    # R13: the same-model skeptic refutes a choice; the objection reaches the agent, who reconsiders
+    ledger, ctx = run_pipeline(FIXTURE, out_dir=str(tmp_path), return_ctx=True)
+    seen: list[str] = []
+    script = iter(
+        [
+            {"action": "finish"},  # triggers the one-shot pre-finish review
+            {
+                "action": "permeability",
+                "method": "perm_timur",
+            },  # reconsiders, adds a backed analysis
+            {"action": "finish"},
+        ]
+    )
+
+    def chat(system, user):
+        if "SKEPTICAL" in system:
+            return json.dumps({"objections": ["is the full logged interval reservoir?"]})
+        seen.append(user)
+        try:
+            return json.dumps(next(script))
+        except StopIteration:
+            return json.dumps({"action": "finish"})
+
+    run_analyst_loop(ledger, ctx, "free", chat, "m")
+    al = ledger["run"]["analyst_loop"]
+    assert any("skeptic_objections" in u for u in seen)  # the skeptic's doubt reached the agent
+    assert al["finished_by_agent"] is True and al["steps_taken"] == 1
+    assert "perm_timur" in ledger.get("tool_results", {})
+
+
+def test_skeptic_pass_returns_objections_or_none():
+    from src.agents.analyst_loop import _skeptic_pass
+
+    ledger = {"calibration": {"vsh_method": {"value": "vsh_larionov_old"}}, "run": {}}
+    with_obj = _skeptic_pass(ledger, [(lambda s, u: json.dumps({"objections": ["x", "y"]}), "m")])
+    assert with_obj == ["x", "y"]
+    assert _skeptic_pass(ledger, [(lambda s, u: json.dumps({"objections": []}), "m")]) is None
+    assert _skeptic_pass(ledger, [(lambda s, u: "not json", "m")]) is None  # unusable output
+
+
+def test_finish_review_fires_on_skeptic_objections_even_when_complete():
+    from src.agents.analyst_loop import _finish_review
+
+    ledger = {  # completeness fully satisfied (all optionals + agent-chosen core)
+        "tool_results": {
+            "perm_timur": {},
+            "rqi": {},
+            "electrofacies": {},
+            "litho_nd_crossplot": {},
+            "bvw": {},
+        },
+        "calibration": {"vsh_method": {"chosen_by_model": True}},
+        "porosity_comparison": {"method_source": "agent"},
+        "sw_summary": {"method_source": "agent"},
+        "run": {},
+    }
+    actions = ["permeability", "rock_quality", "electrofacies", "lithology", "derived_parameters"]
+    obj_chat = [(lambda s, u: json.dumps({"objections": ["is Rw justified?"]}), "m")]
+    review = _finish_review(ledger, actions, obj_chat)
+    assert review is not None and "skeptic_objections" in review and "completeness" not in review
+    no_obj = [(lambda s, u: json.dumps({"objections": []}), "m")]
+    assert _finish_review(ledger, actions, no_obj) is None  # nothing to reconsider -> finish
 
 
 def test_loop_output_composes_a_report(tmp_path):

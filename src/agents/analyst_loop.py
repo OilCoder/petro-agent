@@ -423,6 +423,109 @@ def _completeness_critique(ledger: dict[str, Any], actions: list[str]) -> dict[s
     }
 
 
+_SKEPTIC_SYSTEM = """You are a SKEPTICAL senior petrophysicist reviewing another analyst's
+IN-PROGRESS choices on a well, BEFORE the report is finalized. You see the analyst's key CHOICES
+(methods picked, interval restricted or not, optional analyses added or omitted) and qualitative
+evidence (validator objections, curves present, confidence tier). Try to REFUTE those choices:
+where does the DATA fail to justify a method chosen, an interval kept or restricted, or an analysis
+included or left out?
+
+Rules: QUESTION, do NOT prescribe — ask "is X justified by the data?", never "use method Y" or
+"conclude Z". Never mention or invent a number (numbers are computed and checked elsewhere). If the
+choices are well justified by the evidence, return no objections.
+
+Return ONLY a JSON object: {"objections": ["...", "..."]}  (empty list if the choices hold up)."""
+
+
+def _choices_digest(ledger: dict[str, Any]) -> dict[str, Any]:
+    """Qualitative summary of the analyst's decisions (method ids, zone, optionals) — no numbers."""
+    cal = ledger.get("calibration", {})
+    return {
+        "vsh_method": cal.get("vsh_method", {}).get("value"),
+        "phie_method": ledger.get("porosity_comparison", {}).get("selected"),
+        "sw_method": ledger.get("sw_summary", {}).get("method"),
+        "zone": ledger.get("zone_of_interest") or "full logged interval (not restricted)",
+        "optional_analyses_added": sorted(ledger.get("tool_results", {})),
+    }
+
+
+def _skeptic_evidence(ledger: dict[str, Any]) -> dict[str, Any]:
+    """Qualitative evidence the skeptic grounds objections in (validator flags, curves, tier)."""
+    objs = [
+        o.get("detail") or o.get("type") or o.get("objection_type")
+        for o in ledger.get("objections", [])
+    ]
+    run = ledger.get("run", {})
+    return {
+        "validator_objections": objs[:6] or "none",
+        "curves_present": run.get("eda", {}).get("curves_present"),
+        "confidence_tier": run.get("confidence_tier"),
+    }
+
+
+def _parse_objections(raw: str) -> list[str] | None:
+    """Extract the skeptic's objection list from model output; None if unusable."""
+    if not raw or not raw.strip():
+        return None
+    m = _OBJ.search(raw)
+    if not m:
+        return None
+    try:
+        data = json.loads(m.group(0))
+    except (ValueError, TypeError):
+        return None
+    obj = data.get("objections") if isinstance(data, dict) else None
+    return [str(x) for x in obj][:6] if isinstance(obj, list) else None
+
+
+def _skeptic_pass(ledger: dict[str, Any], chats: list[Any]) -> list[str] | None:
+    """Same-model one-shot adversarial pass over the analyst's CHOICES (never the numbers).
+
+    The analyst's OWN model plays skeptic and tries to refute its choices, grounded in qualitative
+    evidence. Returns a non-empty objection list, or None (no objections / no usable model). It
+    questions, never prescribes; the orchestrator still owns the loop (the LLM decides no gate).
+    """
+    user = (
+        "Analyst choices:\n"
+        + json.dumps(_choices_digest(ledger), default=str)[:1500]
+        + "\n\nEvidence:\n"
+        + json.dumps(_skeptic_evidence(ledger), default=str)[:2000]
+    )
+    for chat, _model in chats:
+        if chat is None:
+            continue
+        try:
+            obj = _parse_objections(chat(_SKEPTIC_SYSTEM, user))
+        except Exception:
+            continue
+        if obj is not None:
+            return obj or None
+    return None
+
+
+def _finish_review(
+    ledger: dict[str, Any], actions: list[str], chats: list[Any]
+) -> dict[str, Any] | None:
+    """One-shot pre-finish review = neutral completeness surface + same-model skeptic objections.
+
+    Returns a combined observation the analyst reconsiders once, or None when nothing is worth it.
+    """
+    comp = _completeness_critique(ledger, actions)
+    objs = _skeptic_pass(ledger, chats)
+    if comp is None and objs is None:
+        return None
+    review: dict[str, Any] = {"action": "finish_review"}
+    if comp is not None:
+        review["completeness"] = comp["note"]
+    if objs is not None:
+        review["skeptic_objections"] = objs
+    review["decide"] = (
+        "A skeptic questioned your CHOICES and a completeness check ran. Address what the DATA "
+        "support (revise a choice, add a backed analysis, or restrict the interval), or finish."
+    )
+    return review
+
+
 def _record_tool_call(graph: MethodologyGraph, action: str, args: dict[str, Any]) -> None:
     """Add the tool_call node, pointing result_ledger_key at the REAL ledger key it wrote.
 
@@ -468,7 +571,7 @@ def run_analyst_loop(
     chats = [(chat, model), (fallback_chat, fallback_model)]
     recent: list[str] = []
     stalled = False
-    critiqued = False
+    reviewed = False
     last_obs: dict[str, Any] | None = None
     for _ in range(max_steps):
         actions = available_actions(
@@ -479,11 +582,11 @@ def run_analyst_loop(
         empty_returns += empty
         action = choice["action"]
         if action == "finish":
-            # Self-critique (once): a neutral completeness surface — reconsider before finishing.
-            crit = None if critiqued else _completeness_critique(ledger, actions)
-            critiqued = True
-            if crit is not None:
-                last_obs = crit
+            # One-shot pre-finish review: neutral completeness surface + same-model skeptic (R13).
+            review = None if reviewed else _finish_review(ledger, actions, chats)
+            reviewed = True
+            if review is not None:
+                last_obs = review
                 continue
             finished = True
             break
