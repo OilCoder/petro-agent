@@ -38,6 +38,14 @@ _EDA_TOOLS = {
 }
 ALLOWED_TOOLS: set[str] = set(METHOD_REGISTRY) | _EDA_TOOLS
 
+# Derived properties (not log curves) a method's runner reads from ctx; absent -> not executable.
+_CTX_DEPS: dict[str, tuple[str, ...]] = {
+    "sw": ("phie", "vsh"),
+    "permeability": ("phie", "sw"),
+    "rock_quality": ("phie", "sw"),
+    "derived": ("phie", "sw"),
+}
+
 
 def _hash(result: Any) -> str:
     return hashlib.sha256(json.dumps(result, sort_keys=True, default=str).encode()).hexdigest()[:16]
@@ -108,8 +116,12 @@ def _run_vsh_method(
     rho_ma, rho_fl = _pv(ledger, "rho_ma", 2.71), _pv(ledger, "rho_fl", 1.0)
     if method_id == "vsh_neutron_density":  # non-GR clay indicator: different signature
         arr = spec.fn(
-            curves["NPHI"], curves["RHOB"], rho_ma, rho_fl,
-            _pv(ledger, "phi_sh_n", 0.35), _pv(ledger, "phi_sh_d", 0.10),
+            curves["NPHI"],
+            curves["RHOB"],
+            rho_ma,
+            rho_fl,
+            _pv(ledger, "phi_sh_n", 0.35),
+            _pv(ledger, "phi_sh_d", 0.10),
         )
     elif method_id == "vsh_multimineral":  # 2-mineral volumetric solve
         arr = spec.fn(curves["RHOB"], curves["NPHI"], rho_ma, rho_fl)
@@ -239,6 +251,12 @@ def _execute(
     spec = METHOD_REGISTRY.get(tool)
     if spec is None:
         return _run_eda(tool, ctx, args) if tool in _EDA_TOOLS else None
+    # A method whose required curve is absent is NOT executable: honest skip, never a crash.
+    if not set(spec.required_curves) <= set(ctx.get("curves", {})):
+        return None
+    # Likewise for derived-property inputs (phie/sw/vsh) a method consumes but that aren't computed.
+    if any(ctx.get(dep) is None for dep in _CTX_DEPS.get(spec.property, ())):
+        return None
     runners = {
         "sw": lambda: _run_sw_method(tool, ctx, args),
         "vsh": lambda: _run_vsh_method(tool, ctx, ledger, args),

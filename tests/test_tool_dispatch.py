@@ -171,6 +171,16 @@ def test_bad_matrix_preset_coerced_not_rejected():
     assert "mean_phi" in ledger["tool_results"]["phi_sonic_wyllie"]["value"]
 
 
+def test_dispatch_skips_method_with_missing_required_curve():
+    # a sonic method selected without a DT curve must be an honest skip, not a KeyError crash
+    plan = {"tool_calls": [{"tool": "phi_sonic_wyllie", "args": {"matrix_preset": "sandstone"}}]}
+    ledger: dict = {}
+    written = dispatch(plan, CTX, ledger, MethodologyGraph(mode="free", model="m"))
+    assert written == []  # nothing executed (no DT in CTX)
+    assert "phi_sonic_wyllie" not in ledger.get("tool_results", {})
+    assert "phi_sonic_wyllie" in ledger["run"]["tools_not_executed"]  # signaled, not dropped
+
+
 def test_verify_keyed_flags_19pct_off_number():
     # flat verifier (2%) passes a 1.9%-off number; the keyed (0.5%) flags it
     ledger = {"tool_results": {"sw_simandoux": {"value": {"mean_sw": 0.300}, "result_hash": "x"}}}
