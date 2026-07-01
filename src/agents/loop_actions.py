@@ -81,7 +81,7 @@ _OBSERVE_NEEDS: dict[str, tuple[str, ...]] = {
 }
 
 
-def available_actions(valid: set[str], curves: set[str]) -> list[str]:
+def available_actions(valid: set[str], curves: set[str], vision: bool = False) -> list[str]:
     """Return the action ids valid right now (compute + observation + FINISH).
 
     Only PHYSICS gates the frontier (PHIE needs Vsh, …). Already-done optionals and same-method
@@ -91,6 +91,7 @@ def available_actions(valid: set[str], curves: set[str]) -> list[str]:
     Args:
         valid: properties already computed AND not stale (e.g. {"vsh", "phie"}).
         curves: canonical curves present in the well.
+        vision: offer ``examine_figures`` (a vision-capable model + figures present).
 
     Returns:
         List of available action ids; always includes ``finish``.
@@ -109,6 +110,8 @@ def available_actions(valid: set[str], curves: set[str]) -> list[str]:
                 ok = ok and need in valid
         if ok:
             actions.append(obs)
+    if vision:  # cloud ceiling track: read the figures qualitatively
+        actions.append("examine_figures")
     # Zone-of-interest selection is always physics-valid (you can always restrict the interval).
     actions.append("set_zone_of_interest")
     actions.append("finish")
@@ -432,6 +435,33 @@ def execute_step(
     return observe(action, ctx, ledger, method, args), set(valid)
 
 
+# Vision guardrail: a vision-capable model may READ figures qualitatively, never numbers off a plot.
+_VISION_GUARDRAIL = (
+    "You may LOOK at petrophysical log figures (composite log, Pickett plot, density-neutron "
+    "crossplot). Report ONLY qualitative patterns that inform WHICH method or interval to choose: "
+    "lithology trend, curve character, log quality/washouts, hydrocarbon cross-over shape, "
+    "zonation boundaries. NEVER read, estimate, or state any NUMERIC value from a plot "
+    "(no Rw, no porosity, no saturation) — the engine owns every number. Two or three sentences, "
+    "qualitative only."
+)
+
+
+def _examine_figures(ctx: dict[str, Any]) -> dict[str, Any]:
+    """Vision observation: a vision-capable model reads the figures QUALITATIVELY (never numbers).
+
+    Offered only when ``ctx`` carries a ``vision_chat`` and ``figure_paths`` (the cloud ceiling
+    track). The reading feeds the next decision as an observation; it authors no number.
+    """
+    vchat = ctx.get("vision_chat")
+    paths = ctx.get("figure_paths") or []
+    if vchat is None or not paths:
+        return {"action": "examine_figures", "note": "no vision backend or figures available"}
+    reading = vchat(
+        _VISION_GUARDRAIL, "Describe these well-log figures qualitatively.", list(paths)
+    )
+    return {"action": "examine_figures", "qualitative_reading": str(reading).strip()}
+
+
 def observe(
     action: str, ctx: dict[str, Any], ledger: dict[str, Any], target=None, args=None
 ) -> dict[str, Any]:  # noqa: ANN001
@@ -441,6 +471,8 @@ def observe(
     if action == "zone_stats":
         zones = ledger.get("zones", [])[:15]
         return {"n_zones": len(ledger.get("zones", [])), "zones": zones}
+    if action == "examine_figures":
+        return _examine_figures(ctx)
     if action == "depth_quality":
         return depth_quality_profile(ctx.get("curves_full", ctx["curves"]), ctx["depth_m"])
     arr = _resolve_target(tgt, ctx)

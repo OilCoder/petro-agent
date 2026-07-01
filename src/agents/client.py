@@ -14,10 +14,13 @@ from __future__ import annotations
 
 import os
 from collections.abc import Callable
+from typing import Any
 
 VERSION = "0.1.0"
 
 ChatFn = Callable[[str, str], str]
+# Vision chat: (system, user, image_paths) -> str. Cloud ceiling only (see make_vision_chat).
+VisionChatFn = Callable[[str, str, list[str]], str]
 
 WRITER_MODEL = "qwen3:30b-a3b"
 REVIEWER_MODEL = "llama3.1:8b"
@@ -58,6 +61,80 @@ def make_chat(
     if backend == "openrouter":
         return _make_openrouter_chat(model, seed)
     raise ValueError(f"unknown backend: {backend!r}")
+
+
+def _openrouter_request(api_key: str, payload: dict[str, Any]) -> str:
+    """POST one OpenRouter chat completion with backoff on transient conditions; return content.
+
+    Raises loudly on hard errors (e.g. 401/404) and on exhausted retries so an infra failure is
+    never mistaken for model incapability. A genuine empty completion returns "".
+    """
+    import time
+
+    import httpx
+
+    last = ""
+    for attempt in range(len(OPENROUTER_BACKOFFS) + 1):
+        try:
+            resp = httpx.post(
+                OPENROUTER_URL,
+                headers={"Authorization": f"Bearer {api_key}"},
+                json=payload,
+                timeout=180.0,
+            )
+        except httpx.HTTPError as e:  # transport: transient infra, retry
+            last = f"transport: {e}"
+        else:
+            if resp.status_code == 200:
+                choices = resp.json().get("choices")
+                if choices:
+                    return str(choices[0]["message"].get("content") or "")
+                last = f"200 without choices: {str(resp.json())[:200]}"
+            elif resp.status_code not in OPENROUTER_RETRY_STATUS:
+                raise RuntimeError(f"OpenRouter HTTP {resp.status_code}: {resp.text[:200]}")
+            else:
+                last = f"HTTP {resp.status_code}: {resp.text[:200]}"
+        if attempt < len(OPENROUTER_BACKOFFS):
+            time.sleep(OPENROUTER_BACKOFFS[attempt])
+    raise RuntimeError(f"OpenRouter exhausted retries ({last})")
+
+
+def make_vision_chat(model: str, seed: int = 42) -> VisionChatFn:
+    """Build an OpenRouter multimodal chat: ``(system, user, image_paths) -> str``.
+
+    A CEILING-track capability for vision-capable cloud models ONLY — the local report runtime has
+    no vision. The visual reading must stay QUALITATIVE (it informs WHICH method/interval to pick);
+    it never authors a number — the deterministic engine owns every number and the claim verifier
+    guards the prose. Not comparable to the text-digest baseline (different input modality).
+
+    Raises:
+        RuntimeError: If the API key is unset, a hard error is returned, or retries are exhausted.
+    """
+    import base64
+
+    api_key = os.environ.get(OPENROUTER_API_KEY_ENV)
+    if not api_key:
+        raise RuntimeError(f"{OPENROUTER_API_KEY_ENV} is unset (vision backend)")
+
+    def _data_uri(path: str) -> str:
+        with open(path, "rb") as f:
+            return "data:image/png;base64," + base64.b64encode(f.read()).decode()
+
+    def chat(system: str, user: str, image_paths: list[str]) -> str:
+        content: list[dict[str, Any]] = [{"type": "text", "text": user}]
+        content += [{"type": "image_url", "image_url": {"url": _data_uri(p)}} for p in image_paths]
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": content},
+            ],
+            "temperature": 0.0,
+            "seed": seed,
+        }
+        return _openrouter_request(api_key, payload)
+
+    return chat
 
 
 def _make_ollama_chat(model: str, host: str | None, seed: int) -> ChatFn:

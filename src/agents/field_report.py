@@ -247,6 +247,11 @@ def write_field_narrative(agg: dict[str, Any], chat: ChatFn) -> dict[str, str]:
 # ----------------------------------------
 
 
+def well_report_filename(uwi: str) -> str:
+    """The per-well report filename the field chapter links to (kept in sync with the writer)."""
+    return "report_" + uwi.replace(",", "").replace(" ", "") + ".md"
+
+
 def render_field_report(
     agg: dict[str, Any],
     narrative: dict[str, str] | None = None,
@@ -267,8 +272,9 @@ def render_field_report(
     ]
     for w in wells:
         flag = " ⚠️" if w["abstain"] else ""
+        link = f"[{w['uwi']}]({well_report_filename(w['uwi'])})"
         rows.append(
-            f"| {w['uwi']}{flag} | {w['status']} | {w['tier']} | {_fmt(w['net_pay_p50'], 1)} | "
+            f"| {link}{flag} | {w['status']} | {w['tier']} | {_fmt(w['net_pay_p50'], 1)} | "
             f"{_fmt(w['ntg'], 3)} | {_fmt(w['avg_phie'], 3)} | {_fmt(w['avg_sw'], 3)} | "
             f"{w['n_objections']} |"
         )
@@ -296,8 +302,8 @@ def render_field_report(
         f"NTG mean {_fmt(field['ntg']['mean'], 3)}.\n\n"
         "---\n\n## Per-well inventory\n\n"
         f"{chr(10).join(rows)}\n\n"
-        f"- **Best reservoir quality:** {best['uwi'] if best else '—'} "
-        f"(NTG {_fmt(best['ntg'], 3) if best else '—'})\n\n"
+        f"- **Highest net-to-gross:** {best['uwi'] if best else '—'} "
+        f"(NTG {_fmt(best['ntg'], 3) if best else '—'}) — a ranking fact, not a judgement\n\n"
         "---\n\n## Figures\n\n"
         f"{fig_block or '_No field figures generated._'}\n\n"
         "---\n\n## Conclusions\n\n"

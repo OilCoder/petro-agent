@@ -67,7 +67,8 @@ Done when: permeabilidad, derivados, electrofacies, rock typing y crossplots ext
 - [x] src/petrophysics/rock_quality.py (RQI/FZI/Winland) (2026-06-28)
 - [x] src/petrophysics/electrofacies.py (k-means numpy determinista) (2026-06-28)
 - [x] Registry + dispatch (familias permeability/rock_quality/facies) + secciones opcionales + golden tests (2026-06-28)
-- [ ] Crossplots Hingle/Buckles/M-N (src/agents/log_plot.py) — figuras, baja prioridad (sin visión); diferido
+- [x] Crossplots Hingle + Buckles + distribuciones (src/agents/log_plot.py) (2026-07-01)
+- ~~Crossplot M-N~~ (diferido: necesita DT, ausente en Schaben)
 
 ### Phase R5 — Informe de campo / multi-pozo (nativo v2) — REQUERIDO (DV2-18) (COMPLETED)
 Done when: dado un set de LAS se produce un capítulo de campo (estadística cross-well sin sumas, correlación GR, mapa desde coordenadas del header, ranking). Diseño de experimento: 1 pozo fijo (ancla, todos los modelos lo analizan) + 2 pozos de libre elección del modelo.
@@ -99,6 +100,14 @@ Done when: ninguna superficie código→agente orienta el análisis (zona, méto
 - [x] Métrica de dos cubos free_floor_ids + completeness_breakdown (report_compose.py, report_score.py) (2026-07-01)
 - [x] Test anti-relleno + anti-interpretación (tests/test_completeness_and_filler.py) (2026-07-01)
 - [x] Experimento 3 modelos post-fix: zona=None sin guía (nemotron free + gpt-5); 28/37 = piso [código], destreza [MODELO] del agente ~0 (2026-07-01)
+
+### Phase R9 — Informe de campo navegable + track de visión + set de figuras (COMPLETED)
+Done when: el informe de campo enlaza a informes por-pozo que existen; un modelo con visión puede leer las figuras CUALITATIVAMENTE (sin números); el set de figuras cubre logs/crossplots + incertidumbre, separando figuras vision-eligible de numéricas human-only.
+- [x] `render_field_report` enlaza cada pozo a `report_<uwi>.md` + `well_report_filename` (field_report.py) (2026-07-01)
+- [x] Fuga "Best reservoir quality" → "Highest net-to-gross" (ranking factual) (field_report.py) (2026-07-01)
+- [x] Track de visión: `make_vision_chat` (client.py) + `examine_figures` con guardarraíl cualitativo (loop_actions.py) + gate en analyst_loop; test con fakes (2026-07-01)
+- [x] Figuras vision-eligible: buckles, hingle, distributions (log_plot.py) (2026-07-01)
+- [x] Figuras human-only post-loop: tornado + MC distribution (excluidas de visión); `montecarlo` expone realizations (2026-07-01)
 
 ## Conventions
 - Cada fórmula nueva entra al registry SOLO con golden test (bounds, monotonía, caso analítico, NaN passthrough).

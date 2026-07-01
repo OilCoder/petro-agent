@@ -69,6 +69,8 @@ def propagate_net_pay(
         "method": "monte_carlo",
         "n_realizations": n,
         "seed": seed,
+        # the per-realization net pays, for the human-only Monte-Carlo distribution figure
+        "realizations": [round(float(x), 2) for x in net_pays],
     }
 
 

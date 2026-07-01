@@ -27,6 +27,8 @@ def test_montecarlo_percentile_ordering():
     mc = propagate_net_pay(VSH, PHIE, RT, BASE, CUTOFFS, STEP, n=200, seed=42)
     assert mc["net_pay_p10"] <= mc["net_pay_p50"] <= mc["net_pay_p90"]
     assert mc["method"] == "monte_carlo" and mc["seed"] == 42
+    # realizations exposed for the human-only MC distribution figure
+    assert len(mc["realizations"]) == 200
 
 
 def test_montecarlo_reproducible():

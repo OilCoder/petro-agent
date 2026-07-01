@@ -363,6 +363,8 @@ def run_analyst_loop(
     seed_baseline_sections(ledger, ctx)
     steps_taken = recomputes = empty_returns = wasted = 0
     agent_steps = default_steps = 0
+    # Vision track: offer examine_figures only when a vision chat + figures are wired into ctx.
+    vision_on = bool(ctx.get("vision_chat") and ctx.get("figure_paths"))
     finished = False
 
     chats = [(chat, model), (fallback_chat, fallback_model)]
@@ -371,7 +373,7 @@ def run_analyst_loop(
     last_obs: dict[str, Any] | None = None
     for _ in range(max_steps):
         actions = available_actions(
-            valid, curves
+            valid, curves, vision=vision_on
         )  # offer everything; no-ops are measured, not hidden
         obs = observation_text(ledger, valid, actions, order, last_obs)
         choice, empty, from_default = _decide(obs, actions, valid, curves, chats)
@@ -442,6 +444,7 @@ def run_analyst_loop(
         "recomputes": recomputes,
         "wasted_steps": wasted,
         "empty_returns": empty_returns,
+        "vision_enabled": vision_on,
     }
     ledger["run"]["methodology_graph"] = graph.to_json()
     return {

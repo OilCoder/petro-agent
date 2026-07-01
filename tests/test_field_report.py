@@ -9,6 +9,7 @@ from src.agents.field_report import (
     select_field_wells,
     select_wells,
     well_quality_summary,
+    well_report_filename,
     write_field_narrative,
 )
 from src.io.loader import WellData
@@ -186,6 +187,20 @@ def test_render_field_report_no_summed_headline():
     )
     # an agent selection (no fell_back) reads as agent-chosen, never as a fallback
     assert "NOT a sum" in md and "agent-chosen" in md and "W1" in md and "W2" in md
+
+
+def test_render_field_report_links_each_well_to_its_report():
+    md = render_field_report(
+        aggregate_field(_LEDGERS),
+        {"executive_summary": "x", "conclusions": "y"},
+    )
+    # each well row links to its per-well report doc; ranking is a neutral fact, not a judgement
+    assert "[W1](report_W1.md)" in md and "[W2](report_W2.md)" in md
+    assert "Highest net-to-gross" in md and "reservoir quality" not in md
+
+
+def test_well_report_filename_sanitizes_uwi():
+    assert well_report_filename("15-135-25,341-00-00") == "report_15-135-25341-00-00.md"
 
 
 def test_render_field_report_fallback_selection_labeled():
