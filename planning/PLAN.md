@@ -116,7 +116,7 @@ Done when: se mide la calibración de la confianza contra ground-truth público 
 - [x] Hallazgo: bandas P10-P90 sobreconfiadas (cobertura 2-35% vs nominal 80%) — solo propagaban parámetros (2026-07-01)
 - [x] Fix: `build_method_alts` + `propagate_net_pay` muestrea alternativas de método (Vsh/PHIE) → incertidumbre estructural (montecarlo.py, cableado en loop_actions + graph) (2026-07-01)
 - [x] Re-demostrado: cobertura 88-98% (VSH 95%, PHIE 98%, SW 88%) — banda calibrada (2026-07-01)
-- [ ] Fase 8 completo: correr el AGENTE sobre VOLVE + narrativa-vs-Final-Well-Report (pendiente)
+- [x] Fase 8: AGENTE e2e sobre LAS real de VOLVE (loader→params north-sea→motor→loop→reporte); narrativa descartada (2026-07-01)
 
 ### Phase R11 — Pulido post-validación + generalización de calibración (COMPLETED)
 Done when: se corrigen los glitches destapados por VOLVE/v5 (provenance del grafo, §14 Vsh selected, unidad de profundidad JWLF) y se mide la generalización de la calibración en más pozos.
@@ -126,6 +126,9 @@ Done when: se corrigen los glitches destapados por VOLVE/v5 (provenance del graf
 - [x] Fix #3 provenance del grafo: `result_ledger_key` apuntaba a `ledger:<action>` (nunca clave real); mapa acción→clave real + observaciones sin clave (analyst_loop.py, tool_dispatch.py) + test (2026-07-01)
 - ~~Narrativa VOLVE vs Final Well Report~~ (descartado: sin informe narrativo público que comparar)
 - [x] `vsh_neutron_density` (indicador de arcilla NO-GR) formalizado: función vetada + golden tests + banda (build_method_alts) + §14; VSH cobertura 65%→71% (parcial: CPI usa multi-mineral) (2026-07-01)
+- [x] `multi_seed_robustness` cableado al ledger + §19 del reporte (loop + guiado) + test; confirmado en el pipeline de VOLVE (2026-07-01)
+- [x] Fase 8 e2e: pipeline determinista + agente completo sobre LAS real de VOLVE (region north_sea_jurassic) → reporte (2026-07-01)
+- [ ] VSH multi-mineral (módulo grande): indicadores/shale-points ligeros NO cierran VSH (72%); la CPI usa solve multi-mineral — pendiente dedicado
 
 ## Conventions
 - Cada fórmula nueva entra al registry SOLO con golden test (bounds, monotonía, caso analítico, NaN passthrough).

@@ -111,3 +111,5 @@ def test_pipeline_adds_uncertainty(tmp_path):
     assert "uncertainty" in ledger
     assert "net_pay_p10_p50_p90" in ledger["run"]
     assert "dominant_parameter" in ledger["uncertainty"]["sensitivity"]
+    # multi-seed robustness now wired into the report's uncertainty block
+    assert "robust" in ledger["uncertainty"]["robustness"]

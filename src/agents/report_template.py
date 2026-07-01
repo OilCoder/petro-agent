@@ -280,6 +280,13 @@ def _uncertainty(ledger: dict[str, Any]) -> str:
     dom = sens.get("dominant_parameter", "—")
     swing = _fmt(sens.get("dominant_swing_m"), 1)
     rows.append(f"\n**Dominant uncertainty: `{dom}`** (swing {swing} m).")
+    rob = unc.get("robustness")
+    if rob:
+        status = "stable" if rob.get("robust") else "UNSTABLE across seeds"
+        rows.append(
+            f"\nMulti-seed robustness: P50 {status} (spread {_fmt(rob.get('p50_spread'), 1)} m "
+            f"across {len(rob.get('p50_by_seed', []))} seeds)."
+        )
     warn = unc.get("high_leverage_warning", {})
     if warn.get("warn"):
         rows.append(f"\n> {warn.get('message')}")

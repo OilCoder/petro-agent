@@ -26,7 +26,7 @@ from src.orchestrator.stages import zonate
 from src.orchestrator.steps import phie_step, sw_step, vsh_step
 from src.petrophysics.phie import porosity_method_comparison
 from src.petrophysics.vsh import vsh_method_comparison
-from src.uncertainty.montecarlo import build_method_alts, propagate_net_pay
+from src.uncertainty.montecarlo import build_method_alts, multi_seed_robustness, propagate_net_pay
 from src.uncertainty.sensitivity import sensitivity_net_pay
 
 # Property produced by each compute action.
@@ -273,7 +273,13 @@ def _exec_uncertainty(ctx, ledger, method, args, valid):  # noqa: ANN001
     )
     sens = sensitivity_net_pay(ctx["vsh"], ctx["phie"], rt, base, cutoffs, step)
     warn = high_leverage_flag(sens["dominant_parameter"], ctx["params"])
-    ledger["uncertainty"] = {**mc, "sensitivity": sens, "high_leverage_warning": warn}
+    rob = multi_seed_robustness(ctx["vsh"], ctx["phie"], rt, base, cutoffs, step, n=200)
+    ledger["uncertainty"] = {
+        **mc,
+        "sensitivity": sens,
+        "high_leverage_warning": warn,
+        "robustness": rob,
+    }
     ledger["run"]["net_pay_p10_p50_p90"] = [mc["net_pay_p10"], mc["net_pay_p50"], mc["net_pay_p90"]]
     nv = set(valid)
     nv.add("uncertainty")

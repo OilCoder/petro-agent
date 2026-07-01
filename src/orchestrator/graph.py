@@ -29,7 +29,11 @@ from src.params.config_loader import (
     resolve_all,
 )
 from src.qc.gate import qc_gate
-from src.uncertainty.montecarlo import build_method_alts, propagate_net_pay
+from src.uncertainty.montecarlo import (
+    build_method_alts,
+    multi_seed_robustness,
+    propagate_net_pay,
+)
 from src.uncertainty.sensitivity import sensitivity_net_pay
 
 VERSION = "0.1.0"
@@ -135,7 +139,13 @@ def run_pipeline(
         )
         sens = sensitivity_net_pay(vsh, phie, rt, base, cutoffs, step)
         warn = high_leverage_flag(sens["dominant_parameter"], params)
-        ledger["uncertainty"] = {**mc, "sensitivity": sens, "high_leverage_warning": warn}
+        rob = multi_seed_robustness(vsh, phie, rt, base, cutoffs, step, n=200)
+        ledger["uncertainty"] = {
+            **mc,
+            "sensitivity": sens,
+            "high_leverage_warning": warn,
+            "robustness": rob,
+        }
         ledger["run"]["net_pay_p10_p50_p90"] = [
             mc["net_pay_p10"],
             mc["net_pay_p50"],
