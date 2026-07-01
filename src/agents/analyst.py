@@ -40,12 +40,11 @@ Data preparation and the honesty rails (parameters, validators, methodology grap
 are added automatically; you choose the ANALYSIS body.
 
 ABSOLUTE RULES:
-- Output ONLY a JSON object with this shape (a concrete example, copy the structure not the
-  values):
-  {"sections": ["gr_analysis", "lithology", "vsh", "porosity", "sw", "zonation", "results",
-                "uncertainty", "shaly_sand_saturation"],
-   "tool_calls": [{"tool": "sw_simandoux", "args": {"electrical_preset": "carbonate_default"}}],
-   "rationale": "dolomitic shaly section, so include lithology and a shaly-sand saturation"}
+- Output ONLY a JSON object with this SHAPE (a schema — the bracketed tokens are slots you fill
+  with real ids from the SECTION CATALOG, they are NOT example choices to copy):
+  {"sections": ["<section_id>", "<section_id>", "..."],
+   "tool_calls": [{"tool": "<optional_tool_id>", "args": {"electrical_preset": "<preset_id>"}}],
+   "rationale": "<one line: what the data shows — no method names, no numbers>"}
 - "sections" is your ORDERED choice of analysis sections (from the SECTION CATALOG). Most
   sections need NO tool_call — list them in "sections" only. tool_calls are ONLY for the OPTIONAL
   sections (each needs its backing method id from the catalog), never for regular section ids.
@@ -57,19 +56,14 @@ ABSOLUTE RULES:
 
 
 def _eda_findings(digest: dict[str, Any]) -> list[tuple[str, str]]:
-    """The actionable EDA findings (one observation node each). Deterministic."""
+    """The EDA observation nodes (one per computed screen). Neutral facts, never a conclusion."""
     out: list[tuple[str, str]] = []
     lr = digest.get("low_resistivity", {})
     if lr.get("n_flagged", 0) > 0:
-        out.append(("low_resistivity_scan", "low-resistivity intervals present"))
+        out.append(("low_resistivity_scan", "low-RT intervals scanned (percentile-based)"))
     lit = digest.get("lithology", {})
-    if lit.get("nearest"):
-        out.append(
-            (
-                "crossplot_density_neutron",
-                f"lithology nearest {lit['nearest']} (from density-neutron numeric crossplot)",
-            )
-        )
+    if lit.get("shares"):
+        out.append(("crossplot_density_neutron", "density-neutron matrix point-shares computed"))
     bh = digest.get("badhole", {})
     if bh.get("DEGRADED", 0) + bh.get("EXCLUDED", 0) > 0:
         out.append(("badhole_summary", "degraded/excluded intervals present"))
@@ -232,6 +226,8 @@ def run_analyst(
         plan["rationale"] = "deterministic heuristic (analyst unavailable)"
         used = "deterministic"
 
+    # record the model actually used (may be a fallback), not just the one requested
+    graph.model = used
     graph.add(
         "decision",
         {

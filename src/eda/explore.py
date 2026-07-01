@@ -87,14 +87,16 @@ def histogram_stats(curve: np.ndarray, bins: int = 20) -> dict[str, Any]:
 def crossplot_density_neutron(
     rhob: np.ndarray, nphi: np.ndarray, line_tol: float = 0.05
 ) -> dict[str, Any]:
-    """Screen the N-D crossplot: nearest-lithology share and a gas-effect flag.
+    """Compute the N-D crossplot per-matrix point-shares (and the nearest matrix line).
 
-    ``line_tol`` is a CITED tolerance (g/cc) for "near" a matrix line.
+    ``line_tol`` is a CITED tolerance (g/cc) for "near" a matrix line. ``nearest`` is exposed
+    ONLY for the agent-invoked lithology tool; ``build_eda_digest`` surfaces the shares alone
+    (the neutral fact), never the nearest label — naming the dominant lithology is the analyst's.
     """
     r, p = np.asarray(rhob, dtype=float), np.asarray(nphi, dtype=float)
     valid = np.isfinite(r) & np.isfinite(p)
     if int(valid.sum()) == 0:
-        return {"n": 0, "nearest": None, "shares": {}, "gas_effect_flag": False}
+        return {"n": 0, "nearest": None, "shares": {}}
     rv, pv = r[valid], p[valid]
     # share of points near each matrix line in (NPHI, RHOB) space
     shares: dict[str, float] = {}
@@ -102,25 +104,24 @@ def crossplot_density_neutron(
         rho_line = rma - pv * (rma - 1.0)  # matrix line in (NPHI, RHOB)
         shares[name] = round(float(np.mean(np.abs(rv - rho_line) <= line_tol)), 3)
     nearest = max(shares, key=lambda k: shares[k])
-    # gas effect: neutron reads low while density reads low (cross-over) in clean rock
-    gas = bool(np.mean((pv < 0.10) & (rv < 2.4)) > 0.05)
-    return {"n": int(valid.sum()), "nearest": nearest, "shares": shares, "gas_effect_flag": gas}
+    return {"n": int(valid.sum()), "nearest": nearest, "shares": shares}
 
 
 def low_resistivity_scan(
-    rt: np.ndarray, depth_m: np.ndarray, phie: np.ndarray, rt_low_pctile: int = 10
+    rt: np.ndarray, depth_m: np.ndarray, rt_low_pctile: int = 10
 ) -> dict[str, Any]:
-    """Flag intervals where RT is low (percentile-based, CITED) but PHIE is decent.
+    """Report depth spans where RT sits in its lowest percentile band (percentile-based, CITED).
 
-    Returns the count and the depth spans — a hint the agent may use to add a saturation
-    analysis (e.g. select Simandoux/Pickett). It computes nothing the report trusts.
+    A neutral resistivity observation: the count and the depth spans below the RT percentile
+    threshold. No porosity cross, no interpretation, no method suggestion — it computes nothing
+    the report trusts, and it does not identify pay (that is the analyst's call).
     """
-    rt_a, d, phi = (np.asarray(x, dtype=float) for x in (rt, depth_m, phie))
-    valid = np.isfinite(rt_a) & np.isfinite(phi) & (rt_a > 0)
+    rt_a, d = (np.asarray(x, dtype=float) for x in (rt, depth_m))
+    valid = np.isfinite(rt_a) & (rt_a > 0)
     if int(valid.sum()) < 10:
         return {"rt_threshold": None, "n_flagged": 0, "intervals": []}
     thr = float(np.percentile(rt_a[valid], rt_low_pctile))
-    flag = valid & (rt_a <= thr) & (phi > 0.08)
+    flag = valid & (rt_a <= thr)
     intervals: list[list[float]] = []
     idx = np.where(flag)[0]
     if idx.size:
@@ -138,12 +139,12 @@ def low_resistivity_scan(
 
 
 def gr_baseline_check(gr: np.ndarray) -> dict[str, Any]:
-    """Report the clean/shale GR endpoints actually present (p5/p95)."""
+    """Report the GR p5/p95 endpoints present (neutral percentiles, no clean/shale label)."""
     f = _finite(gr)
     if f.size == 0:
-        return {"gr_clean_p5": None, "gr_shale_p95": None}
+        return {"gr_p5": None, "gr_p95": None}
     p5, p95 = (float(x) for x in np.percentile(f, [5, 95]))
-    return {"gr_clean_p5": round(p5, 1), "gr_shale_p95": round(p95, 1)}
+    return {"gr_p5": round(p5, 1), "gr_p95": round(p95, 1)}
 
 
 def badhole_summary(quality_map: np.ndarray) -> dict[str, Any]:
@@ -175,8 +176,10 @@ def build_eda_digest(ctx: dict[str, Any]) -> dict[str, Any]:
     }
     if "GR" in curves:
         digest["gr_baseline"] = gr_baseline_check(curves["GR"])
-    if "RT" in curves and "phie" in ctx:
-        digest["low_resistivity"] = low_resistivity_scan(curves["RT"], depth, ctx["phie"])
+    if "RT" in curves:
+        digest["low_resistivity"] = low_resistivity_scan(curves["RT"], depth)
     if "RHOB" in curves and "NPHI" in curves:
-        digest["lithology"] = crossplot_density_neutron(curves["RHOB"], curves["NPHI"])
+        cp = crossplot_density_neutron(curves["RHOB"], curves["NPHI"])
+        # surface the neutral point-shares only — never the 'nearest' label (that is the analyst's)
+        digest["lithology"] = {"n": cp["n"], "shares": cp["shares"]}
     return digest

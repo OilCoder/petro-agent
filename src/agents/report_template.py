@@ -466,14 +466,16 @@ def _caliper_quality(ledger: dict[str, Any]) -> str:
 
 def _lithology(ledger: dict[str, Any]) -> str:
     lit = ledger.get("run", {}).get("eda", {}).get("lithology")
-    if not lit:
+    if not lit or not lit.get("shares"):
         return (
-            "## Lithology interpretation\n\n"
+            "## Density-neutron crossplot lithology\n\n"
             "_Not computed — needs the RHOB+NPHI density-neutron crossplot._\n"
         )
+    shares = ", ".join(f"{k}: {v}" for k, v in lit["shares"].items())
     return (
-        "## Lithology interpretation\n\n"
-        f"Nearest lithology (density-neutron numeric crossplot): {lit.get('nearest', '—')}. "
+        "## Density-neutron crossplot lithology\n\n"
+        f"Matrix point-shares (fraction of points near each matrix line): {shares}. "
+        "Engine crossplot output; naming the dominant lithology is the analyst's judgement. "
         "Comparison with core/mud log: not available (LAS-only).\n"
     )
 
@@ -561,8 +563,7 @@ def _derived_parameters_section(ledger: dict[str, Any]) -> str:
         return "## Derived parameters\n\n_Not computed — no derived-parameter tool result._\n"
     return (
         "## Derived parameters\n\n"
-        f"- Bulk-volume water (BVW = PHIE*Sw): mean {_fmt(v.get('mean_bvw'), 4)} v/v\n\n"
-        "_A near-constant BVW across a zone suggests irreducible water saturation (Buckles)._\n"
+        f"- Bulk-volume water (BVW = PHIE*Sw): mean {_fmt(v.get('mean_bvw'), 4)} v/v\n"
     )
 
 
@@ -633,24 +634,28 @@ _CALIBRATES = {
 
 
 def _recommendations(ledger: dict[str, Any]) -> str:
-    """Data to acquire to calibrate the study and reduce the dominant uncertainty (LAS-only)."""
+    """Data absent for calibration + the parameter that dominates net-pay uncertainty (facts only).
+
+    A neutral data-gaps rail (no analyst voice, no imperative): it states what is missing and which
+    parameter the sensitivity flags as dominant. Whether/what to recommend is the analyst's call.
+    """
     prov = ledger.get("run", {}).get("curve_provenance", {})
     missing = [c for c in _STD_CURVES if c not in prov]
     dom = ledger.get("uncertainty", {}).get("sensitivity", {}).get("dominant_parameter")
     rows = [
-        "## Recommendations\n",
-        "To calibrate this LAS-only interpretation and reduce its dominant uncertainty, acquire:\n",
-        "- Core (routine + SCAL): porosity/permeability and Archie m, n, a — anchors PHIE and Sw.",
-        "- Pressure tests (RFT/MDT): true fluid contacts and gradients (here only log-based).",
-        "- Production/flow data: validates the net-pay flag against deliverability.",
+        "## Data gaps for calibration\n",
+        "This is a LAS-only study. Data that would calibrate the interpretation is absent:\n",
+        "- Core (routine + SCAL): would anchor PHIE and Archie m, n, a.",
+        "- Pressure tests (RFT/MDT): would give true fluid contacts and gradients (log-based).",
+        "- Production/flow data: would test the net-pay flag against deliverability.",
     ]
     if dom:
         rows.append(
-            f"- Priority — the dominant net-pay driver is **{dom}**: "
-            f"acquire {_CALIBRATES.get(dom, 'core calibration')}."
+            f"- Dominant net-pay uncertainty driver (from the sensitivity): **{dom}** "
+            f"(calibrated by {_CALIBRATES.get(dom, 'core calibration')})."
         )
     if missing:
-        rows.append(f"- Missing standard curves to log next: {', '.join(missing)}.")
+        rows.append(f"- Standard curves absent: {', '.join(missing)}.")
     return "\n".join(rows) + "\n"
 
 

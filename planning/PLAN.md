@@ -88,6 +88,18 @@ Done when: corrida e2e produce el informe completo ([FIJO] todas + [MODELO] eleg
 - [x] E2E determinista: modelo elige Simandoux+permeabilidad+rock_quality+electrofacies → 4 secciones con número real, depth_backed=4, claim_verifier PASS (2026-06-28)
 - [ ] Regenerar los 2 informes de muestra con Ollama (requiere modelos levantados)
 
+### Phase R8 — Auditoría y remediación de fuga de interpretación (COMPLETED)
+Done when: ninguna superficie código→agente orienta el análisis (zona, método, litología, conclusión); base-por-fallo siempre señalada en superficie; completitud medible separando piso [código] de contribución interpretativa [agente]; congelado por tests.
+- [x] Auditoría de 7 focos de fuga en 5 ciclos (planning/auditoria_fuga_interpretacion.md) (2026-07-01)
+- [x] Quitar playbook overburden→zona + regla Vsh→shaly-sand + ejemplo trabajado (analyst_loop.py, analyst.py, loop_actions.py) (2026-07-01)
+- [x] Digest solo materia prima: fuera nearest/gas_effect/low-res-pay-screen (eda/explore.py) (2026-07-01)
+- [x] Señalar defaults de preset/método (preset_defaulted, method_source, method_coerced) (tool_dispatch.py, loop_actions.py) (2026-07-01)
+- [x] Fallback visible en superficie: field_report label + fell_back=agent_steps==0 (field_report.py, analyst_loop.py) (2026-07-01)
+- [x] Renderers sin voz de analista: Data gaps, sin nota Buckles, litología por shares (report_template.py) (2026-07-01)
+- [x] Métrica de dos cubos free_floor_ids + completeness_breakdown (report_compose.py, report_score.py) (2026-07-01)
+- [x] Test anti-relleno + anti-interpretación (tests/test_completeness_and_filler.py) (2026-07-01)
+- [x] Experimento 3 modelos post-fix: zona=None sin guía (nemotron free + gpt-5); 28/37 = piso [código], destreza [MODELO] del agente ~0 (2026-07-01)
+
 ## Conventions
 - Cada fórmula nueva entra al registry SOLO con golden test (bounds, monotonía, caso analítico, NaN passthrough).
 - Una sección [MODELO] aparece SOLO si existe su tool_result de respaldo (sin theater).

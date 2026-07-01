@@ -46,21 +46,19 @@ _LOOP_SYSTEM = """You are a senior petrophysical ANALYST refining a well report 
 A BASELINE interpretation (vsh, phie, sw, net pay, uncertainty) is ALREADY computed with default
 methods. Each turn you see the STATE and the VALID ACTIONS; choose exactly ONE next action.
 
-Your job, in order:
-0. CHECK the interval first with the "depth_quality" observation. If the top is non-reservoir
-   OVERBURDEN (low RHOB / high frac_rhob_below_2 = not consolidated rock), restrict to the reservoir
-   with set_zone_of_interest, args {"top": <m>, "bottom": <m>} (recomputes the baseline over that
-   zone). Do this BEFORE refining methods.
-1. OPTIONALLY recompute a core property with a BETTER method for this rock (e.g. a shaly-sand Sw
-   model when Vsh is high) — at most once per property, only when justified by the data.
-2. ADD the optional analyses that add value (permeability, rock_quality, electrofacies, lithology,
-   derived_parameters).
-3. Then pick "finish".
+The actions available to you (use them in whatever order your reading of the data warrants):
+- OBSERVE the data (e.g. depth_quality, distributions, scans) to inform your decisions;
+- RESTRICT the analysis to a depth interval with set_zone_of_interest, args {"top": <m>,
+  "bottom": <m>} (recomputes the baseline over that zone) if the data warrant it;
+- RECOMPUTE a core property with a different vetted method (at most once per property) when the
+  data justify it;
+- ADD optional analyses (permeability, rock_quality, electrofacies, lithology, derived_parameters);
+- pick "finish" when your choices are made.
 
 Output ONLY a JSON object: {"action": "<id>", "method": "<optional method id>", "args": {}}.
 Use an id from VALID ACTIONS only. Do NOT repeat the same action; do NOT recompute a property you
-already chose a method for. Prefer "finish" once your choices are made. You never compute a number —
-the engine does; you decide the method and the order. Never write a number; never invent an id."""
+already chose a method for. You never compute a number — the engine does; you decide which method,
+whether to restrict the interval, and in what order. Never write a number; never invent an id."""
 
 _OBJ = re.compile(r"\{.*\}", re.DOTALL)
 
@@ -210,12 +208,10 @@ def observation_text(
         "baseline_complete": not stale,
         "report_so_far": _report_outline(ledger, order or []),
         "eda": ledger.get("run", {}).get("eda", {}),
-        "hint": "a MECHANICAL objection MIGHT improve with ONE better method, or overburden with "
-        "one set_zone_of_interest — try that at most once. An IRREDUCIBLE objection is a DATA "
-        "limit: recomputing or re-zoning will NOT fix it, do NOT retry for it. Once the core "
-        "reflects your chosen methods, ADD the optional analyses you judge useful (lithology, "
-        "electrofacies, permeability, rock_quality, derived_parameters — they characterize the "
-        "rock and do NOT need convergence), then finish.",
+        "hint": "A MECHANICAL objection MIGHT improve with a different vetted method (try at most "
+        "once). An IRREDUCIBLE objection is a DATA limit: recomputing or re-zoning will NOT fix it "
+        "— do NOT retry for it. Optional analyses do not need convergence. Pick 'finish' when your "
+        "choices are made.",
     }
     return "STATE:\n" + json.dumps(state, indent=1, default=str)[:5200]
 
@@ -314,8 +310,13 @@ def _default_next(valid: set[str], curves: set[str]) -> str | None:
 
 def _decide(
     obs: str, actions: list[str], valid: set[str], curves: set[str], chats: list[tuple[Any, str]]
-) -> tuple[dict[str, Any], int]:
-    """Ask the model cascade for the next action; fall back to the canonical default (signaled)."""
+) -> tuple[dict[str, Any], int, bool]:
+    """Ask the model cascade for the next action; fall back to the canonical default (signaled).
+
+    Returns ``(choice, empty_returns, from_default)`` — ``from_default`` is True when the model gave
+    nothing usable and the deterministic canonical step was substituted, so the caller can keep a
+    base-by-fallback step distinct from a step the agent actually chose.
+    """
     empty = 0
     for c, _mdl in chats:
         if c is None:
@@ -326,9 +327,15 @@ def _decide(
             continue
         choice = parse_action(raw, actions)
         if choice is not None:
-            return choice, empty
+            return choice, empty, False
     nxt = _default_next(valid, curves)
-    return ({"action": nxt} if nxt else {"action": "finish"}), empty
+    return ({"action": nxt} if nxt else {"action": "finish"}), empty, True
+
+
+def _record_step(graph: MethodologyGraph, action: str, from_default: bool) -> None:
+    """Add the decision node, labeling a deterministic-default step apart from an agent step."""
+    tag = "DETERMINISTIC DEFAULT (model empty)" if from_default else "step"
+    graph.add("decision", {"rationale": f"{tag}: {action}", "chosen": action})
 
 
 def run_analyst_loop(
@@ -355,6 +362,7 @@ def run_analyst_loop(
     # Seed the [FIJO] Vsh/Porosity/Sw section keys from the baseline (render without a recompute).
     seed_baseline_sections(ledger, ctx)
     steps_taken = recomputes = empty_returns = wasted = 0
+    agent_steps = default_steps = 0
     finished = False
 
     chats = [(chat, model), (fallback_chat, fallback_model)]
@@ -366,7 +374,7 @@ def run_analyst_loop(
             valid, curves
         )  # offer everything; no-ops are measured, not hidden
         obs = observation_text(ledger, valid, actions, order, last_obs)
-        choice, empty = _decide(obs, actions, valid, curves, chats)
+        choice, empty, from_default = _decide(obs, actions, valid, curves, chats)
         empty_returns += empty
         action = choice["action"]
         if action == "finish":
@@ -389,7 +397,9 @@ def run_analyst_loop(
             }
             continue
 
-        graph.add("decision", {"rationale": f"step: {action}", "chosen": action})
+        default_steps += int(from_default)
+        agent_steps += int(not from_default)
+        _record_step(graph, action, from_default)
         if PRODUCES.get(action) in valid:
             recomputes += 1
         _summary, valid = execute_step(
@@ -424,6 +434,8 @@ def run_analyst_loop(
 
     ledger.setdefault("run", {})["analyst_loop"] = {
         "steps_taken": steps_taken,
+        "agent_steps": agent_steps,
+        "default_steps": default_steps,
         "finished_by_agent": finished,
         "hit_max_steps": steps_taken >= max_steps and not finished and not stalled,
         "stalled": stalled,
@@ -435,7 +447,9 @@ def run_analyst_loop(
     return {
         "section_plan": {"sections": order, "optional_sections": _optionals_in(order)},
         "graph": graph,
-        "fell_back": steps_taken == 0,
+        # fell_back means the agent contributed NO decision of its own (every executed step was the
+        # deterministic default) — a 100%-default run must not read as the agent's analysis.
+        "fell_back": agent_steps == 0,
     }
 
 

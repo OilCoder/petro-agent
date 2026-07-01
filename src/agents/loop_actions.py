@@ -178,7 +178,11 @@ def _exec_phie(ctx, ledger, method, args, valid):  # noqa: ANN001
         phi_sh_d=_pf(ctx)["phi_sh_d"],
         phi_sh_n=_pf(ctx)["phi_sh_n"],
     )
-    ledger["porosity_comparison"] = {"methods": pm, "selected": method or "phie_density_neutron"}
+    ledger["porosity_comparison"] = {
+        "methods": pm,
+        "selected": method or "phie_density_neutron",
+        "method_source": "agent" if method else "engine_default",
+    }
     nv = invalidate_downstream(valid, "phie")
     nv.add("phie")
     return {
@@ -195,6 +199,7 @@ def _exec_sw(ctx, ledger, method, args, valid):  # noqa: ANN001
     pf = _pf(ctx)
     ledger["sw_summary"] = {
         "method": method or "sw_archie",
+        "method_source": "agent" if method else "engine_default",
         "mean_sw": _mean(sw),
         "a": pf["a"],
         "m": pf["m"],
@@ -261,23 +266,35 @@ _OPTIONAL_DEFAULT_TOOL = {
 
 
 def _exec_optional(action, ctx, ledger, method, args, valid):  # noqa: ANN001
+    requested = method
     tool = method or _OPTIONAL_DEFAULT_TOOL[action]
+    coerced = False
     try:
         result = _OPTIONAL_RUNNERS[action](tool, ctx, args)
-    except KeyError:  # hallucinated/unknown method -> coerce to the action's default (signaled)
+    except KeyError:  # hallucinated/unknown method -> coerce to the action's default
         tool = _OPTIONAL_DEFAULT_TOOL[action]
         result = _OPTIONAL_RUNNERS[action](tool, ctx, args)
-    ledger.setdefault("tool_results", {})[tool] = {"value": result, "result_hash": _hash(result)}
+        coerced = True
+    entry = {"value": result, "result_hash": _hash(result)}
+    # Signal base-by-default apart from base-by-choice: record when the engine picked the method
+    # (agent gave none) or had to coerce a hallucinated one, so it never reads as the agent's pick.
+    if requested is None or coerced:
+        entry["method_source"] = "engine_default"
+        entry["requested_method"] = requested
+        ledger.setdefault("run", {}).setdefault("method_coerced", []).append(
+            {"action": action, "requested": requested, "used": tool}
+        )
+    ledger.setdefault("tool_results", {})[tool] = entry
     nv = set(valid)
     nv.add(action)
     return {"property": action, "tool": tool, "result": result}, nv
 
 
 def depth_quality_profile(curves: dict[str, Any], depth: Any, n_bins: int = 8) -> dict[str, Any]:
-    """Binned RHOB-by-depth summary so the agent can spot overburden / bad data (read-only).
+    """Binned RHOB-by-depth summary the agent may read (read-only, no interpretation).
 
     Returns per-bin depth range + median RHOB + fraction below 2.0 g/cc. Summarized, never the raw
-    array. Low RHOB / high ``frac_rhob_below_2`` flags intervals that are likely not reservoir.
+    array. The numbers are surfaced as facts; what they imply about the interval is the analyst's.
     """
     depth_arr = np.asarray(depth, dtype=float)
     n = depth_arr.size
@@ -299,8 +316,8 @@ def depth_quality_profile(curves: dict[str, Any], depth: Any, n_bins: int = 8) -
         )
     return {
         "bins": bins,
-        "note": "RHOB ~2.4-2.7 = consolidated rock; low RHOB / high frac_rhob_below_2 = likely "
-        "overburden or bad data, not reservoir. Restrict with set_zone_of_interest(top,bottom).",
+        "note": "rhob_p50 = median RHOB (g/cc) per depth bin; frac_rhob_below_2 = fraction of "
+        "samples with RHOB < 2.0 g/cc in the bin.",
     }
 
 
@@ -470,7 +487,7 @@ def _observe_eda(action: str, ctx: dict[str, Any], tgt: Any) -> dict[str, Any]:
     if action == "crossplot":
         return explore.crossplot_density_neutron(ctx["curves"]["RHOB"], ctx["curves"]["NPHI"])
     if action == "low_res_scan":
-        return explore.low_resistivity_scan(ctx["curves"]["RT"], ctx["depth_m"], ctx["phie"])
+        return explore.low_resistivity_scan(ctx["curves"]["RT"], ctx["depth_m"])
     return {"note": f"unknown observation {action}"}
 
 

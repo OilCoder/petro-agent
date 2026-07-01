@@ -50,15 +50,16 @@ def test_crossplot_nd_nearest_lithology():
 def test_low_resistivity_scan_flags_interval():
     rt = np.full(100, 50.0)
     rt[40:50] = 2.0  # low-resistivity zone
-    phie = np.full(100, 0.15)
-    scan = low_resistivity_scan(rt, DEPTH, phie, rt_low_pctile=10)
+    # neutral RT-percentile scan: no porosity cross (no pay-screen interpretation)
+    scan = low_resistivity_scan(rt, DEPTH, rt_low_pctile=10)
     assert scan["n_flagged"] >= 5 and scan["intervals"]
 
 
 def test_gr_baseline_check():
     gr = np.linspace(20.0, 120.0, 100)
     b = gr_baseline_check(gr)
-    assert b["gr_clean_p5"] < 30 and b["gr_shale_p95"] > 110
+    # neutral percentiles, no clean/shale label
+    assert b["gr_p5"] < 30 and b["gr_p95"] > 110
 
 
 def test_badhole_summary_fractions():

@@ -125,6 +125,26 @@ def _free_forced_fijo(ledger: dict[str, Any]) -> list[str]:
     return forced
 
 
+# The core interpretation the baseline pass-0 always seeds (rendered regardless of the agent).
+_BASELINE_CORE: tuple[str, ...] = ("vsh", "porosity", "sw", "zonation", "results", "uncertainty")
+
+
+def free_floor_ids(ledger: dict[str, Any]) -> list[str]:
+    """The code-guaranteed FREE-mode floor: sections present regardless of any agent choice.
+
+    Head (data prep + headline) + forced [FIJO] descriptive + baseline core + trailing rails.
+    Used by the evaluation to separate the deterministic floor (the code's job) from the agent's
+    interpretive contribution — so a raw section count never reads as agent achievement.
+    """
+    ids = list(_FREE_HEAD) + _free_forced_fijo(ledger) + list(_BASELINE_CORE)
+    ids += [s for s in _FREE_TAIL if not s.startswith("__")]
+    out: list[str] = []
+    for x in ids:
+        if x not in out:
+            out.append(x)
+    return out
+
+
 def _strip_number(block: str) -> str:
     return re.sub(r"^(#+ )\d+\.\s*", r"\1", block, flags=re.MULTILINE)
 

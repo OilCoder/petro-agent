@@ -275,7 +275,16 @@ def render_field_report(
     fig_block = "\n".join(f"**{f['title']}**\n\n![{f['title']}]({f['file']})\n" for f in figures)
     sel_line = ""
     if selection:
-        sel_line = f"Selection (free, quality-aware): {selection.get('selected', [])}.\n\n"
+        wells = selection.get("selected", [])
+        rat = selection.get("rationale", "")
+        if selection.get("fell_back"):
+            # base-by-fallback must NOT read as the agent's free choice on the report surface
+            sel_line = (
+                f"Selection (DETERMINISTIC FALLBACK — model selection unavailable): {wells}. "
+                f"{rat}\n\n"
+            )
+        else:
+            sel_line = f"Selection (agent-chosen): {wells}." + (f" {rat}\n\n" if rat else "\n\n")
 
     return (
         f"# Field Report — {field['n_wells']} wells\n\n"

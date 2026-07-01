@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.agents.report_compose import OPTIONAL_REQUIRES
+from src.agents.report_compose import OPTIONAL_REQUIRES, OPTIONAL_SECTIONS, free_floor_ids
 from src.petrophysics.registry import METHOD_REGISTRY
 
 VERSION = "0.1.0"
@@ -67,6 +67,43 @@ def objective_score(ledger: dict[str, Any]) -> dict[str, Any]:
         "decisions_justified": round(len(justified) / len(decisions), 3) if decisions else 0.0,
         "honesty_ok": _honesty_ok(ledger),
         "invariant_clean": run.get("claim_verifier", {}).get("result", "PASS") == "PASS",
+    }
+
+
+def completeness_breakdown(ledger: dict[str, Any], section_plan: dict[str, Any]) -> dict[str, Any]:
+    """Split report completeness into two owners so a section count is never mistaken for skill.
+
+    - ``floor`` = the deterministic sections the CODE guarantees (head + forced [FIJO] descriptive +
+      baseline core + rails). Present regardless of the agent; this should stay ~complete.
+    - ``interpretive`` = what the AGENT actually added beyond the floor: [MODELO] optional sections
+      it chose, core methods it changed off the engine default, and whether it restricted the zone.
+      This is the real skill signal; a weak agent scores ~0 here and that is the honest reading.
+    """
+    run = ledger.get("run", {})
+    floor = free_floor_ids(ledger)
+    chosen_optionals = [
+        s for s in section_plan.get("optional_sections", []) if s in OPTIONAL_SECTIONS
+    ]
+    core_methods_agent_chosen = sum(
+        1
+        for key in ("porosity_comparison", "sw_summary")
+        if ledger.get(key, {}).get("method_source") == "agent"
+    )
+    zone_restricted = ledger.get("zone_of_interest") is not None
+    loop = run.get("analyst_loop", {})
+    interpretive_choices = (
+        len(chosen_optionals) + core_methods_agent_chosen + (1 if zone_restricted else 0)
+    )
+    return {
+        "floor_sections": len(floor),
+        "floor_ids": floor,
+        "interpretive_choices": interpretive_choices,
+        "modelo_optionals_chosen": chosen_optionals,
+        "core_methods_agent_chosen": core_methods_agent_chosen,
+        "zone_restricted": zone_restricted,
+        "agent_steps": loop.get("agent_steps", 0),
+        "default_steps": loop.get("default_steps", 0),
+        "wasted_steps": loop.get("wasted_steps", 0),
     }
 
 

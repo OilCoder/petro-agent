@@ -184,4 +184,19 @@ def test_render_field_report_no_summed_headline():
         {"executive_summary": "Field prose.", "conclusions": "Done."},
         selection={"selected": ["W1", "W2"]},
     )
-    assert "NOT a sum" in md and "quality-aware" in md and "W1" in md and "W2" in md
+    # an agent selection (no fell_back) reads as agent-chosen, never as a fallback
+    assert "NOT a sum" in md and "agent-chosen" in md and "W1" in md and "W2" in md
+
+
+def test_render_field_report_fallback_selection_labeled():
+    # a deterministic-fallback selection must NOT read as the agent's free choice on the surface
+    md = render_field_report(
+        aggregate_field(_LEDGERS),
+        {"executive_summary": "Field prose.", "conclusions": "Done."},
+        selection={
+            "selected": ["W1", "W2"],
+            "fell_back": True,
+            "rationale": "top wells by % usable",
+        },
+    )
+    assert "DETERMINISTIC FALLBACK" in md and "agent-chosen" not in md

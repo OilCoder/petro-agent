@@ -64,10 +64,11 @@ def validate_plan(plan: dict[str, Any]) -> list[str]:
 
 def _run_sw_method(method_id: str, ctx: dict[str, Any], args: dict[str, Any]) -> dict[str, Any]:
     spec = METHOD_REGISTRY[method_id]
-    # Unknown/placeholder preset → vetted default (robust to sloppy LLM args).
-    eff_preset = args.get("electrical_preset", "carbonate_default")
-    if eff_preset not in ELECTRICAL_PRESETS:
-        eff_preset = "carbonate_default"
+    # Unknown/absent/placeholder preset → vetted default (robust to sloppy LLM args), SIGNALED:
+    # preset_defaulted tells the report a base-by-default apart from a base the agent chose.
+    requested = args.get("electrical_preset")
+    preset_defaulted = requested not in ELECTRICAL_PRESETS
+    eff_preset = "carbonate_default" if preset_defaulted else str(requested)
     preset = ELECTRICAL_PRESETS[eff_preset]
     rt, phie, vsh = ctx["curves"]["RT"], ctx["phie"], ctx["vsh"]
     if method_id == "sw_archie":
@@ -78,7 +79,12 @@ def _run_sw_method(method_id: str, ctx: dict[str, Any], args: dict[str, Any]) ->
         )
     finite = np.asarray(arr, dtype=float)
     mean = float(np.nanmean(finite)) if np.any(np.isfinite(finite)) else float("nan")
-    return {"mean_sw": round(mean, 4), "method": method_id, "preset": eff_preset}
+    return {
+        "mean_sw": round(mean, 4),
+        "method": method_id,
+        "preset": eff_preset,
+        "preset_defaulted": preset_defaulted,
+    }
 
 
 def _mean(arr: Any) -> float:
@@ -110,6 +116,8 @@ def _run_porosity_method(
     spec = METHOD_REGISTRY[method_id]
     curves = ctx["curves"]
     phie_max = _pv(ledger, "phie_max", 0.45)
+    eff_preset: str | None = None
+    preset_defaulted = False
     if method_id == "phie_density_neutron":
         arr = spec.fn(
             curves["RHOB"],
@@ -127,15 +135,22 @@ def _run_porosity_method(
         )
     elif method_id == "phi_neutron":
         arr = spec.fn(curves["NPHI"], phie_max)
-    else:  # sonic: matrix/fluid transit times from a vetted preset, never the LLM
-        preset = MATRIX_PRESETS.get(
-            args.get("matrix_preset", "limestone"), MATRIX_PRESETS["limestone"]
-        )
+    else:  # sonic preset: matrix/fluid transit times, vetted (default SIGNALED), never the LLM
+        requested = args.get("matrix_preset")
+        preset_defaulted = requested not in MATRIX_PRESETS
+        matrix_key = "limestone" if preset_defaulted else str(requested)
+        eff_preset = matrix_key
+        preset = MATRIX_PRESETS[matrix_key]
         if method_id == "phi_sonic_wyllie":
             arr = spec.fn(curves["DT"], preset["dt_matrix"], preset["dt_fluid"], phie_max)
         else:  # phi_sonic_rhg(dt, dt_matrix, c=0.67, phie_max)
             arr = spec.fn(curves["DT"], preset["dt_matrix"], phie_max=phie_max)
-    return {"mean_phi": _mean(arr), "method": method_id, "preset": args.get("matrix_preset")}
+    return {
+        "mean_phi": _mean(arr),
+        "method": method_id,
+        "preset": eff_preset,
+        "preset_defaulted": preset_defaulted,
+    }
 
 
 def _run_permeability_method(
@@ -200,7 +215,7 @@ def _run_eda(tool: str, ctx: dict[str, Any], args: dict[str, Any]) -> dict[str, 
     if tool == "crossplot_density_neutron":
         return explore.crossplot_density_neutron(curves["RHOB"], curves["NPHI"])
     if tool == "low_resistivity_scan":
-        return explore.low_resistivity_scan(curves["RT"], ctx["depth_m"], ctx["phie"])
+        return explore.low_resistivity_scan(curves["RT"], ctx["depth_m"])
     if tool == "gr_baseline_check":
         return explore.gr_baseline_check(curves["GR"])
     if tool == "badhole_summary":
