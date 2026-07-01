@@ -47,6 +47,23 @@ def test_load_records_unmapped_curves(tmp_path):
     assert "GR" in well.curves and "DEPT" not in well.unmapped  # depth not flagged as unmapped
 
 
+def test_load_flips_reversed_depth(tmp_path):
+    # a deepest-first LAS (fully DECREASING depth) is valid data, just reversed — loader flips it
+    depths = [1005.5 - i * 0.5 for i in range(12)]  # 1005.5 down to 1000.0
+    rows = "\n".join(f"{d:.1f} {d:.1f}" for d in depths)  # GR == depth so alignment is checkable
+    las = (
+        "~Version\nVERS. 2.0:\nWRAP. NO:\n"
+        "~Well\nSTRT.M 1005.5:\nSTOP.M 1000.0:\nSTEP.M -0.5:\nNULL. -999.25:\n"
+        "~Curve\nDEPT.M:\nGR.GAPI:\n"
+        "~ASCII\n" + rows + "\n"
+    )
+    p = tmp_path / "rev.las"
+    p.write_text(las)
+    well = load_las(str(p))
+    assert bool(np.all(np.diff(well.depth_m) > 0))  # now monotonically increasing
+    assert well.curves["GR"][0] == well.depth_m[0]  # curve stayed aligned with the flipped depth
+
+
 def test_load_synthetic_curve_length():
     well = load_las(FIXTURE)
     for arr in well.curves.values():

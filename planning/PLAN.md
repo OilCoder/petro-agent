@@ -129,6 +129,7 @@ Done when: se corrigen los glitches destapados por VOLVE/v5 (provenance del graf
 - [x] `multi_seed_robustness` cableado al ledger + §19 del reporte (loop + guiado) + test; confirmado en el pipeline de VOLVE (2026-07-01)
 - [x] Fase 8 e2e: pipeline determinista + agente completo sobre LAS real de VOLVE (region north_sea_jurassic) → reporte (2026-07-01)
 - [x] `vsh_neutron_density` ahora SELECCIONABLE por el agente: registrado en METHOD_REGISTRY (available_methods) + dispatch en vsh_step (loop) y _run_vsh_method (guiado) + tests (2026-07-01)
+- [x] Loader: flip de profundidad invertida (deepest-first) + unidades pulgada/0.1-in — 198/198 Schaben cargan (era 197); + test (src/io/loader.py) (2026-07-01)
 - [ ] VSH multi-mineral (módulo grande): indicadores/shale-points ligeros NO cierran VSH (72%); la CPI usa solve multi-mineral — pendiente dedicado
 
 ## Conventions

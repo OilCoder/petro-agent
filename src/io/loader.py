@@ -16,6 +16,7 @@ import numpy as np
 VERSION = "0.1.0"
 
 FEET_TO_M = 0.3048
+INCH_TO_M = 0.0254
 
 # Canonical curve -> accepted aliases (case-insensitive). Phase-0 embedded map.
 ALIASES: dict[str, list[str]] = {
@@ -77,6 +78,22 @@ def _header(las: lasio.LASFile, key: str, default: str = "") -> str:
     return default
 
 
+def _normalize_depth(depth: np.ndarray, unit: str) -> tuple[np.ndarray, bool]:
+    """Depth to metres, flipped if logged deepest-first. Returns ``(depth, was_reversed)``.
+
+    Handles FT/IN/0.1-IN units, and reverses a fully DECREASING index (a valid but deepest-first
+    log) so the pipeline always sees a monotonically increasing depth — the caller flips the curves.
+    """
+    if unit in ("FT", "F", "FEET"):
+        depth = depth * FEET_TO_M
+    elif unit in ("IN", "INCH", "INCHES"):
+        depth = depth * INCH_TO_M
+    elif unit in ("0.1 IN", "0.1IN"):  # tenths of an inch (seen in some vendor exports)
+        depth = depth * 0.1 * INCH_TO_M
+    reversed_depth = depth.size >= 2 and bool(np.all(np.diff(depth) < 0))
+    return (depth[::-1] if reversed_depth else depth), reversed_depth
+
+
 def load_las(path: str) -> WellData:
     """Load a LAS file into a :class:`WellData` structure.
 
@@ -95,9 +112,8 @@ def load_las(path: str) -> WellData:
     # Step 1 — depth index, normalized to metres
     # ----------------------------------------
     depth = np.asarray(las.index, dtype=float)
-    depth_unit = (las.curves[0].unit or "").upper() if len(las.curves) else ""
-    if depth_unit in ("FT", "F", "FEET"):
-        depth = depth * FEET_TO_M
+    depth_unit = (las.curves[0].unit or "").upper().strip() if len(las.curves) else ""
+    depth, reversed_depth = _normalize_depth(depth, depth_unit)
 
     if depth.size < 10:
         raise ValueError(f"{path}: fewer than 10 depth samples ({depth.size})")
@@ -116,9 +132,10 @@ def load_las(path: str) -> WellData:
         m = _match(curve.mnemonic)
         if m:
             canon, rank = m
-            candidates.setdefault(canon, []).append(
-                (rank, curve.mnemonic, np.asarray(curve.data, dtype=float))
-            )
+            arr = np.asarray(curve.data, dtype=float)
+            if reversed_depth:  # keep curves aligned with the flipped depth index
+                arr = arr[::-1]
+            candidates.setdefault(canon, []).append((rank, curve.mnemonic, arr))
         elif curve.mnemonic.upper().split(":")[0].strip() not in _DEPTH_MNEMONICS:
             unmapped.append(
                 curve.mnemonic
