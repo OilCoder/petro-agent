@@ -29,7 +29,7 @@ from src.params.config_loader import (
     resolve_all,
 )
 from src.qc.gate import qc_gate
-from src.uncertainty.montecarlo import propagate_net_pay
+from src.uncertainty.montecarlo import build_method_alts, propagate_net_pay
 from src.uncertainty.sensitivity import sensitivity_net_pay
 
 VERSION = "0.1.0"
@@ -117,7 +117,20 @@ def run_pipeline(
         cutoffs = {k: params[k].value for k in ("vsh_cutoff", "phie_cutoff", "sw_cutoff")}
         vsh, phie, rt = final["vsh"], final["phie"], final["curves"]["RT"]
         step = float(well.step_m)
-        mc = propagate_net_pay(vsh, phie, rt, base, cutoffs, step)
+        # include METHOD (structural) uncertainty in the band, not only parameter sensitivity
+        vsh_alts, phie_alts = build_method_alts(
+            final["curves"],
+            vsh,
+            phie,
+            float(params["gr_min"].value),
+            float(params["gr_max"].value),
+            float(params["rho_ma"].value),
+            float(params["rho_fl"].value),
+            float(params["phie_max"].value),
+        )
+        mc = propagate_net_pay(
+            vsh, phie, rt, base, cutoffs, step, vsh_alts=vsh_alts, phie_alts=phie_alts
+        )
         sens = sensitivity_net_pay(vsh, phie, rt, base, cutoffs, step)
         warn = high_leverage_flag(sens["dominant_parameter"], params)
         ledger["uncertainty"] = {**mc, "sensitivity": sens, "high_leverage_warning": warn}

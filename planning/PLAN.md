@@ -109,6 +109,15 @@ Done when: el informe de campo enlaza a informes por-pozo que existen; un modelo
 - [x] Figuras vision-eligible: buckles, hingle, distributions (log_plot.py) (2026-07-01)
 - [x] Figuras human-only post-loop: tornado + MC distribution (excluidas de visión); `montecarlo` expone realizations (2026-07-01)
 
+### Phase R10 — Calibración demostrada vs VOLVE (Fase 8, "demostrable") (COMPLETED)
+Done when: se mide la calibración de la confianza contra ground-truth público (VOLVE CPI de Equinor); si está sobreconfiada, se corrige y se re-demuestra la cobertura.
+- [x] Descarga VOLVE 15/9-F-11A (crudo + CPI Equinor VSH/PHIF/SW) — data/volve/ (gitignored) (2026-07-01)
+- [x] Motor congelado vs CPI: VSH r=0.96, PHIE r=0.91, SW r=0.87 (debug/dbg_volve_compare.py) (2026-07-01)
+- [x] Hallazgo: bandas P10-P90 sobreconfiadas (cobertura 2-35% vs nominal 80%) — solo propagaban parámetros (2026-07-01)
+- [x] Fix: `build_method_alts` + `propagate_net_pay` muestrea alternativas de método (Vsh/PHIE) → incertidumbre estructural (montecarlo.py, cableado en loop_actions + graph) (2026-07-01)
+- [x] Re-demostrado: cobertura 88-98% (VSH 95%, PHIE 98%, SW 88%) — banda calibrada (2026-07-01)
+- [ ] Fase 8 completo: correr el AGENTE sobre VOLVE + narrativa-vs-Final-Well-Report (pendiente)
+
 ## Conventions
 - Cada fórmula nueva entra al registry SOLO con golden test (bounds, monotonía, caso analítico, NaN passthrough).
 - Una sección [MODELO] aparece SOLO si existe su tool_result de respaldo (sin theater).

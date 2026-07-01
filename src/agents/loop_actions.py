@@ -26,7 +26,7 @@ from src.orchestrator.stages import zonate
 from src.orchestrator.steps import phie_step, sw_step, vsh_step
 from src.petrophysics.phie import porosity_method_comparison
 from src.petrophysics.vsh import vsh_method_comparison
-from src.uncertainty.montecarlo import propagate_net_pay
+from src.uncertainty.montecarlo import build_method_alts, propagate_net_pay
 from src.uncertainty.sensitivity import sensitivity_net_pay
 
 # Property produced by each compute action.
@@ -236,9 +236,23 @@ def _exec_uncertainty(ctx, ledger, method, args, valid):  # noqa: ANN001
     cal = ledger.get("calibration", {})
     if cal.get("Rw", {}).get("data_driven"):
         base["Rw"] = cal["Rw"]["value"]
-    cutoffs = {k: float(ctx["params"][k].value) for k in ("vsh_cutoff", "phie_cutoff", "sw_cutoff")}
+    p = ctx["params"]
+    cutoffs = {k: float(p[k].value) for k in ("vsh_cutoff", "phie_cutoff", "sw_cutoff")}
     rt, step = ctx["curves"]["RT"], ctx["step_m"]
-    mc = propagate_net_pay(ctx["vsh"], ctx["phie"], rt, base, cutoffs, step)
+    # net-pay MC now includes METHOD uncertainty (vetted Vsh/PHIE alternatives), not only parameters
+    vsh_alts, phie_alts = build_method_alts(
+        ctx["curves"],
+        ctx["vsh"],
+        ctx["phie"],
+        float(p["gr_min"].value),
+        float(p["gr_max"].value),
+        pf["rho_ma"],
+        pf["rho_fl"],
+        pf["phie_max"],
+    )
+    mc = propagate_net_pay(
+        ctx["vsh"], ctx["phie"], rt, base, cutoffs, step, vsh_alts=vsh_alts, phie_alts=phie_alts
+    )
     sens = sensitivity_net_pay(ctx["vsh"], ctx["phie"], rt, base, cutoffs, step)
     warn = high_leverage_flag(sens["dominant_parameter"], ctx["params"])
     ledger["uncertainty"] = {**mc, "sensitivity": sens, "high_leverage_warning": warn}

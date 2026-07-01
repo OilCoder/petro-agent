@@ -8,7 +8,11 @@ from src.evaluation.calibration import expected_calibration_error, reliability_d
 from src.gating.rules import BRACKETED, FIRM, QUALIFIED, confidence_tier, high_leverage_flag
 from src.orchestrator.graph import run_pipeline
 from src.params.schema import ParamValue
-from src.uncertainty.montecarlo import multi_seed_robustness, propagate_net_pay
+from src.uncertainty.montecarlo import (
+    build_method_alts,
+    multi_seed_robustness,
+    propagate_net_pay,
+)
 from src.uncertainty.sensitivity import sensitivity_net_pay
 
 FIXTURE = os.path.join(os.path.dirname(__file__), "fixtures", "synthetic_oldrocks.las")
@@ -35,6 +39,33 @@ def test_montecarlo_reproducible():
     a = propagate_net_pay(VSH, PHIE, RT, BASE, CUTOFFS, STEP, n=100, seed=7)
     b = propagate_net_pay(VSH, PHIE, RT, BASE, CUTOFFS, STEP, n=100, seed=7)
     assert a["net_pay_p50"] == b["net_pay_p50"]  # same seed -> identical
+
+
+def test_method_alts_widen_the_band():
+    # method (structural) uncertainty must widen the band vs parameter-only (VOLVE calibration fix)
+    base_mc = propagate_net_pay(VSH, PHIE, RT, BASE, CUTOFFS, STEP, n=300, seed=1)
+    wide_mc = propagate_net_pay(
+        VSH,
+        PHIE,
+        RT,
+        BASE,
+        CUTOFFS,
+        STEP,
+        n=300,
+        seed=1,
+        vsh_alts=[VSH, np.full(N, 0.35)],
+        phie_alts=[PHIE, np.full(N, 0.10)],
+    )
+    base_w = base_mc["net_pay_p90"] - base_mc["net_pay_p10"]
+    wide_w = wide_mc["net_pay_p90"] - wide_mc["net_pay_p10"]
+    assert wide_w > base_w
+    assert wide_mc["methods_sampled"] == {"vsh": 2, "phie": 2}
+
+
+def test_build_method_alts_from_curves():
+    curves = {"GR": np.linspace(20, 100, N), "RHOB": np.full(N, 2.4), "NPHI": np.full(N, 0.2)}
+    v_alts, p_alts = build_method_alts(curves, VSH, PHIE, 20.0, 120.0, 2.65, 1.0, 0.45)
+    assert len(v_alts) == 3 and len(p_alts) == 3  # base+linear+clavier ; base+density+neutron
 
 
 def test_sensitivity_identifies_dominant():
