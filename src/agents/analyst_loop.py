@@ -42,6 +42,23 @@ _PROP_SECTIONS: dict[str, tuple[str, ...]] = {
 # Canonical default order for the per-step fallback (a competent baseline interpretation).
 _DEFAULT_ORDER = ("compute_vsh", "compute_phie", "compute_sw", "apply_cutoffs", "run_uncertainty")
 
+# The ledger key each ACTION actually writes (for honest graph provenance). Observations are
+# read-only (absent here) so their tool_call node claims NO result_ledger_key — the graph's
+# self-check flagged "ledger:<action> not in ledger" because the action name is not a ledger key.
+_ACTION_LEDGER_KEY: dict[str, str] = {
+    "compute_vsh": "vsh_comparison",
+    "compute_phie": "porosity_comparison",
+    "compute_sw": "sw_summary",
+    "apply_cutoffs": "zones",
+    "run_uncertainty": "uncertainty",
+    "set_zone_of_interest": "zone_of_interest",
+    "permeability": "tool_results",
+    "rock_quality": "tool_results",
+    "electrofacies": "tool_results",
+    "lithology": "tool_results",
+    "derived_parameters": "tool_results",
+}
+
 _LOOP_SYSTEM = """You are a senior petrophysical ANALYST refining a well report STEP BY STEP.
 A BASELINE interpretation (vsh, phie, sw, net pay, uncertainty) is ALREADY computed with default
 methods. Each turn you see the STATE and the VALID ACTIONS; choose exactly ONE next action.
@@ -338,6 +355,19 @@ def _record_step(graph: MethodologyGraph, action: str, from_default: bool) -> No
     graph.add("decision", {"rationale": f"{tag}: {action}", "chosen": action})
 
 
+def _record_tool_call(graph: MethodologyGraph, action: str, args: dict[str, Any]) -> None:
+    """Add the tool_call node, pointing result_ledger_key at the REAL ledger key it wrote.
+
+    Observations are read-only and write nothing, so their node claims no key (the graph's
+    self-check flagged ``ledger:<action> not in ledger`` because the action name is never a key).
+    """
+    payload: dict[str, Any] = {"tool": action, "args": args}
+    key = _ACTION_LEDGER_KEY.get(action)
+    if key:
+        payload["result_ledger_key"] = f"ledger:{key}"
+    graph.add("tool_call", payload)
+
+
 def run_analyst_loop(
     ledger: dict[str, Any],
     ctx: dict[str, Any],
@@ -409,14 +439,7 @@ def run_analyst_loop(
         )
         # Feed an observation's result into the next decision (reads are no longer fire-and-forget).
         last_obs = _obs_result(action, _summary) or last_obs
-        graph.add(
-            "tool_call",
-            {
-                "tool": action,
-                "args": choice.get("args", {}),
-                "result_ledger_key": f"ledger:{action}",
-            },
-        )
+        _record_tool_call(graph, action, choice.get("args", {}))
         prop = PRODUCES.get(action)
         if prop:
             for sid in _PROP_SECTIONS.get(prop, ()):

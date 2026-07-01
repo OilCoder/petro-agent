@@ -6,9 +6,29 @@ from src.agents.loop_actions import (
     available_actions,
     depth_quality_profile,
     invalidate_downstream,
+    seed_baseline_sections,
 )
+from src.params.schema import ParamValue
 
 _FULL = {"GR", "RHOB", "NPHI", "RT"}
+
+
+def test_seed_vsh_selected_matches_a_real_method_key():
+    # the [FIJO] Vsh section's "Selected" ✓ was empty in free mode: the fallback built
+    # "vsh_larionov_old_rocks" but the method key is "vsh_larionov_old" -> no match
+    ctx = {
+        "curves": {"GR": np.linspace(20.0, 100.0, 30)},
+        "params": {
+            "gr_min": ParamValue(20.0, "API", "default", "x"),
+            "gr_max": ParamValue(120.0, "API", "default", "x"),
+        },
+        "variant": "old_rocks",
+    }
+    ledger: dict = {}
+    seed_baseline_sections(ledger, ctx)
+    cmp = ledger["vsh_comparison"]
+    assert cmp["selected"] == "vsh_larionov_old"
+    assert cmp["selected"] in cmp["methods"]  # so the report actually marks a ✓
 
 
 def test_physics_prereqs_gate_the_chain():

@@ -385,9 +385,14 @@ def seed_baseline_sections(ledger: dict[str, Any], ctx: dict[str, Any]) -> None:
     p = ctx["params"]
     if "GR" in curves and "vsh_comparison" not in ledger:
         gmin, gmax = float(p["gr_min"].value), float(p["gr_max"].value)
+        # the registry key is vsh_larionov_old / _tertiary (NOT _old_rocks) — match it so the
+        # report's [FIJO] Vsh section marks the selected method (was empty in free mode)
+        default_sel = (
+            "vsh_larionov_tertiary" if ctx["variant"] == "tertiary" else "vsh_larionov_old"
+        )
         ledger["vsh_comparison"] = {
             "methods": vsh_method_comparison(curves["GR"], gmin, gmax),
-            "selected": cal.get("vsh_method", {}).get("value", f"vsh_larionov_{ctx['variant']}"),
+            "selected": cal.get("vsh_method", {}).get("value", default_sel),
         }
     if {"RHOB", "NPHI"} <= set(curves) and "porosity_comparison" not in ledger:
         pf = _pf(ctx)

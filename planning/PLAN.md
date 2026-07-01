@@ -118,6 +118,15 @@ Done when: se mide la calibración de la confianza contra ground-truth público 
 - [x] Re-demostrado: cobertura 88-98% (VSH 95%, PHIE 98%, SW 88%) — banda calibrada (2026-07-01)
 - [ ] Fase 8 completo: correr el AGENTE sobre VOLVE + narrativa-vs-Final-Well-Report (pendiente)
 
+### Phase R11 — Pulido post-validación + generalización de calibración (COMPLETED)
+Done when: se corrigen los glitches destapados por VOLVE/v5 (provenance del grafo, §14 Vsh selected, unidad de profundidad JWLF) y se mide la generalización de la calibración en más pozos.
+- [x] Generalización calibración: 4 pozos VOLVE (F11A/F1A/F4/F5) — PHIE 98% + SW 92% generalizan; VSH 65% NO (banda solo Larionov-GR) (2026-07-01)
+- [x] Edge de profundidad JWLF: DEPTH en "0.1 in" vs "M" — normalizado a metros en el harness de calibración (2026-07-01)
+- [x] Fix #4 §14 Vsh "Selected" vacío: fallback `vsh_larionov_{variant}`→`_old_rocks` no matcheaba la clave `_old`; mapeo correcto + test (loop_actions.py) (2026-07-01)
+- [x] Fix #3 provenance del grafo: `result_ledger_key` apuntaba a `ledger:<action>` (nunca clave real); mapa acción→clave real + observaciones sin clave (analyst_loop.py, tool_dispatch.py) + test (2026-07-01)
+- ~~Narrativa VOLVE vs Final Well Report~~ (descartado: sin informe narrativo público que comparar)
+- [ ] Pendiente: VSH necesita métodos no-GR en la banda para calibrar en general (destapado por F4/F5)
+
 ## Conventions
 - Cada fórmula nueva entra al registry SOLO con golden test (bounds, monotonía, caso analítico, NaN passthrough).
 - Una sección [MODELO] aparece SOLO si existe su tool_result de respaldo (sin theater).

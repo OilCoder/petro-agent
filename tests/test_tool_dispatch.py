@@ -66,7 +66,9 @@ def test_dispatch_writes_number_hash_and_graph_node():
     assert "mean_sw" in entry["value"] and len(entry["result_hash"]) == 16
     # the graph recorded a tool_call node pointing at the ledger key
     act = [n for n in graph.nodes if n.type == "tool_call"][0]
-    assert act.payload["result_ledger_key"] == "ledger:sw_simandoux"
+    assert (
+        act.payload["result_ledger_key"] == "ledger:tool_results"
+    )  # result lives under tool_results
 
 
 def test_dispatch_runs_eda_tool():

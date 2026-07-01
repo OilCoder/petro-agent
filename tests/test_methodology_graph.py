@@ -3,6 +3,16 @@
 from src.agents.methodology_graph import MethodologyGraph
 
 
+def test_provenance_key_maps_to_real_ledger_key_and_observations_claim_none():
+    # a compute step points at the ACTUAL ledger key it wrote; an observation claims no key.
+    # (Was: every tool_call claimed ledger:<action>, which is never a ledger key -> false warnings.)
+    g = MethodologyGraph(mode="free", model="x")
+    g.add("tool_call", {"tool": "compute_sw", "result_ledger_key": "ledger:sw_summary"})
+    g.add("tool_call", {"tool": "crossplot", "args": {}})  # observation: read-only, no key
+    ledger = {"sw_summary": {"method": "sw_archie"}}
+    assert [i for i in g.validate(ledger) if "not in ledger" in i] == []
+
+
 def _valid_graph() -> MethodologyGraph:
     g = MethodologyGraph(mode="free", model="qwen3:30b-a3b", model_digest="sha256:ab")
     obs = g.add(

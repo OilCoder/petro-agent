@@ -271,7 +271,7 @@ def dispatch(
             {
                 "tool": tool,
                 "args": args,
-                "result_ledger_key": f"ledger:{tool}",
+                "result_ledger_key": "ledger:tool_results",  # result lives under tool_results[tool]
                 "result_hash": result_hash,
             },
         )
