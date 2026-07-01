@@ -16,11 +16,23 @@ _FULL = {"GR", "RHOB", "NPHI", "RT"}
 def test_seed_vsh_selected_matches_a_real_method_key():
     # the [FIJO] Vsh section's "Selected" ✓ was empty in free mode: the fallback built
     # "vsh_larionov_old_rocks" but the method key is "vsh_larionov_old" -> no match
+    def _pv(v: float) -> ParamValue:
+        return ParamValue(v, "-", "default", "x")
+
     ctx = {
-        "curves": {"GR": np.linspace(20.0, 100.0, 30)},
+        "curves": {"GR": np.linspace(20.0, 100.0, 30)},  # no RHOB/NPHI -> GR methods only
         "params": {
-            "gr_min": ParamValue(20.0, "API", "default", "x"),
-            "gr_max": ParamValue(120.0, "API", "default", "x"),
+            "gr_min": _pv(20.0),
+            "gr_max": _pv(120.0),
+            "rho_fl": _pv(1.0),
+            "rho_ma": _pv(2.65),
+            "phie_max": _pv(0.45),
+            "phi_sh_d": _pv(0.10),
+            "phi_sh_n": _pv(0.35),
+            "a": _pv(1.0),
+            "m": _pv(2.0),
+            "n": _pv(2.0),
+            "Rw": _pv(0.04),
         },
         "variant": "old_rocks",
     }

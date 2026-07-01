@@ -16,7 +16,7 @@ import numpy as np
 from src.petrophysics.netpay import apply_cutoffs, compute_net_pay
 from src.petrophysics.phie import phi_density, phi_neutron
 from src.petrophysics.sw import calc_sw
-from src.petrophysics.vsh import vsh_clavier, vsh_linear
+from src.petrophysics.vsh import vsh_clavier, vsh_linear, vsh_neutron_density
 
 VERSION = "0.1.0"
 
@@ -38,11 +38,14 @@ def build_method_alts(
     rho_ma: float,
     rho_fl: float,
     phie_max: float,
+    phi_sh_d: float,
+    phi_sh_n: float,
 ) -> tuple[list[np.ndarray], list[np.ndarray]]:
     """Vetted Vsh/PHIE method alternatives for ``propagate_net_pay``'s structural-uncertainty draw.
 
-    The base curves plus the other vetted methods for each property (Vsh: linear, Clavier; PHIE:
-    density-only, neutron-only). Feeding these to the MC widens the band to include method choice.
+    The base curves plus the other vetted methods for each property (Vsh: linear, Clavier, and the
+    NON-GR neutron-density when RHOB+NPHI exist; PHIE: density-only, neutron-only). Feeding these to
+    the MC widens the band to include method choice (VOLVE showed VSH needs a non-GR method too).
     """
     vsh_alts = [vsh]
     if "GR" in curves:
@@ -50,6 +53,10 @@ def build_method_alts(
             vsh_linear(curves["GR"], gr_min, gr_max),
             vsh_clavier(curves["GR"], gr_min, gr_max),
         ]
+    if {"RHOB", "NPHI"} <= set(curves):  # non-GR clay indicator
+        vsh_alts.append(
+            vsh_neutron_density(curves["NPHI"], curves["RHOB"], rho_ma, rho_fl, phi_sh_n, phi_sh_d)
+        )
     phie_alts = [phie]
     if "RHOB" in curves:
         phie_alts.append(phi_density(curves["RHOB"], rho_ma, rho_fl, phie_max))

@@ -152,6 +152,22 @@ def _mean(arr: Any) -> float:
     return round(float(np.nanmean(a)), 4) if np.any(np.isfinite(a)) else float("nan")
 
 
+def _vsh_cmp(ctx: dict[str, Any], gmin: float, gmax: float) -> dict[str, float]:
+    """Multi-method Vsh means for §13, including the non-GR neutron-density when RHOB+NPHI exist."""
+    curves, pf = ctx["curves"], _pf(ctx)
+    return vsh_method_comparison(
+        curves["GR"],
+        gmin,
+        gmax,
+        nphi=curves.get("NPHI"),
+        rhob=curves.get("RHOB"),
+        rho_ma=pf["rho_ma"],
+        rho_fl=pf["rho_fl"],
+        phi_sh_n=pf["phi_sh_n"],
+        phi_sh_d=pf["phi_sh_d"],
+    )
+
+
 def _exec_vsh(ctx, ledger, method, args, valid):  # noqa: ANN001
     p = ctx["params"]
     gmin, gmax = float(p["gr_min"].value), float(p["gr_max"].value)
@@ -159,7 +175,7 @@ def _exec_vsh(ctx, ledger, method, args, valid):  # noqa: ANN001
     ctx["vsh"] = vsh
     ledger.setdefault("calibration", {}).update(cal)
     ledger["vsh_comparison"] = {
-        "methods": vsh_method_comparison(ctx["curves"]["GR"], gmin, gmax),
+        "methods": _vsh_cmp(ctx, gmin, gmax),
         "selected": cal["vsh_method"]["value"],
     }
     nv = invalidate_downstream(valid, "vsh")
@@ -249,6 +265,8 @@ def _exec_uncertainty(ctx, ledger, method, args, valid):  # noqa: ANN001
         pf["rho_ma"],
         pf["rho_fl"],
         pf["phie_max"],
+        pf["phi_sh_d"],
+        pf["phi_sh_n"],
     )
     mc = propagate_net_pay(
         ctx["vsh"], ctx["phie"], rt, base, cutoffs, step, vsh_alts=vsh_alts, phie_alts=phie_alts
@@ -391,7 +409,7 @@ def seed_baseline_sections(ledger: dict[str, Any], ctx: dict[str, Any]) -> None:
             "vsh_larionov_tertiary" if ctx["variant"] == "tertiary" else "vsh_larionov_old"
         )
         ledger["vsh_comparison"] = {
-            "methods": vsh_method_comparison(curves["GR"], gmin, gmax),
+            "methods": _vsh_cmp(ctx, gmin, gmax),
             "selected": cal.get("vsh_method", {}).get("value", default_sel),
         }
     if {"RHOB", "NPHI"} <= set(curves) and "porosity_comparison" not in ledger:

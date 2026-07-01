@@ -3,10 +3,43 @@
 import numpy as np
 import pytest
 
-from src.petrophysics.vsh import OLD_ROCKS, TERTIARY, calc_vsh
+from src.petrophysics.vsh import OLD_ROCKS, TERTIARY, calc_vsh, vsh_neutron_density
 
 GR = np.array([0.0, 25.0, 50.0, 75.0, 100.0, 150.0, 200.0])
 GR_MIN, GR_MAX = 10.0, 150.0
+
+# neutron-density Vsh reference points (rho_ma=2.65, rho_fl=1.0; shale @ NPHI=0.42, phi_D=0.10)
+_RHO_MA, _RHO_FL, _PSHN, _PSHD = 2.65, 1.0, 0.42, 0.10
+
+
+def test_vsh_nd_clean_rock_is_zero():
+    # clean rock: NPHI == phi_D -> zero separation -> Vsh 0
+    rhob = np.array([2.65])  # phi_D = 0
+    nphi = np.array([0.0])
+    vsh = vsh_neutron_density(nphi, rhob, _RHO_MA, _RHO_FL, _PSHN, _PSHD)
+    assert vsh[0] == pytest.approx(0.0)
+
+
+def test_vsh_nd_shale_point_is_one():
+    # at the shale point (NPHI=phi_sh_n, phi_D=phi_sh_d) the separation equals the denominator -> 1
+    rhob = np.array([2.65 - _PSHD * (2.65 - 1.0)])  # phi_D = 0.10
+    nphi = np.array([_PSHN])
+    vsh = vsh_neutron_density(nphi, rhob, _RHO_MA, _RHO_FL, _PSHN, _PSHD)
+    assert vsh[0] == pytest.approx(1.0)
+
+
+def test_vsh_nd_bounds_and_nan_passthrough():
+    rhob = np.array([2.2, 2.65, 2.85, np.nan])
+    nphi = np.array([0.5, 0.05, 0.0, 0.2])
+    vsh = vsh_neutron_density(nphi, rhob, _RHO_MA, _RHO_FL, _PSHN, _PSHD)
+    finite = vsh[np.isfinite(vsh)]
+    assert np.all((finite >= 0.0) & (finite <= 1.0))
+    assert np.isnan(vsh[-1])  # NaN density -> NaN Vsh
+
+
+def test_vsh_nd_zero_shale_separation_is_nan():
+    vsh = vsh_neutron_density(np.array([0.3]), np.array([2.4]), _RHO_MA, _RHO_FL, 0.30, 0.30)
+    assert np.isnan(vsh[0])
 
 
 def test_vsh_bounds_old_rocks():

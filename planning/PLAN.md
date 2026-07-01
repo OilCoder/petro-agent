@@ -125,7 +125,7 @@ Done when: se corrigen los glitches destapados por VOLVE/v5 (provenance del graf
 - [x] Fix #4 §14 Vsh "Selected" vacío: fallback `vsh_larionov_{variant}`→`_old_rocks` no matcheaba la clave `_old`; mapeo correcto + test (loop_actions.py) (2026-07-01)
 - [x] Fix #3 provenance del grafo: `result_ledger_key` apuntaba a `ledger:<action>` (nunca clave real); mapa acción→clave real + observaciones sin clave (analyst_loop.py, tool_dispatch.py) + test (2026-07-01)
 - ~~Narrativa VOLVE vs Final Well Report~~ (descartado: sin informe narrativo público que comparar)
-- [ ] Pendiente: VSH necesita métodos no-GR en la banda para calibrar en general (destapado por F4/F5)
+- [x] `vsh_neutron_density` (indicador de arcilla NO-GR) formalizado: función vetada + golden tests + banda (build_method_alts) + §14; VSH cobertura 65%→71% (parcial: CPI usa multi-mineral) (2026-07-01)
 
 ## Conventions
 - Cada fórmula nueva entra al registry SOLO con golden test (bounds, monotonía, caso analítico, NaN passthrough).

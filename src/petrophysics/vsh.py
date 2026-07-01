@@ -134,16 +134,63 @@ def vsh_steiber(gr: np.ndarray, gr_min: float, gr_max: float) -> np.ndarray:
     return vsh
 
 
-def vsh_method_comparison(gr: np.ndarray, gr_min: float, gr_max: float) -> dict[str, float]:
-    """Mean Vsh from every GR-only method, for the multi-method comparison section.
+def vsh_neutron_density(
+    nphi: np.ndarray,
+    rhob: np.ndarray,
+    rho_ma: float,
+    rho_fl: float,
+    phi_sh_n: float,
+    phi_sh_d: float,
+) -> np.ndarray:
+    """Shale volume from the neutron-density separation (a NON-GR clay indicator).
 
-    Deterministic aggregation (not a new formula) — runs the vetted Vsh methods on the same
-    GR and returns each one's mean, so the report can show how the estimate varies by method.
+    ``phi_D = (rho_ma - rhob) / (rho_ma - rho_fl)``; clay widens the ``(NPHI - phi_D)`` separation,
+    so normalizing by the shale-point separation ``(phi_sh_n - phi_sh_d)`` estimates Vsh in [0, 1].
+    Complements the GR-Larionov family so the uncertainty band spans more of the method space.
+
+    Args:
+        nphi: neutron porosity (v/v). NaN propagates.
+        rhob: bulk density (g/cc). NaN propagates.
+        rho_ma: matrix density (g/cc).
+        rho_fl: fluid density (g/cc).
+        phi_sh_n: neutron porosity at the 100%-shale point (v/v).
+        phi_sh_d: apparent density porosity at the 100%-shale point (v/v).
+
+    Returns:
+        Vsh in [0, 1]; all-NaN when the shale separation ``(phi_sh_n - phi_sh_d)`` is ~0.
+    """
+    nphi = np.asarray(nphi, dtype=float)
+    rhob = np.asarray(rhob, dtype=float)
+    denom = phi_sh_n - phi_sh_d
+    if abs(denom) < 1e-6:
+        return np.full_like(nphi, np.nan)
+    phi_d = (rho_ma - rhob) / (rho_ma - rho_fl)
+    return np.clip((nphi - phi_d) / denom, 0.0, 1.0)
+
+
+def vsh_method_comparison(
+    gr: np.ndarray,
+    gr_min: float,
+    gr_max: float,
+    nphi: np.ndarray | None = None,
+    rhob: np.ndarray | None = None,
+    rho_ma: float | None = None,
+    rho_fl: float | None = None,
+    phi_sh_n: float | None = None,
+    phi_sh_d: float | None = None,
+) -> dict[str, float]:
+    """Mean Vsh from every vetted method, for the multi-method comparison section.
+
+    Deterministic aggregation (not a new formula) — runs the vetted Vsh methods on the same data
+    and returns each one's mean, so the report shows how the estimate varies by method. When the
+    neutron-density inputs are supplied, the NON-GR ``vsh_neutron_density`` is included too.
 
     Args:
         gr: gamma-ray array (API).
         gr_min: clean-sand GR baseline (API).
         gr_max: shale GR baseline (API).
+        nphi, rhob, rho_ma, rho_fl, phi_sh_n, phi_sh_d: optional; when all present, add the
+            neutron-density Vsh method.
 
     Returns:
         ``{method_id: mean_vsh}`` (NaN where a method yields no finite value).
@@ -155,6 +202,17 @@ def vsh_method_comparison(gr: np.ndarray, gr_min: float, gr_max: float) -> dict[
         "vsh_clavier": vsh_clavier(gr, gr_min, gr_max),
         "vsh_steiber": vsh_steiber(gr, gr_min, gr_max),
     }
+    if (
+        nphi is not None
+        and rhob is not None
+        and rho_ma is not None
+        and rho_fl is not None
+        and phi_sh_n is not None
+        and phi_sh_d is not None
+    ):
+        methods["vsh_neutron_density"] = vsh_neutron_density(
+            nphi, rhob, rho_ma, rho_fl, phi_sh_n, phi_sh_d
+        )
     out: dict[str, float] = {}
     for key, arr in methods.items():
         finite = arr[np.isfinite(arr)]

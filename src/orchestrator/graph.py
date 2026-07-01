@@ -127,6 +127,8 @@ def run_pipeline(
             float(params["rho_ma"].value),
             float(params["rho_fl"].value),
             float(params["phie_max"].value),
+            float(params["phi_sh_d"].value),
+            float(params["phi_sh_n"].value),
         )
         mc = propagate_net_pay(
             vsh, phie, rt, base, cutoffs, step, vsh_alts=vsh_alts, phie_alts=phie_alts

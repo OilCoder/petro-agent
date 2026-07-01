@@ -64,8 +64,9 @@ def test_method_alts_widen_the_band():
 
 def test_build_method_alts_from_curves():
     curves = {"GR": np.linspace(20, 100, N), "RHOB": np.full(N, 2.4), "NPHI": np.full(N, 0.2)}
-    v_alts, p_alts = build_method_alts(curves, VSH, PHIE, 20.0, 120.0, 2.65, 1.0, 0.45)
-    assert len(v_alts) == 3 and len(p_alts) == 3  # base+linear+clavier ; base+density+neutron
+    v_alts, p_alts = build_method_alts(curves, VSH, PHIE, 20.0, 120.0, 2.65, 1.0, 0.45, 0.10, 0.35)
+    # base+linear+clavier+neutron-density (non-GR) ; base+density+neutron
+    assert len(v_alts) == 4 and len(p_alts) == 3
 
 
 def test_sensitivity_identifies_dominant():
