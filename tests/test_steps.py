@@ -59,6 +59,13 @@ def test_agent_can_select_non_gr_neutron_density_vsh():
     )  # a genuinely different (non-GR) read
 
 
+def test_agent_can_select_multimineral_vsh():
+    default, _ = vsh_step(CURVES, 20.0, 120.0, "old_rocks")
+    mm, cal = vsh_step(CURVES, 20.0, 120.0, "old_rocks", "vsh_multimineral", pf=P)
+    assert cal["vsh_method"]["value"] == "vsh_multimineral" and cal["vsh_method"]["chosen_by_model"]
+    assert _in_bounds(mm, 0.0, 1.0)
+
+
 def test_sw_method_choice_changes_result():
     vsh, _ = vsh_step(CURVES, 20.0, 120.0, "old_rocks")
     phie, _ = phie_step(CURVES, vsh, P)

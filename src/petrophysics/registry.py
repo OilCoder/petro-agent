@@ -67,6 +67,13 @@ METHOD_REGISTRY: dict[str, MethodSpec] = {
         ("RHOB", "NPHI"),
         "Neutron-density separation (non-GR clay indicator)",
     ),
+    "vsh_multimineral": MethodSpec(
+        "vsh_multimineral",
+        "vsh",
+        vsh.vsh_multimineral,
+        ("RHOB", "NPHI"),
+        "2-mineral volumetric solve (matrix+clay+porosity from RHOB+NPHI)",
+    ),
     "phie_density_neutron": MethodSpec(
         "phie_density_neutron",
         "porosity",

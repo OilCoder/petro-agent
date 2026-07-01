@@ -31,6 +31,7 @@ def test_available_methods_full_suite():
     assert "phi_sonic_wyllie" in avail["porosity"]  # DT present
     assert "litho_nd_crossplot" in avail["lithology"]
     assert "vsh_neutron_density" in avail["vsh"]  # non-GR method now selectable (RHOB+NPHI present)
+    assert "vsh_multimineral" in avail["vsh"]  # 2-mineral volumetric solve (RHOB+NPHI)
 
 
 def test_registry_ids_self_consistent():

@@ -105,15 +105,14 @@ def _run_vsh_method(
 ) -> dict[str, Any]:
     spec = METHOD_REGISTRY[method_id]
     curves = ctx["curves"]
+    rho_ma, rho_fl = _pv(ledger, "rho_ma", 2.71), _pv(ledger, "rho_fl", 1.0)
     if method_id == "vsh_neutron_density":  # non-GR clay indicator: different signature
         arr = spec.fn(
-            curves["NPHI"],
-            curves["RHOB"],
-            _pv(ledger, "rho_ma", 2.71),
-            _pv(ledger, "rho_fl", 1.0),
-            _pv(ledger, "phi_sh_n", 0.35),
-            _pv(ledger, "phi_sh_d", 0.10),
+            curves["NPHI"], curves["RHOB"], rho_ma, rho_fl,
+            _pv(ledger, "phi_sh_n", 0.35), _pv(ledger, "phi_sh_d", 0.10),
         )
+    elif method_id == "vsh_multimineral":  # 2-mineral volumetric solve
+        arr = spec.fn(curves["RHOB"], curves["NPHI"], rho_ma, rho_fl)
     else:
         gmin, gmax = _pv(ledger, "gr_min", 20.0), _pv(ledger, "gr_max", 120.0)
         arr = spec.fn(curves["GR"], gmin, gmax, **spec.fixed_kwargs)

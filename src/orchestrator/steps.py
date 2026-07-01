@@ -26,9 +26,40 @@ from src.petrophysics.vsh import (
     calc_vsh,
     vsh_clavier,
     vsh_linear,
+    vsh_multimineral,
     vsh_neutron_density,
     vsh_steiber,
 )
+
+
+def _vsh_by_method(
+    curves: dict[str, np.ndarray],
+    gr_min: float,
+    gr_max: float,
+    variant: str,
+    method: str | None,
+    pf: dict[str, float] | None,
+) -> np.ndarray:
+    """Run the selected vetted Vsh method (GR family + non-GR N-D / multi-mineral)."""
+    if method in ("vsh_neutron_density", "vsh_multimineral") and pf and {"RHOB", "NPHI"} <= set(
+        curves
+    ):
+        if method == "vsh_neutron_density":
+            return vsh_neutron_density(
+                curves["NPHI"], curves["RHOB"], pf["rho_ma"], pf["rho_fl"], pf["phi_sh_n"],
+                pf["phi_sh_d"],
+            )
+        return vsh_multimineral(curves["RHOB"], curves["NPHI"], pf["rho_ma"], pf["rho_fl"])
+    gr = curves["GR"]
+    gr_methods = {
+        "vsh_linear": lambda: vsh_linear(gr, gr_min, gr_max),
+        "vsh_clavier": lambda: vsh_clavier(gr, gr_min, gr_max),
+        "vsh_steiber": lambda: vsh_steiber(gr, gr_min, gr_max),
+        "vsh_larionov_tertiary": lambda: calc_vsh(gr, gr_min, gr_max, TERTIARY),
+        "vsh_larionov_old": lambda: calc_vsh(gr, gr_min, gr_max, OLD_ROCKS),
+    }
+    fn = gr_methods.get(method or "")
+    return fn() if fn else calc_vsh(gr, gr_min, gr_max, variant)
 
 
 def vsh_step(
@@ -43,30 +74,7 @@ def vsh_step(
 
     ``pf`` (param floats) is required only for the non-GR ``vsh_neutron_density`` method.
     """
-    gr = curves["GR"]
-    nd_ok = method == "vsh_neutron_density" and pf is not None and {"RHOB", "NPHI"} <= set(curves)
-    if nd_ok:
-        assert pf is not None  # narrowed by nd_ok
-        arr = vsh_neutron_density(
-            curves["NPHI"],
-            curves["RHOB"],
-            pf["rho_ma"],
-            pf["rho_fl"],
-            pf["phi_sh_n"],
-            pf["phi_sh_d"],
-        )
-    elif method == "vsh_linear":
-        arr = vsh_linear(gr, gr_min, gr_max)
-    elif method == "vsh_clavier":
-        arr = vsh_clavier(gr, gr_min, gr_max)
-    elif method == "vsh_steiber":
-        arr = vsh_steiber(gr, gr_min, gr_max)
-    elif method == "vsh_larionov_tertiary":
-        arr = calc_vsh(gr, gr_min, gr_max, TERTIARY)
-    elif method == "vsh_larionov_old":
-        arr = calc_vsh(gr, gr_min, gr_max, OLD_ROCKS)
-    else:
-        arr = calc_vsh(gr, gr_min, gr_max, variant)
+    arr = _vsh_by_method(curves, gr_min, gr_max, variant, method, pf)
     cal = {
         "vsh_method": {
             "value": method or f"vsh_larionov_{variant}",

@@ -168,6 +168,45 @@ def vsh_neutron_density(
     return np.clip((nphi - phi_d) / denom, 0.0, 1.0)
 
 
+def vsh_multimineral(
+    rhob: np.ndarray,
+    nphi: np.ndarray,
+    rho_ma: float = 2.65,
+    rho_fl: float = 1.0,
+    rho_clay: float = 2.75,
+    nphi_ma: float = -0.02,
+    nphi_clay: float = 0.30,
+    nphi_fl: float = 1.0,
+) -> np.ndarray:
+    """Vsh from a 2-mineral (matrix + clay) volumetric solve on RHOB and NPHI.
+
+    Jointly inverts the density and neutron responses for the volume fractions of matrix, clay and
+    porosity (fluid), subject to closure ``V_ma + V_clay + PHI = 1`` — a light multi-mineral model
+    that uses BOTH logs at once, capturing clay differently than any single GR/N-D indicator.
+    ``Vsh = V_clay``, clipped to [0, 1].
+
+    Args:
+        rhob, nphi: bulk density (g/cc) and neutron porosity (v/v). NaN propagates.
+        rho_ma, rho_fl, rho_clay: matrix, fluid, clay densities (g/cc).
+        nphi_ma, nphi_clay, nphi_fl: neutron responses of matrix, clay, fluid (v/v).
+
+    Returns:
+        Vsh in [0, 1] (= clay volume fraction); NaN where a response matrix is singular or inputs
+        are NaN.
+    """
+    a = np.array(
+        [[rho_ma, rho_clay, rho_fl], [nphi_ma, nphi_clay, nphi_fl], [1.0, 1.0, 1.0]], dtype=float
+    )
+    rhob = np.asarray(rhob, dtype=float)
+    try:
+        a_inv = np.linalg.inv(a)
+    except np.linalg.LinAlgError:
+        return np.full(rhob.shape, np.nan)
+    nphi = np.asarray(nphi, dtype=float)
+    v_clay = (a_inv @ np.vstack([rhob, nphi, np.ones_like(rhob)]))[1]  # [V_ma, V_clay, PHI]
+    return np.clip(v_clay, 0.0, 1.0)
+
+
 def vsh_method_comparison(
     gr: np.ndarray,
     gr_min: float,
@@ -213,6 +252,7 @@ def vsh_method_comparison(
         methods["vsh_neutron_density"] = vsh_neutron_density(
             nphi, rhob, rho_ma, rho_fl, phi_sh_n, phi_sh_d
         )
+        methods["vsh_multimineral"] = vsh_multimineral(rhob, nphi, rho_ma, rho_fl)
     out: dict[str, float] = {}
     for key, arr in methods.items():
         finite = arr[np.isfinite(arr)]

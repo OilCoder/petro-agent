@@ -16,7 +16,7 @@ import numpy as np
 from src.petrophysics.netpay import apply_cutoffs, compute_net_pay
 from src.petrophysics.phie import phi_density, phi_neutron
 from src.petrophysics.sw import calc_sw
-from src.petrophysics.vsh import vsh_clavier, vsh_linear, vsh_neutron_density
+from src.petrophysics.vsh import vsh_clavier, vsh_linear, vsh_multimineral, vsh_neutron_density
 
 VERSION = "0.1.0"
 
@@ -53,10 +53,11 @@ def build_method_alts(
             vsh_linear(curves["GR"], gr_min, gr_max),
             vsh_clavier(curves["GR"], gr_min, gr_max),
         ]
-    if {"RHOB", "NPHI"} <= set(curves):  # non-GR clay indicator
+    if {"RHOB", "NPHI"} <= set(curves):  # non-GR clay indicators (N-D separation + 2-mineral solve)
         vsh_alts.append(
             vsh_neutron_density(curves["NPHI"], curves["RHOB"], rho_ma, rho_fl, phi_sh_n, phi_sh_d)
         )
+        vsh_alts.append(vsh_multimineral(curves["RHOB"], curves["NPHI"], rho_ma, rho_fl))
     phie_alts = [phie]
     if "RHOB" in curves:
         phie_alts.append(phi_density(curves["RHOB"], rho_ma, rho_fl, phie_max))

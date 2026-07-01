@@ -3,7 +3,13 @@
 import numpy as np
 import pytest
 
-from src.petrophysics.vsh import OLD_ROCKS, TERTIARY, calc_vsh, vsh_neutron_density
+from src.petrophysics.vsh import (
+    OLD_ROCKS,
+    TERTIARY,
+    calc_vsh,
+    vsh_multimineral,
+    vsh_neutron_density,
+)
 
 GR = np.array([0.0, 25.0, 50.0, 75.0, 100.0, 150.0, 200.0])
 GR_MIN, GR_MAX = 10.0, 150.0
@@ -40,6 +46,28 @@ def test_vsh_nd_bounds_and_nan_passthrough():
 def test_vsh_nd_zero_shale_separation_is_nan():
     vsh = vsh_neutron_density(np.array([0.3]), np.array([2.4]), _RHO_MA, _RHO_FL, 0.30, 0.30)
     assert np.isnan(vsh[0])
+
+
+# multi-mineral endpoints: matrix (2.65, -0.02), clay (2.75, 0.30), fluid (1.0, 1.0)
+def test_vsh_multimineral_pure_endpoints():
+    # pure matrix -> Vsh 0 ; pure clay -> Vsh 1 ; pure water -> Vsh 0 (all porosity)
+    rhob = np.array([2.65, 2.75, 1.00])
+    nphi = np.array([-0.02, 0.30, 1.00])
+    vsh = vsh_multimineral(rhob, nphi)
+    assert vsh[0] == pytest.approx(0.0, abs=1e-6)
+    assert vsh[1] == pytest.approx(1.0, abs=1e-6)
+    assert vsh[2] == pytest.approx(0.0, abs=1e-6)
+
+
+def test_vsh_multimineral_fifty_fifty_and_bounds():
+    # 50/50 clay-matrix at zero porosity -> Vsh ~0.5
+    rhob = np.array([(2.65 + 2.75) / 2])
+    nphi = np.array([(-0.02 + 0.30) / 2])
+    assert vsh_multimineral(rhob, nphi)[0] == pytest.approx(0.5, abs=1e-6)
+    # bounds + NaN passthrough
+    vsh = vsh_multimineral(np.array([2.2, 3.0, np.nan]), np.array([0.5, -0.1, 0.2]))
+    finite = vsh[np.isfinite(vsh)]
+    assert np.all((finite >= 0.0) & (finite <= 1.0)) and np.isnan(vsh[-1])
 
 
 def test_vsh_bounds_old_rocks():

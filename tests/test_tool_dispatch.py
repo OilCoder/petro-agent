@@ -106,6 +106,14 @@ def test_dispatch_runs_vsh_neutron_density():
     assert "mean_vsh" in val and np.isfinite(val["mean_vsh"])
 
 
+def test_dispatch_runs_vsh_multimineral():
+    plan = {"tool_calls": [{"tool": "vsh_multimineral", "args": {}}]}
+    ledger: dict = {}
+    dispatch(plan, CTX, ledger, MethodologyGraph(mode="free", model="m"))
+    val = ledger["tool_results"]["vsh_multimineral"]["value"]
+    assert "mean_vsh" in val and np.isfinite(val["mean_vsh"])
+
+
 def test_dispatch_runs_porosity_density_neutron():
     plan = {"tool_calls": [{"tool": "phie_density_neutron", "args": {}}]}
     ledger: dict = {}
