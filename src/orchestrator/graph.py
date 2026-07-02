@@ -173,6 +173,7 @@ def run_pipeline(
             "quality_map": qc.quality_map,
             "params": params,  # resolved ParamValues, for the agentic loop's recompute steps
             "variant": variant,
+            "out_dir": out_dir,  # so the analyst loop can re-persist the mutated ledger
         }
         return ledger, ctx
     return ledger

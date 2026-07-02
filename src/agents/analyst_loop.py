@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import re
+from pathlib import Path
 from typing import Any
 
 from src.agents.client import ChatFn
@@ -527,17 +528,46 @@ def _finish_review(
     return review
 
 
-def _record_tool_call(graph: MethodologyGraph, action: str, args: dict[str, Any]) -> None:
+def _record_tool_call(
+    graph: MethodologyGraph, action: str, args: dict[str, Any], method: str | None = None
+) -> None:
     """Add the tool_call node, pointing result_ledger_key at the REAL ledger key it wrote.
 
+    ``method`` is the vetted method id the agent selected — recorded so the trace shows WHICH
+    method was picked, not just that the action ran (the v6 audit had to reverse-engineer it).
     Observations are read-only and write nothing, so their node claims no key (the graph's
     self-check flagged ``ledger:<action> not in ledger`` because the action name is never a key).
     """
     payload: dict[str, Any] = {"tool": action, "args": args}
+    if method:
+        payload["method"] = method
     key = _ACTION_LEDGER_KEY.get(action)
     if key:
         payload["result_ledger_key"] = f"ledger:{key}"
     graph.add("tool_call", payload)
+
+
+def _persist_ledger(ledger: dict[str, Any], out_dir: str | None) -> None:
+    """Overwrite ``<out_dir>/<uwi>_ledger.json`` with the post-loop ledger.
+
+    Pass-0's ``emit`` writes a pre-loop snapshot; without this re-write the agent's
+    interpretive choices (sw_summary, vsh/porosity comparisons, run.analyst_loop,
+    run.methodology_graph) would be unauditable from the persisted artifact.
+    """
+    uwi = ledger.get("run", {}).get("uwi")
+    if not out_dir or not uwi:
+        return
+    path = Path(out_dir) / f"{uwi}_ledger.json"
+    path.write_text(json.dumps(ledger, indent=2, default=_json_fallback))
+
+
+def _json_fallback(o: Any) -> Any:
+    """Serialize numpy scalars/arrays the loop may have left in the ledger; str() as last resort."""
+    if hasattr(o, "item"):
+        return o.item()
+    if hasattr(o, "tolist"):
+        return o.tolist()
+    return str(o)
 
 
 def run_analyst_loop(
@@ -618,7 +648,7 @@ def run_analyst_loop(
         )
         # Feed an observation's result into the next decision (reads are no longer fire-and-forget).
         last_obs = _obs_result(action, _summary) or last_obs
-        _record_tool_call(graph, action, choice.get("args", {}))
+        _record_tool_call(graph, action, choice.get("args", {}), choice.get("method"))
         _extend_order(order, action)
         steps_taken += 1
 
@@ -669,6 +699,8 @@ def run_analyst_loop(
         "vision_enabled": vision_on,
     }
     ledger["run"]["methodology_graph"] = graph.to_json()
+    # Re-persist: pass-0's emit wrote a pre-loop snapshot; the agent's choices must be auditable.
+    _persist_ledger(ledger, ctx.get("out_dir"))
     return {
         "section_plan": {"sections": order, "optional_sections": _optionals_in(order)},
         "graph": graph,
