@@ -622,6 +622,29 @@ def run_analyst_loop(
         _extend_order(order, action)
         steps_taken += 1
 
+    # ----------------------------------------
+    # Step — Deterministic re-close of the stale core chain
+    # ----------------------------------------
+    # A core recompute (the agent's method choice) invalidates its downstream; if the loop ends
+    # before the agent re-runs the chain, the report would render pass-0 numbers next to the
+    # recomputed property (internally inconsistent). The ORCHESTRATOR re-closes with canonical
+    # defaults so the agent's upstream choice propagates — no LLM decides anything here. One pass
+    # over _DEFAULT_ORDER suffices: it is topological (vsh -> phie -> sw -> cutoffs -> uncertainty).
+    reclosed: list[str] = []
+    for stale_action in _DEFAULT_ORDER:
+        if PRODUCES[stale_action] in valid or stale_action not in available_actions(valid, curves):
+            continue
+        graph.add(
+            "decision",
+            {
+                "rationale": f"DETERMINISTIC RECLOSE (stale chain): {stale_action}",
+                "chosen": stale_action,
+            },
+        )
+        _summary, valid = execute_step(stale_action, ctx, ledger, valid, None, None)
+        _record_tool_call(graph, stale_action, {})
+        reclosed.append(stale_action)
+
     # Finalize: cross-tool consistency of the agent's optional results vs the core (a contradiction
     # becomes a MECHANICAL objection). NOTE: re-running the full validator harness on a recomputed
     # core is a follow-up — the pass-0 objections/tier reflect the default interpretation.
@@ -642,6 +665,7 @@ def run_analyst_loop(
         "recomputes": recomputes,
         "wasted_steps": wasted,
         "empty_returns": empty_returns,
+        "reclosed_steps": reclosed,
         "vision_enabled": vision_on,
     }
     ledger["run"]["methodology_graph"] = graph.to_json()
