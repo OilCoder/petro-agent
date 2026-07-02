@@ -22,7 +22,7 @@ from src.agents.loop_actions import (
 )
 from src.agents.methodology_graph import MethodologyGraph
 from src.eda.explore import build_eda_digest
-from src.orchestrator.finalize import persist_ledger
+from src.orchestrator.finalize import persist_ledger, revalidate_objections
 from src.orchestrator.steps import default_vsh_key
 from src.validators.physical import cross_tool_consistency
 
@@ -43,6 +43,21 @@ _PROP_SECTIONS: dict[str, tuple[str, ...]] = {
 }
 # Canonical default order for the per-step fallback (a competent baseline interpretation).
 _DEFAULT_ORDER = ("compute_vsh", "compute_phie", "compute_sw", "apply_cutoffs", "run_uncertainty")
+# The complete core chain; mid-loop advisory validation fires only once it exists.
+_CORE_CHAIN = frozenset({"vsh", "phie", "sw", "netpay"})
+
+
+def _maybe_revalidate(
+    action: str, valid: set[str], ledger: dict[str, Any], ctx: dict[str, Any]
+) -> None:
+    """Mid-loop advisory validation (R14-G): re-run the deterministic checks the moment the core
+    chain is complete after a core-affecting step, so the NEXT observation carries the objections
+    (e.g. implausible PHIE). Evidence only — no gate, nothing prescribed; the verdict stays with
+    ``finalize_run``."""
+    core_touched = action == "set_zone_of_interest" or PRODUCES.get(action) in _CORE_CHAIN
+    if core_touched and _CORE_CHAIN <= valid:
+        revalidate_objections(ledger, ctx)
+
 
 # The ledger key each ACTION actually writes (for honest graph provenance). Observations are
 # read-only (absent here) so their tool_call node claims NO result_ledger_key — the graph's
@@ -686,6 +701,7 @@ def run_analyst_loop(
         _record_tool_call(graph, action, choice.get("args", {}), choice.get("method"))
         _extend_order(order, action)
         steps_taken += 1
+        _maybe_revalidate(action, valid, ledger, ctx)
 
     # ----------------------------------------
     # Step — Deterministic re-close of the stale core chain

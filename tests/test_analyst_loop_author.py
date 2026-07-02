@@ -94,6 +94,30 @@ def test_author_skips_baseline_seeding(monkeypatch, tmp_path):
     assert calls["n"] == 1  # baseline mode keeps the seeding
 
 
+def test_author_midloop_validation_surfaces_objections_before_finish(tmp_path):
+    # R14-G: once the chain closes, the NEXT observation must carry the validator objections —
+    # in v8 the agent authored blind (objections only existed after finalize) and never zoned.
+    ledger, ctx = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
+    seen: list[str] = []
+    it = iter(_AUTHOR_SCRIPT)
+
+    def chat(system, user):
+        if "SKEPTICAL" in system:
+            return json.dumps({"objections": []})
+        seen.append(user)
+        try:
+            return json.dumps(next(it))
+        except StopIteration:
+            return json.dumps({"action": "finish"})
+
+    run_analyst_loop(ledger, ctx, "free", chat, "fake", max_steps=16, author=True)
+    # the fixture's default chain yields a net_pay_plausibility objection: it must be in the
+    # ledger BEFORE finalize, and visible in an observation AFTER apply_cutoffs closed the chain
+    assert any(o["validator_id"] == "net_pay_plausibility" for o in ledger["objections"])
+    post_chain_obs = seen[4:]  # observations after the 4th step (apply_cutoffs) executed
+    assert any("net_pay_plausibility" in obs for obs in post_chain_obs)
+
+
 def test_author_compare_methods_feeds_the_next_decision(tmp_path):
     ledger, ctx = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
     script = [

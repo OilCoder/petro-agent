@@ -47,11 +47,45 @@ def _serialize(objs: list[Objection]) -> list[dict[str, str]]:
     ]
 
 
+def revalidate_objections(ledger: dict[str, Any], ctx: dict[str, Any]) -> list[Objection]:
+    """Re-run the deterministic checks on the CURRENT chain and REBUILD ``ledger["objections"]``.
+
+    Validator harness on the ctx arrays (zone-masked if a zone was set) + net-pay plausibility on
+    the current summary + cross-tool consistency. Rebuilt from scratch (idempotent). Shared by the
+    analyst loop (mid-loop advisory surface — the agent decides WITH the objections in view) and
+    ``finalize_run`` (the gate). Evidence only: no verdict is written here.
+    """
+    run = ledger.get("run", {})
+    params = ctx["params"]
+    rho_ma_used = (
+        ledger.get("calibration", {}).get("rho_ma", {}).get("value", float(params["rho_ma"].value))
+    )
+    objections = run_validators(
+        ctx["vsh"],
+        ctx["phie"],
+        ctx["sw"],
+        ctx["curves"],
+        phie_max=float(params["phie_max"].value),
+        rho_ma=rho_ma_used,
+        rt_floor=float(params["rt_hydrocarbon_floor"].value),
+        out_dir=ctx.get("out_dir") or "outputs",
+        uwi=run.get("uwi", "well"),
+    )
+    summary = ledger.get("summary", {})
+    objections += net_pay_plausibility(
+        float(ledger.get("net_pay_total_m", 0.0)),
+        float(summary.get("gross_m", 0.0)),
+        float(summary.get("avg_phie", float("nan"))),
+    )
+    objections += cross_tool_consistency(ledger)
+    ledger["objections"] = _serialize(objections)
+    return objections
+
+
 def finalize_run(ledger: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
     """Re-validate and gate the FINAL chain, regenerate figures, persist. Deterministic.
 
-    Rebuilds ``ledger["objections"]`` from scratch (validator harness + net-pay plausibility on
-    the FINAL summary + cross-tool consistency) so a second call is idempotent, then writes the
+    Rebuilds ``ledger["objections"]`` via ``revalidate_objections`` (idempotent), then writes the
     gate verdict (``run.convergence_status/confidence_tier/abstain/abstain_reasons``) via the same
     ``gate_decision`` the pass-0 gate uses. Post-loop there is no correction loop, so ``converged``
     means "no non-irreducible objection remains".
@@ -73,44 +107,18 @@ def finalize_run(ledger: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
         return ledger
 
     # ----------------------------------------
-    # Step 2 — Validator harness on the FINAL arrays (zone-masked curves if a zone was set)
+    # Step 2 — Rebuild objections from the FINAL chain (harness + plausibility + cross-tool)
     # ----------------------------------------
-    params = ctx["params"]
-    rho_ma_used = (
-        ledger.get("calibration", {}).get("rho_ma", {}).get("value", float(params["rho_ma"].value))
-    )
-    objections = run_validators(
-        ctx["vsh"],
-        ctx["phie"],
-        ctx["sw"],
-        ctx["curves"],
-        phie_max=float(params["phie_max"].value),
-        rho_ma=rho_ma_used,
-        rt_floor=float(params["rt_hydrocarbon_floor"].value),
-        out_dir=out_dir or "outputs",
-        uwi=run.get("uwi", "well"),
-    )
+    objections = revalidate_objections(ledger, ctx)
 
     # ----------------------------------------
-    # Step 3 — Plausibility on the FINAL summary + cross-tool consistency (rebuilt, not appended)
-    # ----------------------------------------
-    summary = ledger.get("summary", {})
-    objections += net_pay_plausibility(
-        float(ledger.get("net_pay_total_m", 0.0)),
-        float(summary.get("gross_m", 0.0)),
-        float(summary.get("avg_phie", float("nan"))),
-    )
-    objections += cross_tool_consistency(ledger)
-    ledger["objections"] = _serialize(objections)
-
-    # ----------------------------------------
-    # Step 4 — Gate verdict on the final objection set (shared gate math)
+    # Step 3 — Gate verdict on the final objection set (shared gate math)
     # ----------------------------------------
     converged = not any(o.objection_type != IRREDUCIBLE for o in objections)
-    run.update(gate_decision(objections, params, converged))
+    run.update(gate_decision(objections, ctx["params"], converged))
 
     # ----------------------------------------
-    # Step 5 — Figures from the FINAL arrays (+ human-only uncertainty charts)
+    # Step 4 — Figures from the FINAL arrays (+ human-only uncertainty charts)
     # ----------------------------------------
     if out_dir:
         ledger["figures"] = generate_figures(
@@ -120,13 +128,13 @@ def finalize_run(ledger: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
             ctx["vsh"],
             ctx["phie"],
             ctx["sw"],
-            params,
+            ctx["params"],
             out_dir,
         )
         generate_uncertainty_figures(ledger, out_dir)
 
     # ----------------------------------------
-    # Step 6 — Persist the finalized ledger (the artifact must tell the whole story)
+    # Step 5 — Persist the finalized ledger (the artifact must tell the whole story)
     # ----------------------------------------
     persist_ledger(ledger, out_dir)
     return ledger
