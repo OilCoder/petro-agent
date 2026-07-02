@@ -148,14 +148,14 @@ Done when: al pedir `finish`, el MISMO modelo hace un pase escéptico que intent
 - [x] Guardarraíl anti-fuga: `_SKEPTIC_SYSTEM` cuestiona ("¿lo justifica el dato?"), no prescribe método/conclusión; re-auditado vs 7-focos — sin fuga (2026-07-01)
 - [x] Tests deterministas (4): dispara ≤1 vez, surface de objeciones alcanza al agente, reconsidera, no bloquea terminación; +unit de `_skeptic_pass`/`_finish_review` (2026-07-01)
 
-### Phase R14 — Flip "autor, no revisor" (modo free; guided intacto como control A/B)
+### Phase R14 — Flip "autor, no revisor" (modo free; guided intacto como control A/B) (COMPLETED — el techo ERA el entorno: 1→7 choices/pozo en free)
 Done when: en modo autor el pass-0 es solo descriptivo, el agente autora la interpretación (zona → método por propiedad con evidencia numérica del motor → cierre de cadena), el gate/abstención se computa post-loop sobre la cadena FINAL (cierra el banner stale), y el A/B v7↔v8 mide si el techo de destreza era del entorno. Rama: `feature/r14-author-mode`. Invariante intacto: el motor computa todo número; los fallbacks deterministas siguen midiendo (`default_steps`/`fell_back`/`reclosed_steps`).
-- [ ] R14-A `sw_method_comparison` (sw.py, golden tests) + `sw_summary.methods` en `_exec_sw` + tabla en `_sw` + observación read-only `compare_methods` (vsh/porosity/sw) con re-audit de fuga
-- [ ] R14-B provenance/scoring: `method_source` en `_exec_vsh`; tupla de `completeness_breakdown` amplía a vsh; keys aditivas `authored_core`/`core_methods_defaulted`; `_vsh` deja de hardcodear "engine's selection"
-- [ ] R14-C `run_descriptive_pass` (graph.py, hermana de run_pipeline) + `emit_descriptive` (stages.py, params helper compartido) + `generate_descriptive_figures` raw (log_plot.py) + tests/test_descriptive_pass.py; run_pipeline byte-idéntico
-- [ ] R14-D `src/orchestrator/finalize.py`: re-valida + `gate_decision` compartido con stages.gating + figuras + persist sobre la cadena FINAL; regresión banner-stale en tests/test_finalize.py; verificar semántica DID_NOT_CONVERGE contra ledgers v7
-- [ ] R14-E loop autor: kwarg `author`, `_LOOP_SYSTEM_AUTHOR` (auditado 7 focos), salta `seed_baseline_sections`, `vsh` en stale_or_pending; tests/test_analyst_loop_author.py (scripted authored_core==3; modelo-basura → reclose + fell_back)
-- [ ] R14-F driver `debug/gen_field_report_v8_author.py` + smoke local + batch free en `outputs/v8` + lectura A/B vs v7 en bitácora (leg de pago solo con OK del usuario)
+- [x] R14-A `sw_method_comparison` (sw.py, golden tests) + `sw_summary.methods` en `_exec_sw` + tabla en `_sw` + observación read-only `compare_methods` (vsh/porosity/sw) con re-audit de fuga (2026-07-02)
+- [x] R14-B provenance/scoring: `method_source` en `_exec_vsh`; tupla de `completeness_breakdown` amplía a vsh; keys aditivas `authored_core`/`core_methods_defaulted`; `_vsh` deja de hardcodear "engine's selection" (2026-07-02)
+- [x] R14-C `run_descriptive_pass` (graph.py, hermana de run_pipeline) + `emit_descriptive` (stages.py, params helper compartido) + `generate_descriptive_figures` raw (log_plot.py) + tests/test_descriptive_pass.py; run_pipeline byte-idéntico (2026-07-02)
+- [x] R14-D `src/orchestrator/finalize.py`: re-valida + `gate_decision` compartido con stages.gating + figuras + persist sobre la cadena FINAL; regresión banner-stale en tests/test_finalize.py; verificar semántica DID_NOT_CONVERGE contra ledgers v7 (2026-07-02)
+- [x] R14-E loop autor: kwarg `author`, `_LOOP_SYSTEM_AUTHOR` (auditado 7 focos), salta `seed_baseline_sections`, `vsh` en stale_or_pending; tests/test_analyst_loop_author.py (scripted authored_core==3; modelo-basura → reclose + fell_back) (2026-07-02)
+- [x] R14-F driver `debug/gen_field_report_v8_author.py` + smoke local + batch free en `outputs/v8` + lectura A/B vs v7 en bitácora (leg de pago solo con OK del usuario) (2026-07-02)
 
 ## Conventions
 - Cada fórmula nueva entra al registry SOLO con golden test (bounds, monotonía, caso analítico, NaN passthrough).
