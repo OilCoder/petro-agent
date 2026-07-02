@@ -177,7 +177,7 @@ def _render_known(section_id: str, ledger: dict[str, Any], narrative: dict[str, 
         "executive_summary": lambda: v1._executive_summary(
             ledger, narrative.get("executive_summary", "")
         ),
-        "methodology": v1._methodology,
+        "methodology": lambda: v1._methodology(ledger),
         "parameters": lambda: v1._parameters(ledger),
         "zonation": lambda: v1._zonation(ledger),
         "results": lambda: v1._results(ledger),

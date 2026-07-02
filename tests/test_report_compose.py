@@ -154,7 +154,7 @@ def test_porosity_and_sw_sections_render():
     }
     md = compose_report(ledger, {"optional_sections": []}, GUIDED, _valid_graph(GUIDED))
     assert "## " in md and "Porosity" in md and "phie_density_neutron" in md
-    assert "Water saturation" in md and "Mean Sw (Archie)" in md
+    assert "Water saturation" in md and "Mean Sw (Archie 1942)" in md
 
 
 def test_vsh_comparison_section_renders_with_selection():

@@ -12,6 +12,7 @@ import math
 from typing import Any
 
 from src.params.citations import load_citations
+from src.petrophysics.registry import METHOD_REGISTRY
 
 VERSION = "0.1.0"
 
@@ -155,7 +156,17 @@ def _executive_summary(ledger: dict[str, Any], narrative: str) -> str:
     return f"## 1. Executive summary\n\n{banner}\n{body}\n\n{headline}{caveat}"
 
 
-def _methodology() -> str:
+def _method_label(method_id: str) -> str:
+    """Human attribution for a vetted method id (registry citation; the id itself as fallback)."""
+    spec = METHOD_REGISTRY.get(method_id)
+    return spec.citation if spec else f"`{method_id}`"
+
+
+def _methodology(ledger: dict[str, Any]) -> str:
+    """Render the method table from the SELECTED method ids — never a hardcoded attribution."""
+    vsh_id = ledger.get("calibration", {}).get("vsh_method", {}).get("value") or "vsh_larionov_old"
+    phie_id = ledger.get("porosity_comparison", {}).get("selected") or "phie_density_neutron"
+    sw_id = ledger.get("sw_summary", {}).get("method") or "sw_archie"
     return (
         "## 2. Methodology\n\n"
         "All numbers are produced by the deterministic, golden-tested engine. The LLM only "
@@ -163,9 +174,9 @@ def _methodology() -> str:
         "deterministic renderings of these computed numbers for the human reader; the agent "
         "reasons over the numeric EDA digest, not images (the models have no vision).\n\n"
         "| Step | Method (frozen) | Version |\n|---|---|---|\n"
-        "| Vsh | Larionov old rocks (Paleozoic) from GR | `calc_vsh 0.1.0` |\n"
-        "| PHIE | Density–neutron crossplot (neutron-only fallback) | `calc_phie 0.1.0` |\n"
-        "| Sw | Archie | `calc_sw 0.1.0` |\n"
+        f"| Vsh | {_method_label(vsh_id)} | `{vsh_id} {VERSION}` |\n"
+        f"| PHIE | {_method_label(phie_id)} | `{phie_id} {VERSION}` |\n"
+        f"| Sw | {_method_label(sw_id)} | `{sw_id} {VERSION}` |\n"
         "| Net pay | Vsh/PHIE/Sw cutoffs → net sand → net reservoir → net pay | `netpay 0.1.0` |\n"
         "| Uncertainty | Monte Carlo P10/P50/P90 + parameter sensitivity | `mc 0.1.0` |\n"
     )
@@ -541,7 +552,8 @@ def _sw(ledger: dict[str, Any]) -> str:
         return "## Water saturation\n\n_Not computed — no Sw result._\n"
     return (
         "## Water saturation\n\n"
-        f"Mean Sw (Archie) = {_fmt(s.get('mean_sw'), 3)} "
+        f"Mean Sw ({_method_label(s.get('method') or 'sw_archie')}) = "
+        f"{_fmt(s.get('mean_sw'), 3)} "
         f"(a={_fmt(s.get('a'), 2)}, m={_fmt(s.get('m'), 2)}, n={_fmt(s.get('n'), 2)}, "
         f"Rw={_fmt(s.get('rw'), 4)} ohm-m). "
         "Electrical parameters are engine-sourced; alternative Sw models are optional sections.\n"
