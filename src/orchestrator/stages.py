@@ -14,11 +14,12 @@ from typing import Any
 
 import numpy as np
 
-from src.orchestrator.state import CONVERGED, DID_NOT_CONVERGE, PipelineState
+from src.gating.rules import gate_decision
+from src.orchestrator.state import PipelineState
 from src.orchestrator.steps import phie_step, sw_step, vsh_step
 from src.petrophysics.netpay import apply_cutoffs
 from src.validators.harness import run_validators
-from src.validators.objections import IRREDUCIBLE, MECHANICAL
+from src.validators.objections import IRREDUCIBLE
 from src.validators.physical import net_pay_plausibility
 
 VERSION = "0.1.0"
@@ -105,27 +106,15 @@ def route_after_typify(state: PipelineState) -> str:
     return "correct"
 
 
-_TIER_ORDER = ("bracketed", "qualified", "firm")
-
-
-def _downgrade(tier: str, levels: int) -> str:
-    """Lower a confidence tier by ``levels`` steps, floored at 'bracketed'."""
-    idx = max(0, _TIER_ORDER.index(tier) - levels)
-    return _TIER_ORDER[idx]
-
-
 def gating(state: PipelineState) -> dict[str, Any]:
     """Set convergence status, confidence tier, and the emission/abstention gate.
 
-    Runs after ``zonate`` so it can judge net-pay plausibility. The tier is downgraded
-    one step per irreducible objection (floored at bracketed); the run abstains when
+    Runs after ``zonate`` so it can judge net-pay plausibility. The gate math lives in
+    ``gate_decision`` (shared with the post-loop ``finalize_run``): tier downgraded one
+    step per irreducible objection (floored at bracketed); the run abstains when
     unresolved MECHANICAL objections remain or the net pay is physically implausible —
     the report then states an explicit abstention rather than a confident estimate.
     """
-    status = CONVERGED if state["correctable"] == 0 else DID_NOT_CONVERGE
-    provs = {p.provenance for p in state["params"].values()}
-    base_tier = "firm" if "core" in provs else ("qualified" if "offset" in provs else "bracketed")
-
     summary = state.get("summary", {})
     plausibility = net_pay_plausibility(
         state.get("net_pay_total_m", 0.0),
@@ -133,23 +122,8 @@ def gating(state: PipelineState) -> dict[str, Any]:
         float(summary.get("avg_phie", float("nan"))),
     )
     objections = list(state.get("objections", [])) + plausibility
-
-    n_irreducible = sum(1 for o in objections if o.objection_type == IRREDUCIBLE)
-    tier = _downgrade(base_tier, n_irreducible)
-
-    n_mechanical = sum(1 for o in objections if o.objection_type == MECHANICAL)
-    abstain_reasons: list[str] = []
-    if status == DID_NOT_CONVERGE and n_mechanical > 0:
-        abstain_reasons.append(f"{n_mechanical} unresolved MECHANICAL objection(s)")
-    abstain_reasons += [o.detail for o in plausibility]
-
-    return {
-        "convergence_status": status,
-        "confidence_tier": tier,
-        "objections": objections,
-        "abstain": bool(abstain_reasons),
-        "abstain_reasons": abstain_reasons,
-    }
+    verdict = gate_decision(objections, state["params"], state["correctable"] == 0)
+    return {"objections": objections, **verdict}
 
 
 def zonate(state: PipelineState) -> dict[str, Any]:

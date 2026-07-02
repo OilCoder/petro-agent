@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import json
 import re
-from pathlib import Path
 from typing import Any
 
 from src.agents.client import ChatFn
@@ -23,6 +22,7 @@ from src.agents.loop_actions import (
 )
 from src.agents.methodology_graph import MethodologyGraph
 from src.eda.explore import build_eda_digest
+from src.orchestrator.finalize import persist_ledger
 from src.orchestrator.steps import default_vsh_key
 from src.validators.physical import cross_tool_consistency
 
@@ -554,21 +554,9 @@ def _persist_ledger(ledger: dict[str, Any], out_dir: str | None) -> None:
     Pass-0's ``emit`` writes a pre-loop snapshot; without this re-write the agent's
     interpretive choices (sw_summary, vsh/porosity comparisons, run.analyst_loop,
     run.methodology_graph) would be unauditable from the persisted artifact.
+    Delegates to the orchestrator's ``persist_ledger`` (single serializer).
     """
-    uwi = ledger.get("run", {}).get("uwi")
-    if not out_dir or not uwi:
-        return
-    path = Path(out_dir) / f"{uwi}_ledger.json"
-    path.write_text(json.dumps(ledger, indent=2, default=_json_fallback))
-
-
-def _json_fallback(o: Any) -> Any:
-    """Serialize numpy scalars/arrays the loop may have left in the ledger; str() as last resort."""
-    if hasattr(o, "item"):
-        return o.item()
-    if hasattr(o, "tolist"):
-        return o.tolist()
-    return str(o)
+    persist_ledger(ledger, out_dir)
 
 
 def run_analyst_loop(
