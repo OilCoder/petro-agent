@@ -69,7 +69,8 @@ reading of the data supports, and finish ONLY when the analysis is genuinely com
 — not merely because a baseline exists. Each turn you see the STATE and the VALID ACTIONS; choose
 exactly ONE next action:
 - OBSERVE the data (depth_quality, distributions, scans, crossplot, examine_figures) to inform your
-  judgement;
+  judgement; compare_methods, args {"property": "vsh"|"porosity"|"sw"}, returns the engine-computed
+  mean of every vetted method for that property — evidence you may read BEFORE choosing a method;
 - RESTRICT the analysis to a depth interval with set_zone_of_interest, args {"top": <m>,
   "bottom": <m>} (recomputes over that zone) if your reading of the data warrants it;
 - RECOMPUTE a core property with a different vetted method (at most once per property) when the

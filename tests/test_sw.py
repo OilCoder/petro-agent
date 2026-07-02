@@ -68,7 +68,7 @@ def test_sw_nan_passthrough():
 # Shaly-sand methods (V2-A): Simandoux, Indonesia
 # ----------------------------------------
 
-from src.petrophysics.sw import sw_indonesia, sw_simandoux  # noqa: E402
+from src.petrophysics.sw import sw_indonesia, sw_method_comparison, sw_simandoux  # noqa: E402
 
 RSH = 2.0
 
@@ -114,3 +114,42 @@ def test_indonesia_bounds_and_nan():
         np.array([15.0, np.nan]), np.array([0.18, 0.18]), np.array([0.5, 0.5]), A, M, 2.0, RW, RSH
     )
     assert 0.0 <= sw[0] <= 1.0 and np.isnan(sw[1])
+
+
+# ----------------------------------------
+# Step — sw_method_comparison (deterministic evidence aggregation)
+# ----------------------------------------
+
+
+def test_sw_method_comparison_archie_matches_calc_sw():
+    rt, phie, vsh = np.array([10.0, 30.0]), np.array([0.2, 0.15]), np.array([0.3, 0.2])
+    cmp_result = sw_method_comparison(rt, phie, vsh, A, M, 2.0, RW, RSH)
+    expected = round(float(np.nanmean(calc_sw(rt, phie, A, M, 2.0, RW))), 4)
+    assert cmp_result["sw_archie"] == expected
+
+
+def test_sw_method_comparison_bounds_and_keys():
+    rt = np.linspace(1.0, 100.0, 50)
+    phie = np.full(50, 0.18)
+    vsh = np.linspace(0.0, 0.8, 50)
+    cmp_result = sw_method_comparison(rt, phie, vsh, A, M, 2.0, RW, RSH)
+    assert set(cmp_result) == {"sw_archie", "sw_simandoux", "sw_indonesia"}
+    assert all(0.0 <= v <= 1.0 for v in cmp_result.values())
+
+
+def test_sw_method_comparison_shaly_methods_converge_to_archie_when_clean():
+    rt, phie = np.array([10.0, 30.0]), np.array([0.2, 0.15])
+    cmp_result = sw_method_comparison(rt, phie, np.zeros(2), A, M, 2.0, RW, RSH)
+    assert cmp_result["sw_simandoux"] == pytest.approx(cmp_result["sw_archie"], abs=1e-4)
+    assert cmp_result["sw_indonesia"] == pytest.approx(cmp_result["sw_archie"], abs=1e-4)
+
+
+def test_sw_method_comparison_without_vsh_is_archie_only():
+    cmp_result = sw_method_comparison(np.array([10.0]), np.array([0.2]), None, A, M, 2.0, RW)
+    assert set(cmp_result) == {"sw_archie"}
+
+
+def test_sw_method_comparison_all_nan_input_is_nan():
+    nanarr = np.array([np.nan, np.nan])
+    cmp_result = sw_method_comparison(nanarr, nanarr, nanarr, A, M, 2.0, RW, RSH)
+    assert all(np.isnan(v) for v in cmp_result.values())

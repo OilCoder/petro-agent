@@ -550,7 +550,7 @@ def _sw(ledger: dict[str, Any]) -> str:
     s = ledger.get("sw_summary") or {}
     if s.get("mean_sw") is None:
         return "## Water saturation\n\n_Not computed — no Sw result._\n"
-    return (
+    head = (
         "## Water saturation\n\n"
         f"Mean Sw ({_method_label(s.get('method') or 'sw_archie')}) = "
         f"{_fmt(s.get('mean_sw'), 3)} "
@@ -558,6 +558,19 @@ def _sw(ledger: dict[str, Any]) -> str:
         f"Rw={_fmt(s.get('rw'), 4)} ohm-m). "
         "Electrical parameters are engine-sourced; alternative Sw models are optional sections.\n"
     )
+    methods = s.get("methods") or {}
+    if not methods:
+        return head
+    selected = s.get("method") or "sw_archie"
+    rows = [
+        "",
+        "Mean Sw by method (engine-computed comparison; the LLM authors no number):",
+        "| Method | Mean Sw | Selected |",
+        "|---|---|---|",
+    ]
+    for m, v in methods.items():
+        rows.append(f"| {m} | {_fmt(v, 3)} | {'✓' if m == selected else ''} |")
+    return head + "\n".join(rows) + "\n"
 
 
 def _permeability_section(ledger: dict[str, Any]) -> str:

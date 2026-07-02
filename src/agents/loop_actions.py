@@ -25,6 +25,7 @@ from src.gating.rules import high_leverage_flag
 from src.orchestrator.stages import zonate
 from src.orchestrator.steps import default_vsh_key, phie_step, sw_step, vsh_step
 from src.petrophysics.phie import porosity_method_comparison
+from src.petrophysics.sw import sw_method_comparison
 from src.petrophysics.vsh import vsh_method_comparison
 from src.uncertainty.montecarlo import build_method_alts, multi_seed_robustness, propagate_net_pay
 from src.uncertainty.sensitivity import sensitivity_net_pay
@@ -78,6 +79,7 @@ _OBSERVE_NEEDS: dict[str, tuple[str, ...]] = {
     "histogram": (),
     "crossplot": ("__curves__:RHOB,NPHI",),
     "low_res_scan": ("__curves__:RT",),
+    "compare_methods": (),  # property chosen at call time; prerequisites checked by the runner
 }
 
 
@@ -168,6 +170,20 @@ def _vsh_cmp(ctx: dict[str, Any], gmin: float, gmax: float) -> dict[str, float]:
     )
 
 
+def _sw_cmp(ctx: dict[str, Any], rw: float) -> dict[str, float]:
+    """Multi-method Sw means (Archie + shaly-sand family) — evidence, never a decision."""
+    pf = _pf(ctx)
+    return sw_method_comparison(
+        ctx["curves"]["RT"],
+        ctx["phie"],
+        ctx.get("vsh"),
+        pf["a"],
+        pf["m"],
+        pf["n"],
+        rw,
+    )
+
+
 def _exec_vsh(ctx, ledger, method, args, valid):  # noqa: ANN001
     p = ctx["params"]
     gmin, gmax = float(p["gr_min"].value), float(p["gr_max"].value)
@@ -220,6 +236,7 @@ def _exec_sw(ctx, ledger, method, args, valid):  # noqa: ANN001
         "method": method or "sw_archie",
         "method_source": "agent" if method else "engine_default",
         "mean_sw": _mean(sw),
+        "methods": _sw_cmp(ctx, cal["Rw"]["value"]),
         "a": pf["a"],
         "m": pf["m"],
         "n": pf["n"],
@@ -500,6 +517,46 @@ def _examine_figures(ctx: dict[str, Any]) -> dict[str, Any]:
     return {"action": "examine_figures", "qualitative_reading": str(reading).strip()}
 
 
+def _compare_methods(ctx: dict[str, Any], ledger: dict[str, Any], prop: str) -> dict[str, Any]:
+    """Read-only evidence: mean result of each vetted method for one core property.
+
+    The engine computes every number; the agent only reads the comparison before selecting a
+    method via the corresponding compute action. Prerequisites are checked here (not at the
+    frontier) so an unmet request returns an honest note instead of being hidden.
+    """
+    curves = ctx["curves"]
+    p = ctx["params"]
+    if prop == "vsh":
+        if "GR" not in curves:
+            return {"property": prop, "note": "prerequisites not met: GR curve absent"}
+        gmin, gmax = float(p["gr_min"].value), float(p["gr_max"].value)
+        return {"property": prop, "methods": _vsh_cmp(ctx, gmin, gmax)}
+    if prop == "porosity":
+        if not {"RHOB", "NPHI"} <= set(curves):
+            return {"property": prop, "note": "prerequisites not met: RHOB/NPHI absent"}
+        pf = _pf(ctx)
+        return {
+            "property": prop,
+            "methods": porosity_method_comparison(
+                curves.get("RHOB"),
+                curves.get("NPHI"),
+                pf["rho_ma"],
+                pf["rho_fl"],
+                pf["phie_max"],
+                vsh=ctx.get("vsh"),
+                phi_sh_d=pf["phi_sh_d"],
+                phi_sh_n=pf["phi_sh_n"],
+            ),
+        }
+    if prop == "sw":
+        if ctx.get("phie") is None or "RT" not in curves:
+            return {"property": prop, "note": "prerequisites not met: compute phie first + RT"}
+        cal_rw = ledger.get("calibration", {}).get("Rw", {}).get("value")
+        rw = float(cal_rw) if cal_rw is not None else _pf(ctx)["Rw"]
+        return {"property": prop, "methods": _sw_cmp(ctx, rw)}
+    return {"note": f"unknown property '{prop}' — use vsh, porosity, or sw"}
+
+
 def observe(
     action: str, ctx: dict[str, Any], ledger: dict[str, Any], target=None, args=None
 ) -> dict[str, Any]:  # noqa: ANN001
@@ -513,6 +570,8 @@ def observe(
         return _examine_figures(ctx)
     if action == "depth_quality":
         return depth_quality_profile(ctx.get("curves_full", ctx["curves"]), ctx["depth_m"])
+    if action == "compare_methods":
+        return _compare_methods(ctx, ledger, str(args.get("property", tgt or "")))
     arr = _resolve_target(tgt, ctx)
     if action == "percentiles":
         finite = arr[np.isfinite(arr)] if arr is not None else np.array([])
