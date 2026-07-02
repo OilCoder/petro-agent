@@ -85,6 +85,28 @@ already chose a method for. You never compute a number — the engine does; you 
 WHETHER to restrict the interval, WHICH analyses to include, and in what order. Never write a
 number; never invent an id. NEVER add an analysis the data do not support just to lengthen it."""
 
+_LOOP_SYSTEM_AUTHOR = """You are a senior petrophysical ANALYST and the AUTHOR of this well's
+interpretation. NO interpretation exists yet — only the measured data (curves, QC, figures). Your
+job is to build the complete, defensible analysis the DATA justify, step by step. Each turn you see
+the STATE and the VALID ACTIONS (actions unlock as their physical prerequisites are met); choose
+exactly ONE next action:
+- OBSERVE the data (depth_quality, distributions, scans, crossplot, examine_figures) to inform your
+  judgement; compare_methods, args {"property": "vsh"|"porosity"|"sw"}, returns the engine-computed
+  mean of every vetted method for that property — evidence you may read BEFORE choosing a method;
+- DECIDE whether to RESTRICT the analysis to a depth interval with set_zone_of_interest, args
+  {"top": <m>, "bottom": <m>}, if your reading of the data warrants it;
+- COMPUTE each core property (vsh, phie, sw, cutoffs, uncertainty), choosing its method ONCE — pass
+  "method" to select a vetted method, or omit it to accept the engine default;
+- ADD an optional analysis (permeability, rock_quality, electrofacies, lithology,
+  derived_parameters) that the data support and that adds value to the report;
+- pick "finish" ONLY when the analysis is genuinely complete for this well.
+
+Output ONLY a JSON object: {"action": "<id>", "method": "<optional method id>", "args": {}}.
+Use an id from VALID ACTIONS only. Do NOT repeat the same action. You never compute a number — the
+engine does; you decide WHICH method, WHETHER to restrict the interval, WHICH analyses to include,
+and in what order. Never write a number; never invent an id. NEVER add an analysis the data do not
+support just to lengthen it."""
+
 _OBJ = re.compile(r"\{.*\}", re.DOTALL)
 
 
@@ -154,7 +176,8 @@ def _report_outline(ledger: dict[str, Any], order: list[str]) -> list[str]:
 def _diagnostics(ledger: dict[str, Any]) -> dict[str, Any]:
     """The red-flag signals the analyst must see: validator objections, net-pay summary, status.
 
-    All already computed by pass-0 (validate/zonate/gating) — surfaced, not recomputed.
+    Surfaced from the current ledger, not recomputed (pass-0's gate in baseline mode; absent
+    until the chain exists in author mode — ``finalize_run`` writes the final verdict).
     """
     run = ledger.get("run", {})
     objs = [
@@ -207,7 +230,7 @@ def observation_text(
         "netpay": {"in": "netpay" in valid, "net_pay_m": ledger.get("net_pay_total_m")},
         "uncertainty": {"in": "uncertainty" in valid},
     }
-    stale = [p for p in ("phie", "sw", "netpay", "uncertainty") if p not in valid]
+    stale = [p for p in ("vsh", "phie", "sw", "netpay", "uncertainty") if p not in valid]
     done_tools = set(ledger.get("tool_results", {}))
     optionals_available = [
         a
@@ -344,7 +367,12 @@ def _default_next(valid: set[str], curves: set[str]) -> str | None:
 
 
 def _decide(
-    obs: str, actions: list[str], valid: set[str], curves: set[str], chats: list[tuple[Any, str]]
+    obs: str,
+    actions: list[str],
+    valid: set[str],
+    curves: set[str],
+    chats: list[tuple[Any, str]],
+    system: str = _LOOP_SYSTEM,
 ) -> tuple[dict[str, Any], int, bool]:
     """Ask the model cascade for the next action; fall back to the canonical default (signaled).
 
@@ -356,7 +384,7 @@ def _decide(
     for c, _mdl in chats:
         if c is None:
             continue
-        raw = c(_LOOP_SYSTEM, obs)
+        raw = c(system, obs)
         if not raw or not raw.strip():
             empty += 1
             continue
@@ -559,6 +587,21 @@ def _persist_ledger(ledger: dict[str, Any], out_dir: str | None) -> None:
     persist_ledger(ledger, out_dir)
 
 
+def _prepare_loop(ledger: dict[str, Any], ctx: dict[str, Any], author: bool) -> str:
+    """Pre-loop setup: EDA digest + (baseline mode only) section seeding; returns the system prompt.
+
+    Author mode skips ``seed_baseline_sections`` — seeding would fabricate "selected" labels for
+    choices nobody made — and frames the agent as the AUTHOR of the interpretation.
+    """
+    # Build the EDA digest the agent reads (the loop path never populated it -> agent was blind).
+    ledger.setdefault("run", {})["eda"] = build_eda_digest(ctx)
+    if author:
+        return _LOOP_SYSTEM_AUTHOR
+    # Seed the [FIJO] Vsh/Porosity/Sw section keys from the baseline (render without a recompute).
+    seed_baseline_sections(ledger, ctx)
+    return _LOOP_SYSTEM
+
+
 def run_analyst_loop(
     ledger: dict[str, Any],
     ctx: dict[str, Any],
@@ -568,20 +611,23 @@ def run_analyst_loop(
     fallback_chat: ChatFn | None = None,
     fallback_model: str = "",
     max_steps: int = 12,
+    author: bool = False,
 ) -> dict[str, Any]:
     """Run the observe→decide→compute loop; return ``{section_plan, graph, fell_back}``.
 
     Records ``ledger.run.analyst_loop`` (steps_taken, finished_by_agent, hit_max_steps, recomputes,
     empty_returns) and ``ledger.run.methodology_graph`` (the step-by-step trace).
+
+    With ``author=True`` (R14: the descriptive pass-0 computed no interpretation) the agent is
+    framed as the AUTHOR of the interpretation and the baseline section seeding is skipped —
+    seeding would fabricate "selected" labels for choices nobody made. The deterministic per-step
+    fallback and the post-loop re-close are unchanged (they close the chain for weak models).
     """
     graph = MethodologyGraph(mode=mode, model=model)
     curves = set(ctx["curves"])
     valid = _initial_valid(ctx, ledger)
     order = _seed_order(valid)
-    # Build the EDA digest the agent reads (the loop path never populated it -> agent was blind).
-    ledger.setdefault("run", {})["eda"] = build_eda_digest(ctx)
-    # Seed the [FIJO] Vsh/Porosity/Sw section keys from the baseline (render without a recompute).
-    seed_baseline_sections(ledger, ctx)
+    system = _prepare_loop(ledger, ctx, author)
     steps_taken = recomputes = empty_returns = wasted = 0
     agent_steps = default_steps = 0
     # Vision track: offer examine_figures only when a vision chat + figures are wired into ctx.
@@ -598,7 +644,7 @@ def run_analyst_loop(
             valid, curves, vision=vision_on
         )  # offer everything; no-ops are measured, not hidden
         obs = observation_text(ledger, valid, actions, order, last_obs)
-        choice, empty, from_default = _decide(obs, actions, valid, curves, chats)
+        choice, empty, from_default = _decide(obs, actions, valid, curves, chats, system)
         empty_returns += empty
         action = choice["action"]
         if action == "finish":
@@ -686,6 +732,7 @@ def run_analyst_loop(
         "empty_returns": empty_returns,
         "reclosed_steps": reclosed,
         "vision_enabled": vision_on,
+        "author_mode": author,
     }
     ledger["run"]["methodology_graph"] = graph.to_json()
     # Re-persist: pass-0's emit wrote a pre-loop snapshot; the agent's choices must be auditable.
