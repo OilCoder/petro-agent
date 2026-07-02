@@ -214,17 +214,59 @@ def _well_summary(
     }
 
 
-def _emit_parameters(state: PipelineState) -> dict[str, Any]:
+def emit_parameters(params: dict[str, Any], calibration: dict[str, Any]) -> dict[str, Any]:
     """Build the ledger parameter block, reflecting data-driven calibration overrides."""
-    calibration = state.get("calibration", {})
-    params: dict[str, Any] = {}
-    for k, p in state["params"].items():
+    out: dict[str, Any] = {}
+    for k, p in params.items():
         cal = calibration.get(k)
         if cal and cal.get("data_driven"):
-            params[k] = {"value": cal["value"], "unit": p.unit, "provenance": "data_driven"}
+            out[k] = {"value": cal["value"], "unit": p.unit, "provenance": "data_driven"}
         else:
-            params[k] = {"value": p.value, "unit": p.unit, "provenance": p.provenance}
-    return params
+            out[k] = {"value": p.value, "unit": p.unit, "provenance": p.provenance}
+    return out
+
+
+def _emit_parameters(state: PipelineState) -> dict[str, Any]:
+    """Ledger parameter block from the pipeline state (delegates to ``emit_parameters``)."""
+    return emit_parameters(state["params"], state.get("calibration", {}))
+
+
+def emit_descriptive(
+    uwi: str,
+    variant: str,
+    variant_degraded: bool,
+    raw_mnemonics: dict[str, Any],
+    well_metadata: dict[str, Any],
+    params: dict[str, Any],
+    edits: list[dict[str, Any]],
+    out_dir: str,
+) -> dict[str, Any]:
+    """Assemble and write the DESCRIPTIVE-ONLY ledger skeleton (author mode's pass-0).
+
+    Carries only what load/QC/config produced. Interpretation keys (``zones``, ``summary``,
+    ``net_pay_total_m``, ``uncertainty``, ``figures``) and the gate verdict (tier/abstain/status)
+    are deliberately ABSENT — the agent authors the interpretation and ``finalize_run`` gates the
+    FINAL chain. Their absence makes the loop's ``_initial_valid`` start from an empty set.
+    """
+    ledger = {
+        "run": {
+            "uwi": uwi,
+            "variant": variant,
+            "variant_degraded": variant_degraded,
+            "curve_provenance": raw_mnemonics,
+            "well_metadata": well_metadata,
+            "environmental_corrections": "none_applied",
+            "authoring_mode": "agent",
+        },
+        "parameters": emit_parameters(params, {}),
+        "calibration": {},
+        "objections": [],
+        "edits": edits,
+    }
+    out = Path(out_dir) / f"{uwi}_ledger.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(ledger, indent=2))
+    return ledger
 
 
 def emit(state: PipelineState) -> dict[str, Any]:

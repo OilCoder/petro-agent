@@ -15,6 +15,7 @@ from src.orchestrator.stages import (
     compute,
     correct_stub,
     emit,
+    emit_descriptive,
     gating,
     route_after_typify,
     typify,
@@ -65,6 +66,59 @@ def build_graph() -> Any:
     g.add_edge("gating", "emit")
     g.add_edge("emit", END)
     return g.compile()
+
+
+def run_descriptive_pass(
+    las_path: str,
+    region: str = "paleozoic_kansas",
+    out_dir: str = "outputs",
+    config_path: str | None = None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Run ONLY the descriptive pass-0 (author mode): load → QC gate → params → skeleton ledger.
+
+    No interpretation is precomputed — no vsh/phie/sw, no zones, no gate verdict, no figures.
+    The analyst loop (``author=True``) authors the interpretation over the returned ctx and
+    ``finalize_run`` validates/gates the FINAL chain. The QC abort (>80% unusable) is unchanged:
+    a data gate, not an interpretive decision. Sibling of ``run_pipeline`` (which stays intact
+    as the guided/baseline entry).
+
+    Returns:
+        ``(ledger, ctx)`` — descriptive-only ledger skeleton and a ctx whose vsh/phie/sw are None.
+    """
+    well = load_las(las_path)
+    qc = qc_gate(well)
+    config = load_config(config_path) if config_path else load_config()
+    params = resolve_all(config, region, well.uwi)
+    variant, degraded = larionov_variant(well.prov)
+
+    uwi = well.uwi or Path(las_path).stem
+    ledger = emit_descriptive(
+        uwi,
+        variant,
+        degraded,
+        well.raw_mnemonics,
+        well.metadata,
+        params,
+        qc.edits,
+        out_dir,
+    )
+    ledger["run"]["config_hash_sha256"] = config_hash(config_path) if config_path else config_hash()
+    ledger["run"]["versions"] = pin_versions()
+    ledger["run"]["unmapped_curves"] = well.unmapped
+
+    ctx = {
+        "curves": qc.curves,
+        "vsh": None,
+        "phie": None,
+        "sw": None,
+        "depth_m": well.depth_m,
+        "step_m": float(well.step_m),
+        "quality_map": qc.quality_map,
+        "params": params,
+        "variant": variant,
+        "out_dir": out_dir,
+    }
+    return ledger, ctx
 
 
 def run_pipeline(
