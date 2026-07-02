@@ -518,9 +518,10 @@ def _vsh(ledger: dict[str, Any]) -> str:
     if not methods:
         return "## Shale volume (Vsh)\n\n_Not computed — no GR curve for the comparison._\n"
     selected = cmp.get("selected", "—")
+    source = "the agent's" if cmp.get("method_source") == "agent" else "the engine's"
     rows = [
         "## Shale volume (Vsh)\n",
-        "Mean Vsh by method (selection is the engine's; the LLM authors no number):",
+        f"Mean Vsh by method (selection is {source}; the LLM authors no number):",
         "| Method | Mean Vsh | Selected |",
         "|---|---|---|",
     ]

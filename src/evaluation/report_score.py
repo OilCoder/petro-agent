@@ -84,11 +84,15 @@ def completeness_breakdown(ledger: dict[str, Any], section_plan: dict[str, Any])
     chosen_optionals = [
         s for s in section_plan.get("optional_sections", []) if s in OPTIONAL_SECTIONS
     ]
+    core_keys = {"vsh": "vsh_comparison", "porosity": "porosity_comparison", "sw": "sw_summary"}
     core_methods_agent_chosen = sum(
-        1
-        for key in ("porosity_comparison", "sw_summary")
-        if ledger.get(key, {}).get("method_source") == "agent"
+        1 for key in core_keys.values() if ledger.get(key, {}).get("method_source") == "agent"
     )
+    core_methods_defaulted = [
+        prop
+        for prop, key in core_keys.items()
+        if ledger.get(key, {}).get("method_source") != "agent"
+    ]
     zone_restricted = ledger.get("zone_of_interest") is not None
     loop = run.get("analyst_loop", {})
     interpretive_choices = (
@@ -100,6 +104,8 @@ def completeness_breakdown(ledger: dict[str, Any], section_plan: dict[str, Any])
         "interpretive_choices": interpretive_choices,
         "modelo_optionals_chosen": chosen_optionals,
         "core_methods_agent_chosen": core_methods_agent_chosen,
+        "authored_core": core_methods_agent_chosen,
+        "core_methods_defaulted": core_methods_defaulted,
         "zone_restricted": zone_restricted,
         "agent_steps": loop.get("agent_steps", 0),
         "default_steps": loop.get("default_steps", 0),

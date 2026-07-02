@@ -193,6 +193,7 @@ def _exec_vsh(ctx, ledger, method, args, valid):  # noqa: ANN001
     ledger["vsh_comparison"] = {
         "methods": _vsh_cmp(ctx, gmin, gmax),
         "selected": cal["vsh_method"]["value"],
+        "method_source": "agent" if method else "engine_default",
     }
     nv = invalidate_downstream(valid, "vsh")
     nv.add("vsh")
