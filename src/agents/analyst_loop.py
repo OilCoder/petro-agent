@@ -22,6 +22,7 @@ from src.agents.loop_actions import (
 )
 from src.agents.methodology_graph import MethodologyGraph
 from src.eda.explore import build_eda_digest
+from src.orchestrator.steps import default_vsh_key
 from src.validators.physical import cross_tool_consistency
 
 VERSION = "0.1.0"
@@ -312,7 +313,7 @@ def _is_noop(
         prop = PRODUCES[action]
         if prop not in valid:  # stale -> recomputing it is necessary, not wasted
             return False
-        default = _DEFAULT_METHOD.get(action) or f"vsh_larionov_{ctx['variant']}"
+        default = _DEFAULT_METHOD.get(action) or default_vsh_key(ctx["variant"])
         chosen = method or default
         current = _current_method(prop, ledger)
         if current is None:

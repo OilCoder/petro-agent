@@ -68,6 +68,16 @@ def _vsh_by_method(
     return fn() if fn else calc_vsh(gr, gr_min, gr_max, variant)
 
 
+def default_vsh_key(variant: str) -> str:
+    """Registry key of the engine's default Larionov variant.
+
+    The calibration ledger must speak the registry vocabulary ("vsh_larionov_old",
+    not the internal variant name "old_rocks") so the report's Vsh comparison
+    table can mark the selected method and the loop's no-op check stays aligned.
+    """
+    return "vsh_larionov_tertiary" if variant == TERTIARY else "vsh_larionov_old"
+
+
 def vsh_step(
     curves: dict[str, np.ndarray],
     gr_min: float,
@@ -83,7 +93,7 @@ def vsh_step(
     arr = _vsh_by_method(curves, gr_min, gr_max, variant, method, pf)
     cal = {
         "vsh_method": {
-            "value": method or f"vsh_larionov_{variant}",
+            "value": method or default_vsh_key(variant),
             "chosen_by_model": bool(method),
         }
     }

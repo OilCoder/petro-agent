@@ -23,7 +23,7 @@ from src.agents.tool_dispatch import (
 from src.eda import explore
 from src.gating.rules import high_leverage_flag
 from src.orchestrator.stages import zonate
-from src.orchestrator.steps import phie_step, sw_step, vsh_step
+from src.orchestrator.steps import default_vsh_key, phie_step, sw_step, vsh_step
 from src.petrophysics.phie import porosity_method_comparison
 from src.petrophysics.vsh import vsh_method_comparison
 from src.uncertainty.montecarlo import build_method_alts, multi_seed_robustness, propagate_net_pay
@@ -409,14 +409,9 @@ def seed_baseline_sections(ledger: dict[str, Any], ctx: dict[str, Any]) -> None:
     p = ctx["params"]
     if "GR" in curves and "vsh_comparison" not in ledger:
         gmin, gmax = float(p["gr_min"].value), float(p["gr_max"].value)
-        # the registry key is vsh_larionov_old / _tertiary (NOT _old_rocks) — match it so the
-        # report's [FIJO] Vsh section marks the selected method (was empty in free mode)
-        default_sel = (
-            "vsh_larionov_tertiary" if ctx["variant"] == "tertiary" else "vsh_larionov_old"
-        )
         ledger["vsh_comparison"] = {
             "methods": _vsh_cmp(ctx, gmin, gmax),
-            "selected": cal.get("vsh_method", {}).get("value", default_sel),
+            "selected": cal.get("vsh_method", {}).get("value", default_vsh_key(ctx["variant"])),
         }
     if {"RHOB", "NPHI"} <= set(curves) and "porosity_comparison" not in ledger:
         pf = _pf(ctx)
