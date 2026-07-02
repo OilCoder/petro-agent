@@ -86,10 +86,16 @@ def _openrouter_request(api_key: str, payload: dict[str, Any]) -> str:
             last = f"transport: {e}"
         else:
             if resp.status_code == 200:
-                choices = resp.json().get("choices")
-                if choices:
-                    return str(choices[0]["message"].get("content") or "")
-                last = f"200 without choices: {str(resp.json())[:200]}"
+                try:
+                    data = resp.json()
+                except ValueError:  # 200 with a non-JSON body (flaky pool) — transient, retry
+                    data = None
+                    last = f"200 unparseable body: {resp.text[:200]}"
+                if data is not None:
+                    choices = data.get("choices")
+                    if choices:
+                        return str(choices[0]["message"].get("content") or "")
+                    last = f"200 without choices: {str(data)[:200]}"
             elif resp.status_code not in OPENROUTER_RETRY_STATUS:
                 raise RuntimeError(f"OpenRouter HTTP {resp.status_code}: {resp.text[:200]}")
             else:
@@ -172,48 +178,20 @@ def _make_openrouter_chat(model: str, seed: int) -> ChatFn:
         RuntimeError: If the API key is unset, a hard error is returned, or the
             retries are exhausted on transient conditions.
     """
-    import time
-
-    import httpx
-
     api_key = os.environ.get(OPENROUTER_API_KEY_ENV)
     if not api_key:
         raise RuntimeError(f"{OPENROUTER_API_KEY_ENV} is unset (OpenRouter backend)")
 
     def chat(system: str, user: str) -> str:
-        last = ""
-        for attempt in range(len(OPENROUTER_BACKOFFS) + 1):
-            try:
-                resp = httpx.post(
-                    OPENROUTER_URL,
-                    headers={"Authorization": f"Bearer {api_key}"},
-                    json={
-                        "model": model,
-                        "messages": [
-                            {"role": "system", "content": system},
-                            {"role": "user", "content": user},
-                        ],
-                        "temperature": 0.0,
-                        "seed": seed,
-                    },
-                    timeout=180.0,
-                )
-            except httpx.HTTPError as e:  # transport: transient infra, retry
-                last = f"transport: {e}"
-            else:
-                if resp.status_code == 200:
-                    data = resp.json()
-                    choices = data.get("choices")
-                    if choices:
-                        return str(choices[0]["message"].get("content") or "")
-                    # 200 carrying an error envelope (flaky free pool) — transient, retry
-                    last = f"200 without choices: {str(data)[:200]}"
-                elif resp.status_code not in OPENROUTER_RETRY_STATUS:
-                    raise RuntimeError(f"OpenRouter HTTP {resp.status_code}: {resp.text[:200]}")
-                else:
-                    last = f"HTTP {resp.status_code}: {resp.text[:200]}"
-            if attempt < len(OPENROUTER_BACKOFFS):
-                time.sleep(OPENROUTER_BACKOFFS[attempt])
-        raise RuntimeError(f"OpenRouter exhausted retries ({last})")
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            "temperature": 0.0,
+            "seed": seed,
+        }
+        return _openrouter_request(api_key, payload)
 
     return chat
