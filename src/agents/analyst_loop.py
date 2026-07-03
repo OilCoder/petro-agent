@@ -188,6 +188,25 @@ def _report_outline(ledger: dict[str, Any], order: list[str]) -> list[str]:
     return lines
 
 
+# What each validator's objection is COMPUTED FROM (factual scope, per id — never a fix
+# suggestion). A generic legend once claimed "no method/zone can fix" for ALL irreducible
+# objections; that is true for raw-data checks but FALSE for interval-scoped ones, and a
+# false universal is disinformation, not honesty.
+_OBJECTION_SCOPE: dict[str, str] = {
+    "net_pay_plausibility": (
+        "computed from the net-pay summary over the CURRENT analysis interval "
+        "(full logged interval unless restricted)"
+    ),
+    "rt_sw_consistency": "computed sample-by-sample from raw RT vs the computed Sw",
+    "model_mismatch_nd": "computed from raw RHOB/NPHI character (data quality)",
+    "vsh_phie_anticorrelation": "computed from the correlation of the computed Vsh vs PHIE",
+    "vsh_bounds": "computed from the computed Vsh against its physical bounds",
+    "phie_bounds": "computed from the computed PHIE against its physical bounds",
+    "sw_bounds": "computed from the computed Sw against its physical bounds",
+    "cross_tool_consistency": "computed by cross-checking optional tool results vs the core",
+}
+
+
 def _diagnostics(ledger: dict[str, Any]) -> dict[str, Any]:
     """The red-flag signals the analyst must see: validator objections, net-pay summary, status.
 
@@ -200,6 +219,7 @@ def _diagnostics(ledger: dict[str, Any]) -> dict[str, Any]:
             "validator": o.get("validator_id"),
             "type": o.get("type") or o.get("objection_type"),
             "detail": o.get("detail"),
+            "computed_from": _OBJECTION_SCOPE.get(o.get("validator_id", ""), "see validator"),
         }
         for o in ledger.get("objections", [])
     ][:6]
@@ -210,9 +230,10 @@ def _diagnostics(ledger: dict[str, Any]) -> dict[str, Any]:
     return {
         "objections": objs or "none",
         "objections_legend": (
-            "type 'irreducible' = a DATA limitation no method/zone can fix — note it and MOVE ON; "
-            "'mechanical' = may improve with a better method (try ONCE); 'support' = info. "
-            "Do NOT loop trying to resolve an irreducible objection."
+            "type 'irreducible' = cannot be fixed by choosing a different METHOD — note it and "
+            "MOVE ON rather than looping; what each objection DEPENDS ON is stated in its "
+            "computed_from. 'mechanical' = may improve with a better method (try ONCE); "
+            "'support' = info."
         ),
         "net_pay_summary": summary or "not computed yet",
         "convergence": {
@@ -273,9 +294,9 @@ def observation_text(
         "report_so_far": _report_outline(ledger, order or []),
         "eda": ledger.get("run", {}).get("eda", {}),
         "hint": "A MECHANICAL objection MIGHT improve with a different vetted method (try at most "
-        "once). An IRREDUCIBLE objection is a DATA limit: recomputing or re-zoning will NOT fix it "
-        "— do NOT retry for it. Optional analyses do not need convergence. Pick 'finish' when your "
-        "choices are made.",
+        "once). An IRREDUCIBLE objection cannot be fixed by another METHOD — do NOT retry methods "
+        "for it; what it depends on is in its computed_from. Optional analyses do not need "
+        "convergence. Pick 'finish' when your choices are made.",
     }
     return "STATE:\n" + json.dumps(state, indent=1, default=str)[:5200]
 

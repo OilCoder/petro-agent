@@ -118,6 +118,25 @@ def test_author_midloop_validation_surfaces_objections_before_finish(tmp_path):
     assert any("net_pay_plausibility" in obs for obs in post_chain_obs)
 
 
+def test_objection_scope_is_typed_per_validator():
+    # A false universal ("no method/zone can fix") misinformed the agent for interval-scoped
+    # checks. Each objection must state what it is computed from, truthfully per validator.
+    from src.agents.analyst_loop import _diagnostics
+
+    ledger = {
+        "objections": [
+            {"validator_id": "net_pay_plausibility", "type": "irreducible", "detail": "x"},
+            {"validator_id": "model_mismatch_nd", "type": "irreducible", "detail": "y"},
+        ],
+        "run": {},
+    }
+    objs = _diagnostics(ledger)["objections"]
+    assert "CURRENT analysis interval" in objs[0]["computed_from"]  # interval-scoped: says so
+    assert "raw RHOB/NPHI" in objs[1]["computed_from"]  # data-quality: says so
+    legend = _diagnostics(ledger)["objections_legend"]
+    assert "zone" not in legend  # the false universal is gone
+
+
 def test_author_compare_methods_feeds_the_next_decision(tmp_path):
     ledger, ctx = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
     script = [
