@@ -195,6 +195,7 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
   <a href="#metodologia"><span data-lang="es">Metodología</span><span data-lang="en">Methodology</span></a>
   <a href="#resultados"><span data-lang="es">Resultados</span><span data-lang="en">Results</span></a>
   <a href="#informes"><span data-lang="es">Informes finales</span><span data-lang="en">Final reports</span></a>
+  <a href="#veredicto"><span data-lang="es">¿Junior o senior?</span><span data-lang="en">Junior or senior?</span></a>
   <a href="#honestidad"><span data-lang="es">Honestidad</span><span data-lang="en">Honesty</span></a>
   <a href="#reproducibilidad"><span data-lang="es">Reproducibilidad</span><span data-lang="en">Reproducibility</span></a>
 </nav>
@@ -535,6 +536,101 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
     <h4><span data-lang="es">Informe de campo</span><span data-lang="en">Field report</span> · <span class="mono">nemotron-ultra</span> (author)</h4>
     <div class="meta"><span data-lang="es">selección libre de pozos con inventario de calidad</span><span data-lang="en">free well selection over a quality inventory</span></div></div>
   </a>
+</section>
+
+<section id="veredicto" class="reveal">
+  <h2><span data-lang="es">El veredicto: ¿junior o senior?</span><span data-lang="en">The verdict: junior or senior?</span></h2>
+  <p>
+    <span data-lang="es">Este proyecto tiene dos lectores técnicos, y el mismo dato les responde
+    preguntas distintas. Al petrofísico: <i>¿me va a reemplazar una IA?</i> Al desarrollador:
+    <i>¿qué aprendimos construyendo un sistema de agentes que se puede medir?</i></span>
+    <span data-lang="en">This project has two technical readers, and the same data answers a
+    different question for each. To the petrophysicist: <i>will an AI replace me?</i> To the
+    developer: <i>what did we learn building an agent system that can actually be measured?</i></span>
+  </p>
+
+  <h3><span data-lang="es">Si eres petrofísico: no llegan a junior en lo decisivo</span>
+      <span data-lang="en">If you're a petrophysicist: they don't reach junior at what matters</span></h3>
+  <p>
+    <span data-lang="es">Delimitar el intervalo de análisis es lo <i>primero</i> que aprende un
+    analista de registros: un junior mira el composite, ve RHOB de 1.75 g/cc en el tramo somero y
+    recorta antes de calcular nada. Estos agentes lo hicieron <b>1 vez en 47 pozos-corrida</b> —
+    con el perfil de profundidad a demanda, la objeción de porosidad implausible en pantalla y el
+    texto diciéndoles la verdad. Los errores que sí cometen son de calibre pre-junior: elegir
+    Larionov <i>terciario</i> en roca paleozoica es no saber en qué cuenca estás parado. Y las
+    elecciones que sí toman flipean con la seed de muestreo (Simandoux↔Indonesia sin que la
+    evidencia cambie): son plausibles, no razonadas.</span>
+    <span data-lang="en">Delimiting the analysis interval is the <i>first</i> thing a log analyst
+    learns: a junior looks at the composite, sees 1.75 g/cc RHOB in the shallow section, and cuts
+    it before computing anything. These agents did it <b>once in 47 well-runs</b> — with the
+    depth profile on demand, the implausible-porosity objection on screen, and the text telling
+    them the truth. The errors they do make are pre-junior grade: picking <i>Tertiary</i>
+    Larionov on Paleozoic rock means not knowing which basin you're standing in. And the choices
+    they do make flip with the sampling seed (Simandoux↔Indonesia with unchanged evidence):
+    plausible, not reasoned.</span>
+  </p>
+  <p>
+    <span data-lang="es">Donde sí rinden a nivel junior-competente: selección de métodos con el
+    encuadre limpio, selección de pozos sobre un inventario de calidad, redacción técnica, y una
+    diligencia inhumana — 4 pozos × 25 secciones en minutos, cada decisión trazada. La respuesta
+    corta: <b>no te reemplazan; te cambian el trabajo</b>. El sistema produce el borrador
+    completo, honesto y auditable que un junior tardaría días en armar — y tu oficio pasa de
+    escribir informes a revisar borradores. Lo que quedó medido como escaso es exactamente tu
+    parte: delimitar con contexto geológico, cuestionar el dato antes de calcular, y <i>resolver</i>
+    la abstención que el sistema declara con honestidad en su portada.</span>
+    <span data-lang="en">Where they do perform at competent-junior level: method selection under
+    a clean framing, well selection over a quality inventory, technical prose, and inhuman
+    diligence — 4 wells × 25 sections in minutes, every decision traced. The short answer:
+    <b>they don't replace you; they change your job</b>. The system produces the complete,
+    honest, auditable draft a junior would take days to build — and your craft shifts from
+    writing reports to reviewing drafts. What measured scarce is precisely your part: delimiting
+    with geological context, challenging the data before computing, and <i>resolving</i> the
+    abstention the system honestly declares on its front page.</span>
+  </p>
+
+  <h3><span data-lang="es">Si eres desarrollador: cuatro lecciones de un sistema medible</span>
+      <span data-lang="en">If you're a developer: four lessons from a measurable system</span></h3>
+  <ul style="line-height:1.9">
+    <li><span data-lang="es"><b>El techo de conducta puede ser tu entorno.</b> Cuatro familias
+      frontier convergían al mismo perfil pobre — no porque los modelos no pudieran, sino porque
+      el pipeline les presentaba un informe terminado. El A/B revisor↔autor con los MISMOS
+      modelos (1→7 elecciones/pozo) es la prueba: antes de concluir "el modelo no da", audita
+      qué le estás dando tú.</span>
+      <span data-lang="en"><b>Your behavior ceiling may be your environment.</b> Four frontier
+      families converged to the same poor profile — not because the models couldn't, but because
+      the pipeline handed them a finished report. The reviewer↔author A/B on the SAME models
+      (1→7 choices/well) is the proof: before concluding "the model can't", audit what you're
+      feeding it.</span></li>
+    <li><span data-lang="es"><b>Actividad ≠ decisión — mide compromiso, no volumen.</b> Un modelo
+      respondió los 16 pasos en todos los pozos sin comprometer una sola elección (8× el mismo
+      perfil de profundidad, 5–7× las mismas figuras). Sin provenance por decisión
+      (<code>method_source</code>, opcionales, zona), ese run parecería el más trabajado del
+      leg.</span>
+      <span data-lang="en"><b>Activity ≠ decision — measure commitment, not volume.</b> One model
+      answered all 16 steps on every well without committing a single choice (8× the same depth
+      profile, 5–7× the same figures). Without per-decision provenance
+      (<code>method_source</code>, optionals, zone), that run would look like the leg's hardest
+      worker.</span></li>
+    <li><span data-lang="es"><b>Tu propio texto puede desinformar.</b> Una leyenda escrita para
+      una clase de objeción ("re-zonificar no lo arregla") era falsa para otra — y empujó a los
+      modelos lejos de la acción correcta durante dos versiones. La honestidad de un prompt es
+      una propiedad por caso, no un adjetivo global; y corregirla cambió conducta medible
+      (fijación 3→1).</span>
+      <span data-lang="en"><b>Your own text can misinform.</b> A legend written for one objection
+      class ("re-zoning won't fix it") was false for another — and steered models away from the
+      right action for two versions. Prompt honesty is a per-case property, not a global
+      adjective; fixing it changed measurable behavior (fixation 3→1).</span></li>
+    <li><span data-lang="es"><b>El muro determinista es lo que hace todo lo demás legible.</b>
+      Como el LLM jamás produce un número, toda variación entre informes es variación de
+      criterio — y por eso el mismo sistema sirve de benchmark conductual: seeds, entornos y
+      modelos se comparan sobre aritmética idéntica. Separar decisión de cálculo no es solo
+      seguridad; es lo que convierte al agente en objeto de medición.</span>
+      <span data-lang="en"><b>The deterministic wall is what makes everything else legible.</b>
+      Because the LLM never produces a number, all variation across reports is judgment
+      variation — which is why the same system doubles as a behavioral benchmark: seeds,
+      environments and models compare over identical arithmetic. Separating decision from
+      computation isn't just safety; it's what turns the agent into a measurable object.</span></li>
+  </ul>
 </section>
 
 <section id="honestidad" class="reveal">
