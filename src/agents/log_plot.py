@@ -290,6 +290,82 @@ def field_map_plot(wells: list[dict[str, Any]], out_path: str | Path) -> str | N
     return out.name
 
 
+def mn_plot(
+    m: np.ndarray,
+    n: np.ndarray,
+    matrix_points: dict[str, dict[str, float]],
+    out_path: str | Path,
+) -> str:
+    """Render the M-N lithology crossplot with the reference matrix points.
+
+    Returns the basename of the saved PNG.
+    """
+    m_a = np.asarray(m, dtype=float)
+    n_a = np.asarray(n, dtype=float)
+    valid = np.isfinite(m_a) & np.isfinite(n_a)
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.scatter(n_a[valid], m_a[valid], s=5, alpha=0.3, color="k", label="data")
+    for name, pt in matrix_points.items():
+        ax.plot(pt["n"], pt["m"], "^", ms=9, label=name)
+    ax.set_xlabel("N")
+    ax.set_ylabel("M")
+    ax.set_title("M-N lithology crossplot")
+    ax.legend(fontsize=7)
+    ax.grid(True, alpha=0.3)
+    out = Path(out_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=90, bbox_inches="tight")
+    plt.close(fig)
+    return out.name
+
+
+def gr_correlation_panel(
+    wells: list[dict[str, Any]],
+    out_path: str | Path,
+) -> str | None:
+    """Render side-by-side normalized-GR tracks for cross-well correlation (spec ch.25).
+
+    Each well dict carries ``{uwi, depth, gr, marker_m}`` — ``marker_m`` (optional) is an
+    engine-computed horizon (e.g. top of competent rock) drawn as a dashed line. GR is
+    min-max normalized per well so character, not absolute API, aligns the panel.
+
+    Returns the PNG basename, or None when fewer than 2 wells carry GR.
+    """
+    usable = [w for w in wells if w.get("gr") is not None]
+    if len(usable) < 2:
+        return None
+    fig, axes = plt.subplots(1, len(usable), figsize=(1.6 * len(usable), 9), sharey=True)
+    for ax, w in zip(np.atleast_1d(axes), usable, strict=False):
+        gr = np.asarray(w["gr"], dtype=float)
+        depth = np.asarray(w["depth"], dtype=float)
+        finite = np.isfinite(gr)
+        lo, hi = (
+            (np.percentile(gr[finite], 5), np.percentile(gr[finite], 95))
+            if finite.any()
+            else (0, 1)
+        )
+        norm = np.clip((gr - lo) / max(hi - lo, 1e-6), 0, 1)
+        ax.plot(norm, depth, "k", lw=0.5)
+        if w.get("marker_m") is not None:
+            ax.axhline(float(w["marker_m"]), color="tab:red", ls="--", lw=1)
+        ax.set_title(str(w["uwi"])[-11:], fontsize=6, rotation=90, va="bottom")
+        ax.set_xticks([])
+        ax.grid(True, alpha=0.2)
+    np.atleast_1d(axes)[0].set_ylim(
+        max(float(np.nanmax(np.asarray(w["depth"], float))) for w in usable),
+        min(float(np.nanmin(np.asarray(w["depth"], float))) for w in usable),
+    )
+    np.atleast_1d(axes)[0].set_ylabel("Depth (m)")
+    fig.suptitle(
+        "Normalized GR correlation panel (red dash = engine competent-rock top)", fontsize=9
+    )
+    out = Path(out_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=90, bbox_inches="tight")
+    plt.close(fig)
+    return out.name
+
+
 def raw_log_plot(depth: np.ndarray, curves: dict[str, np.ndarray], out_path: str | Path) -> str:
     """Render the raw-curve log (GR, RT, RHOB/NPHI, CALI) — no computed properties.
 

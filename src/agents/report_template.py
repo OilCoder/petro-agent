@@ -490,12 +490,22 @@ def _lithology(ledger: dict[str, Any]) -> str:
             "_Not computed — needs the RHOB+NPHI density-neutron crossplot._\n"
         )
     shares = ", ".join(f"{k}: {v}" for k, v in lit["shares"].items())
-    return (
+    body = (
         "## Density-neutron crossplot lithology\n\n"
         f"Matrix point-shares (fraction of points near each matrix line): {shares}. "
         "Engine crossplot output; naming the dominant lithology is the analyst's judgement. "
         "Comparison with core/mud log: not available (LAS-only).\n"
     )
+    tr = ledger.get("tool_results", {})
+    for key, label in (
+        ("litho_mn", "M-N crossplot (porosity-independent, needs DT)"),
+        ("umaa_apparent", "Apparent matrix Umaa (from PEF)"),
+    ):
+        v = tr.get(key, {}).get("value", {})
+        if v.get("shares"):
+            sh = ", ".join(f"{k}: {s}" for k, s in v["shares"].items())
+            body += f"\n{label}: {sh} over {v.get('n_samples', 0)} samples.\n"
+    return body
 
 
 def _rw(ledger: dict[str, Any]) -> str:
@@ -594,10 +604,23 @@ def _derived_parameters_section(ledger: dict[str, Any]) -> str:
     v = ledger.get("tool_results", {}).get("bvw", {}).get("value", {})
     if not v:
         return "## Derived parameters\n\n_Not computed — no derived-parameter tool result._\n"
-    return (
-        "## Derived parameters\n\n"
-        f"- Bulk-volume water (BVW = PHIE*Sw): mean {_fmt(v.get('mean_bvw'), 4)} v/v\n"
-    )
+    rows = [
+        "## Derived parameters\n",
+        f"- Bulk-volume water (BVW = PHIE*Sw): mean {_fmt(v.get('mean_bvw'), 4)} v/v",
+    ]
+    if v.get("phi_h_m") is not None:
+        rows.append(f"- Porosity-thickness (Phi·H over net pay): {_fmt(v.get('phi_h_m'), 3)} m")
+    if v.get("hcpv_m") is not None:
+        rows.append(
+            "- Hydrocarbon pore thickness (HCPV = Σ PHIE·(1−Sw)·step): "
+            f"{_fmt(v.get('hcpv_m'), 3)} m"
+        )
+    if v.get("buckles") is not None:
+        rows.append(
+            f"- Buckles constant (BVW at P10 of net pay): {_fmt(v.get('buckles'), 4)} → "
+            f"Swirr (mean) ≈ {_fmt(v.get('swirr_mean'), 3)} over {v.get('n_pay', 0)} pay samples"
+        )
+    return "\n".join(rows) + "\n"
 
 
 def _rock_quality_section(ledger: dict[str, Any]) -> str:

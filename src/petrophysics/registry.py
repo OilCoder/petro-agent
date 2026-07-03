@@ -14,7 +14,16 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from src.petrophysics import electrofacies, permeability, rock_quality, sonic, sw, volumetrics, vsh
+from src.petrophysics import (
+    electrofacies,
+    lithology,
+    permeability,
+    rock_quality,
+    sonic,
+    sw,
+    volumetrics,
+    vsh,
+)
 from src.petrophysics.phie import calc_phie, phi_density, phi_neutron
 from src.validators.model_mismatch import neutron_density_crossplot
 
@@ -106,6 +115,20 @@ METHOD_REGISTRY: dict[str, MethodSpec] = {
         neutron_density_crossplot,
         ("RHOB", "NPHI"),
         "Neutron-density lithology crossplot",
+    ),
+    "litho_mn": MethodSpec(
+        "litho_mn",
+        "lithology",
+        lithology.litho_mn,
+        ("RHOB", "NPHI", "DT"),
+        "M-N lithology crossplot (porosity-independent)",
+    ),
+    "umaa_apparent": MethodSpec(
+        "umaa_apparent",
+        "lithology",
+        lithology.umaa_apparent,
+        ("PEF", "RHOB", "NPHI"),
+        "Apparent matrix Umaa from PEF (MID-style)",
     ),
     # MODELO depth methods (uncalibrated; selected by the model, computed by the engine)
     "perm_timur": MethodSpec(

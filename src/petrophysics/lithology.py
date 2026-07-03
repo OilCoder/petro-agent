@@ -92,6 +92,144 @@ def estimate_shale_points(
 # Plausible formation-water resistivity window (ohm-m) for the Rwa estimate.
 RW_FLOOR, RW_CEIL = 0.01, 0.5
 
+# Arps' constant for resistivity-temperature conversion in Celsius (6.77 in Fahrenheit).
+_ARPS_C = 21.5
+
+
+def rw_arps_temperature(
+    rw_surface: float,
+    t_surface_c: float,
+    gradient_c_km: float,
+    depth_m: float,
+) -> dict[str, float]:
+    """Correct a surface-conditions Rw to formation temperature via Arps' equation.
+
+    ``Rw_f = Rw_s * (T_s + 21.5) / (T_f + 21.5)`` with temperatures in Celsius and the
+    formation temperature from a linear geothermal gradient:
+    ``T_f = T_s + gradient * depth/1000``. Salinity is assumed constant (Arps).
+
+    Args:
+        rw_surface: water resistivity at surface temperature (ohm-m).
+        t_surface_c: mean surface temperature (Celsius).
+        gradient_c_km: geothermal gradient (Celsius per km).
+        depth_m: formation depth (m).
+
+    Returns:
+        ``{rw_formation, t_formation_c}``.
+
+    Raises:
+        ValueError: If ``rw_surface`` is not positive.
+    """
+    if rw_surface <= 0.0:
+        raise ValueError(f"rw_surface must be positive, got {rw_surface}")
+    t_f = t_surface_c + gradient_c_km * depth_m / 1000.0
+    rw_f = rw_surface * (t_surface_c + _ARPS_C) / (t_f + _ARPS_C)
+    return {"rw_formation": round(float(rw_f), 5), "t_formation_c": round(float(t_f), 2)}
+
+
+# M-N crossplot fluid points (fresh mud): DT_fl (µs/ft), RHOB_fl (g/cc), NPHI_fl (v/v).
+_MN_FLUID = {"dt_fl": 189.0, "rho_fl": 1.0, "nphi_fl": 1.0}
+# Reference M-N matrix points (fresh mud, standard chart values).
+MN_MATRIX_POINTS = {
+    "quartz": {"m": 0.81, "n": 0.63},
+    "calcite": {"m": 0.83, "n": 0.59},
+    "dolomite": {"m": 0.78, "n": 0.52},
+}
+
+
+def litho_mn(
+    rhob: np.ndarray,
+    nphi: np.ndarray,
+    dt: np.ndarray,
+    dt_fl: float = 189.0,
+    rho_fl: float = 1.0,
+    nphi_fl: float = 1.0,
+) -> dict[str, object]:
+    """Compute M-N lithology values and nearest-matrix point shares (porosity-independent).
+
+    ``M = 0.01 * (DT_fl - DT) / (RHOB - RHO_fl)`` and ``N = (NPHI_fl - NPHI) / (RHOB -
+    RHO_fl)`` collapse porosity so points cluster by mineralogy; each sample is assigned
+    to the nearest reference matrix point (quartz/calcite/dolomite).
+
+    Args:
+        rhob: bulk density (g/cc). nphi: neutron porosity (v/v). dt: sonic slowness (µs/ft).
+        dt_fl: fluid slowness (µs/ft). rho_fl: fluid density (g/cc). nphi_fl: fluid neutron.
+
+    Returns:
+        ``{m, n, shares, n_samples}`` — M/N arrays (NaN where undefined) and the fraction
+        of classified samples nearest each matrix point.
+    """
+    rhob_a = np.asarray(rhob, dtype=float)
+    nphi_a = np.asarray(nphi, dtype=float)
+    dt_a = np.asarray(dt, dtype=float)
+    denom = rhob_a - rho_fl
+    with np.errstate(divide="ignore", invalid="ignore"):
+        m_val = 0.01 * (dt_fl - dt_a) / denom
+        n_val = (nphi_fl - nphi_a) / denom
+    bad = ~np.isfinite(m_val) | ~np.isfinite(n_val) | (denom <= 0.05)
+    m_val[bad] = np.nan
+    n_val[bad] = np.nan
+
+    ok = np.isfinite(m_val) & np.isfinite(n_val)
+    shares: dict[str, float] = {}
+    n_ok = int(np.count_nonzero(ok))
+    if n_ok:
+        names = list(MN_MATRIX_POINTS)
+        dists = np.stack(
+            [
+                (m_val[ok] - MN_MATRIX_POINTS[k]["m"]) ** 2
+                + (n_val[ok] - MN_MATRIX_POINTS[k]["n"]) ** 2
+                for k in names
+            ]
+        )
+        nearest = np.argmin(dists, axis=0)
+        shares = {k: round(float(np.mean(nearest == i)), 3) for i, k in enumerate(names)}
+    return {"m": m_val, "n": n_val, "shares": shares, "n_samples": n_ok}
+
+
+# Umaa matrix points (barns/cc): standard chart values for the apparent-matrix crossplot.
+UMAA_MATRIX_POINTS = {"quartz": 4.8, "calcite": 13.8, "dolomite": 9.0}
+_U_FLUID = 0.5  # fresh-water fluid volumetric cross-section (barns/cc)
+
+
+def umaa_apparent(
+    pef: np.ndarray,
+    rhob: np.ndarray,
+    phit: np.ndarray,
+) -> dict[str, object]:
+    """Compute apparent matrix volumetric cross-section (Umaa) and matrix point shares.
+
+    ``U = PEF * rho_e`` with ``rho_e ≈ RHOB`` (electron-density approximation), then
+    ``Umaa = (U - PHIT * U_fl) / (1 - PHIT)``. Each sample is assigned to the nearest
+    reference matrix (quartz 4.8, calcite 13.8, dolomite 9.0 barns/cc).
+
+    Args:
+        pef: photoelectric factor (barns/electron).
+        rhob: bulk density (g/cc).
+        phit: total porosity estimate (v/v) — neutron-density porosity is acceptable.
+
+    Returns:
+        ``{umaa, shares, n_samples}`` — Umaa array (NaN where undefined) and nearest-point
+        shares over classified samples.
+    """
+    pef_a = np.asarray(pef, dtype=float)
+    rhob_a = np.asarray(rhob, dtype=float)
+    phit_a = np.clip(np.asarray(phit, dtype=float), 0.0, 0.6)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        u = pef_a * rhob_a
+        umaa = (u - phit_a * _U_FLUID) / (1.0 - phit_a)
+    umaa[~np.isfinite(umaa)] = np.nan
+
+    ok = np.isfinite(umaa)
+    shares: dict[str, float] = {}
+    n_ok = int(np.count_nonzero(ok))
+    if n_ok:
+        names = list(UMAA_MATRIX_POINTS)
+        dists = np.stack([np.abs(umaa[ok] - UMAA_MATRIX_POINTS[k]) for k in names])
+        nearest = np.argmin(dists, axis=0)
+        shares = {k: round(float(np.mean(nearest == i)), 3) for i, k in enumerate(names)}
+    return {"umaa": umaa, "shares": shares, "n_samples": n_ok}
+
 
 def estimate_rw(
     rt: np.ndarray,

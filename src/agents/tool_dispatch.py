@@ -17,7 +17,7 @@ import numpy as np
 
 from src.agents.methodology_graph import MethodologyGraph
 from src.eda import explore
-from src.petrophysics import permeability
+from src.petrophysics import netpay, permeability, volumetrics
 from src.petrophysics.registry import (
     ELECTRICAL_PRESETS,
     MATRIX_PRESETS,
@@ -177,10 +177,23 @@ def _run_porosity_method(
 def _run_permeability_method(
     method_id: str, ctx: dict[str, Any], args: dict[str, Any]
 ) -> dict[str, Any]:
-    # Sw is used as the irreducible-Sw proxy (no core); the result carries the uncalibrated flag.
+    # Default: Sw as the irreducible-Sw proxy (no core). The analyst may pass a numeric
+    # ``swirr`` (e.g. the Buckles-fit estimate) — a parameterization, still engine-computed.
     spec = METHOD_REGISTRY[method_id]
-    arr = spec.fn(ctx["phie"], ctx["sw"])
-    return {"mean_k_md": _mean(arr), "method": method_id, "calibrated": False}
+    swirr_arg = args.get("swirr")
+    if isinstance(swirr_arg, (int, float)) and 0.0 < float(swirr_arg) <= 1.0:
+        swirr = np.full_like(np.asarray(ctx["phie"], dtype=float), float(swirr_arg))
+        source = "analyst_swirr"
+    else:
+        swirr = ctx["sw"]
+        source = "sw_proxy"
+    arr = spec.fn(ctx["phie"], swirr)
+    return {
+        "mean_k_md": _mean(arr),
+        "method": method_id,
+        "calibrated": False,
+        "swirr_source": source,
+    }
 
 
 def _run_rock_quality_method(
@@ -210,19 +223,43 @@ def _run_facies_method(method_id: str, ctx: dict[str, Any], args: dict[str, Any]
 def _run_lithology_method(
     method_id: str, ctx: dict[str, Any], args: dict[str, Any]
 ) -> dict[str, Any]:
-    # Numeric value from the golden-tested EDA crossplot (the registry fn is the figure/validator
-    # twin); the agent's lithology call yields the nearest-lithology call, not a fabricated number.
-    cp = explore.crossplot_density_neutron(ctx["curves"]["RHOB"], ctx["curves"]["NPHI"])
+    # Numeric value from a golden-tested lithology estimator; the agent's call yields point
+    # shares / a nearest-lithology call, never a fabricated number.
+    curves = ctx["curves"]
+    if method_id == "litho_mn":
+        res = METHOD_REGISTRY[method_id].fn(curves["RHOB"], curves["NPHI"], curves["DT"])
+        return {"shares": res["shares"], "n_samples": res["n_samples"], "method": method_id}
+    if method_id == "umaa_apparent":
+        phit = ctx["phie"] if ctx.get("phie") is not None else curves["NPHI"]
+        res = METHOD_REGISTRY[method_id].fn(curves["PEF"], curves["RHOB"], phit)
+        return {"shares": res["shares"], "n_samples": res["n_samples"], "method": method_id}
+    cp = explore.crossplot_density_neutron(curves["RHOB"], curves["NPHI"])
     return {"nearest_litho": cp.get("nearest"), "method": method_id}
 
 
 def _run_derived_method(
     method_id: str, ctx: dict[str, Any], args: dict[str, Any]
 ) -> dict[str, Any]:
-    # Derived volumetrics over the computed PHIE/Sw (deterministic arithmetic, not a new equation).
+    # Derived volumetrics over the computed PHIE/Sw (deterministic arithmetic, not a new
+    # equation). Pay-flagged aggregates (Phi-H, HCPV, Buckles/Swirr) use the current cutoffs.
     spec = METHOD_REGISTRY[method_id]
     arr = spec.fn(ctx["phie"], ctx["sw"])
-    return {"mean_bvw": _mean(arr), "method": method_id}
+    out = {"mean_bvw": _mean(arr), "method": method_id}
+    p = ctx.get("params")
+    if p is not None:
+        flag = netpay.apply_cutoffs(
+            ctx["vsh"],
+            ctx["phie"],
+            ctx["sw"],
+            float(p["vsh_cutoff"].value),
+            float(p["phie_cutoff"].value),
+            float(p["sw_cutoff"].value),
+        )
+        step = float(ctx.get("step_m", 0.5))
+        out["phi_h_m"] = round(volumetrics.phi_h(ctx["phie"], flag, step), 3)
+        out["hcpv_m"] = round(volumetrics.hcpv(ctx["phie"], ctx["sw"], flag, step), 3)
+        out.update(volumetrics.swirr_buckles(ctx["phie"], ctx["sw"], flag))
+    return out
 
 
 def _run_eda(tool: str, ctx: dict[str, Any], args: dict[str, Any]) -> dict[str, Any]:
