@@ -40,6 +40,21 @@ def test_completeness_separates_floor_from_agent_contribution():
     assert br["interpretive_choices"] == 2  # 1 optional + 1 core method + 0 zone
 
 
+def test_completeness_counts_vsh_choice_and_lists_defaulted_core():
+    # R14-B: an agent-chosen Vsh method is an interpretive choice like porosity/sw
+    ledger = {
+        "run": {"curve_provenance": {"GR": {}}, "analyst_loop": {"agent_steps": 2}},
+        "vsh_comparison": {"method_source": "agent"},
+        "porosity_comparison": {"method_source": "engine_default"},
+        "sw_summary": {"method_source": "agent"},
+    }
+    br = completeness_breakdown(ledger, {"sections": [], "optional_sections": []})
+    assert br["core_methods_agent_chosen"] == 2  # vsh + sw
+    assert br["authored_core"] == 2
+    assert br["core_methods_defaulted"] == ["porosity"]
+    assert br["interpretive_choices"] == 2
+
+
 def test_completeness_zero_agent_contribution_reads_honestly():
     # a run where the agent added nothing beyond the floor must score 0 interpretive choices
     ledger = {"run": {"curve_provenance": {"GR": {}}, "analyst_loop": {"agent_steps": 0}}}

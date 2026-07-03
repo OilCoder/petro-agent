@@ -49,6 +49,36 @@ def _undefined_mask(rt: np.ndarray, phie: np.ndarray) -> np.ndarray:
     return np.isnan(rt) | np.isnan(phie) | (phie <= 0.0) | (rt <= 0.0)
 
 
+def _mean_finite(arr: np.ndarray) -> float:
+    finite = np.asarray(arr, dtype=float)
+    return round(float(np.nanmean(finite)), 4) if np.any(np.isfinite(finite)) else float("nan")
+
+
+def sw_method_comparison(
+    rt: np.ndarray,
+    phie: np.ndarray,
+    vsh: np.ndarray | None,
+    a: float,
+    m: float,
+    n: float,
+    rw: float,
+    rsh: float = 2.0,
+) -> dict[str, float]:
+    """Mean Sw from each vetted saturation method (evidence for the agent's choice).
+
+    Deterministic aggregation (not a new formula). Runs Archie and — when a Vsh array is
+    available — the Simandoux and Indonesia shaly-sand models, and returns each one's mean.
+
+    Returns:
+        ``{method_id: mean_sw}`` for the applicable methods.
+    """
+    out: dict[str, float] = {"sw_archie": _mean_finite(calc_sw(rt, phie, a, m, n, rw))}
+    if vsh is not None:
+        out["sw_simandoux"] = _mean_finite(sw_simandoux(rt, phie, vsh, a, m, n, rw, rsh))
+        out["sw_indonesia"] = _mean_finite(sw_indonesia(rt, phie, vsh, a, m, n, rw, rsh))
+    return out
+
+
 def sw_simandoux(
     rt: np.ndarray,
     phie: np.ndarray,

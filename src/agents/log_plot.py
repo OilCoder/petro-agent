@@ -290,6 +290,92 @@ def field_map_plot(wells: list[dict[str, Any]], out_path: str | Path) -> str | N
     return out.name
 
 
+def raw_log_plot(depth: np.ndarray, curves: dict[str, np.ndarray], out_path: str | Path) -> str:
+    """Render the raw-curve log (GR, RT, RHOB/NPHI, CALI) — no computed properties.
+
+    The author-mode pre-loop figure: shows the measured data only, so a vision-capable model
+    reads the rock before any interpretation exists. Returns the PNG basename.
+    """
+    tracks: list[tuple[str, list[tuple[Any, str, str | None]], bool]] = [
+        ("GR (API)", [(curves.get("GR"), "k", None)], False),
+        ("RT (ohm-m)", [(curves.get("RT"), "tab:red", None)], True),
+        (
+            "RHOB / NPHI",
+            [(curves.get("RHOB"), "tab:brown", "RHOB"), (curves.get("NPHI"), "tab:blue", "NPHI")],
+            False,
+        ),
+        ("CALI (in)", [(curves.get("CALI"), "tab:gray", None)], False),
+    ]
+    fig, axes = plt.subplots(1, len(tracks), figsize=(9, 8), sharey=True)
+    for ax, (label, series, logx) in zip(axes, tracks, strict=True):
+        for arr, color, name in series:
+            if arr is not None:
+                ax.plot(np.asarray(arr, dtype=float), depth, color=color, lw=0.6, label=name)
+        if logx:
+            ax.set_xscale("log")
+        if any(s[2] for s in series):
+            ax.legend(fontsize=6, loc="upper right")
+        ax.set_title(label, fontsize=8)
+        ax.grid(True, alpha=0.3)
+    axes[0].set_ylim(float(np.nanmax(depth)), float(np.nanmin(depth)))
+    axes[0].set_ylabel("Depth (m)")
+    fig.suptitle("Raw log curves", fontsize=10)
+    out = Path(out_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=90, bbox_inches="tight")
+    plt.close(fig)
+    return out.name
+
+
+def raw_nd_crossplot(rhob: np.ndarray, nphi: np.ndarray, out_path: str | Path) -> str:
+    """Render the raw neutron-density crossplot (figure only — no validator, no objection).
+
+    Returns the PNG basename.
+    """
+    r = np.asarray(rhob, dtype=float)
+    n = np.asarray(nphi, dtype=float)
+    valid = np.isfinite(r) & np.isfinite(n)
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.scatter(n[valid], r[valid], s=5, alpha=0.3, color="k")
+    ax.invert_yaxis()  # denser rock plots downward, standard N-D convention
+    ax.set_xlabel("NPHI (v/v)")
+    ax.set_ylabel("RHOB (g/cc)")
+    ax.set_title("Neutron-density crossplot (raw)")
+    ax.grid(True, alpha=0.3)
+    out = Path(out_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=90, bbox_inches="tight")
+    plt.close(fig)
+    return out.name
+
+
+def generate_descriptive_figures(
+    uwi: str,
+    depth: np.ndarray,
+    curves: dict[str, np.ndarray],
+    out_dir: str | Path,
+) -> list[dict[str, str]]:
+    """Generate the raw-curve (pre-interpretation) figures for author mode's vision track.
+
+    Filenames carry the ``_raw_`` marker so the driver's vision glob selects exactly these and
+    the post-loop ``generate_figures`` set never collides. Returns ``[{title, file}]``.
+    """
+    safe = _safe(uwi)
+    fig_dir = Path(out_dir) / "figuras"
+    figures: list[dict[str, str]] = []
+    log_png = raw_log_plot(depth, curves, fig_dir / f"{safe}_raw_composite.png")
+    figures.append({"title": "Raw log curves", "file": f"figuras/{log_png}"})
+    if curves.get("RHOB") is not None and curves.get("NPHI") is not None:
+        nd = raw_nd_crossplot(curves["RHOB"], curves["NPHI"], fig_dir / f"{safe}_raw_nd.png")
+        figures.append({"title": "Neutron-density crossplot (raw)", "file": f"figuras/{nd}"})
+    dist = distribution_plot(
+        {k: curves.get(k) for k in ("GR", "RHOB", "NPHI", "RT")},
+        fig_dir / f"{safe}_raw_distributions.png",
+    )
+    figures.append({"title": "Raw curve distributions", "file": f"figuras/{dist}"})
+    return figures
+
+
 def generate_figures(
     uwi: str,
     depth: np.ndarray,

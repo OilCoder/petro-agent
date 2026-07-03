@@ -48,7 +48,7 @@ def test_net_pay_plausibility_passes_realistic():
 
 
 def test_tier_downgrade_floors_at_bracketed():
-    from src.orchestrator.stages import _downgrade
+    from src.gating.rules import _downgrade  # moved to the shared gate helper (R14-D)
 
     assert _downgrade("firm", 1) == "qualified"
     assert _downgrade("firm", 2) == "bracketed"

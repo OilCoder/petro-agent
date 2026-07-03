@@ -14,11 +14,12 @@ from typing import Any
 
 import numpy as np
 
-from src.orchestrator.state import CONVERGED, DID_NOT_CONVERGE, PipelineState
+from src.gating.rules import gate_decision
+from src.orchestrator.state import PipelineState
 from src.orchestrator.steps import phie_step, sw_step, vsh_step
 from src.petrophysics.netpay import apply_cutoffs
 from src.validators.harness import run_validators
-from src.validators.objections import IRREDUCIBLE, MECHANICAL
+from src.validators.objections import IRREDUCIBLE
 from src.validators.physical import net_pay_plausibility
 
 VERSION = "0.1.0"
@@ -105,27 +106,15 @@ def route_after_typify(state: PipelineState) -> str:
     return "correct"
 
 
-_TIER_ORDER = ("bracketed", "qualified", "firm")
-
-
-def _downgrade(tier: str, levels: int) -> str:
-    """Lower a confidence tier by ``levels`` steps, floored at 'bracketed'."""
-    idx = max(0, _TIER_ORDER.index(tier) - levels)
-    return _TIER_ORDER[idx]
-
-
 def gating(state: PipelineState) -> dict[str, Any]:
     """Set convergence status, confidence tier, and the emission/abstention gate.
 
-    Runs after ``zonate`` so it can judge net-pay plausibility. The tier is downgraded
-    one step per irreducible objection (floored at bracketed); the run abstains when
+    Runs after ``zonate`` so it can judge net-pay plausibility. The gate math lives in
+    ``gate_decision`` (shared with the post-loop ``finalize_run``): tier downgraded one
+    step per irreducible objection (floored at bracketed); the run abstains when
     unresolved MECHANICAL objections remain or the net pay is physically implausible —
     the report then states an explicit abstention rather than a confident estimate.
     """
-    status = CONVERGED if state["correctable"] == 0 else DID_NOT_CONVERGE
-    provs = {p.provenance for p in state["params"].values()}
-    base_tier = "firm" if "core" in provs else ("qualified" if "offset" in provs else "bracketed")
-
     summary = state.get("summary", {})
     plausibility = net_pay_plausibility(
         state.get("net_pay_total_m", 0.0),
@@ -133,23 +122,8 @@ def gating(state: PipelineState) -> dict[str, Any]:
         float(summary.get("avg_phie", float("nan"))),
     )
     objections = list(state.get("objections", [])) + plausibility
-
-    n_irreducible = sum(1 for o in objections if o.objection_type == IRREDUCIBLE)
-    tier = _downgrade(base_tier, n_irreducible)
-
-    n_mechanical = sum(1 for o in objections if o.objection_type == MECHANICAL)
-    abstain_reasons: list[str] = []
-    if status == DID_NOT_CONVERGE and n_mechanical > 0:
-        abstain_reasons.append(f"{n_mechanical} unresolved MECHANICAL objection(s)")
-    abstain_reasons += [o.detail for o in plausibility]
-
-    return {
-        "convergence_status": status,
-        "confidence_tier": tier,
-        "objections": objections,
-        "abstain": bool(abstain_reasons),
-        "abstain_reasons": abstain_reasons,
-    }
+    verdict = gate_decision(objections, state["params"], state["correctable"] == 0)
+    return {"objections": objections, **verdict}
 
 
 def zonate(state: PipelineState) -> dict[str, Any]:
@@ -214,17 +188,59 @@ def _well_summary(
     }
 
 
-def _emit_parameters(state: PipelineState) -> dict[str, Any]:
+def emit_parameters(params: dict[str, Any], calibration: dict[str, Any]) -> dict[str, Any]:
     """Build the ledger parameter block, reflecting data-driven calibration overrides."""
-    calibration = state.get("calibration", {})
-    params: dict[str, Any] = {}
-    for k, p in state["params"].items():
+    out: dict[str, Any] = {}
+    for k, p in params.items():
         cal = calibration.get(k)
         if cal and cal.get("data_driven"):
-            params[k] = {"value": cal["value"], "unit": p.unit, "provenance": "data_driven"}
+            out[k] = {"value": cal["value"], "unit": p.unit, "provenance": "data_driven"}
         else:
-            params[k] = {"value": p.value, "unit": p.unit, "provenance": p.provenance}
-    return params
+            out[k] = {"value": p.value, "unit": p.unit, "provenance": p.provenance}
+    return out
+
+
+def _emit_parameters(state: PipelineState) -> dict[str, Any]:
+    """Ledger parameter block from the pipeline state (delegates to ``emit_parameters``)."""
+    return emit_parameters(state["params"], state.get("calibration", {}))
+
+
+def emit_descriptive(
+    uwi: str,
+    variant: str,
+    variant_degraded: bool,
+    raw_mnemonics: dict[str, Any],
+    well_metadata: dict[str, Any],
+    params: dict[str, Any],
+    edits: list[dict[str, Any]],
+    out_dir: str,
+) -> dict[str, Any]:
+    """Assemble and write the DESCRIPTIVE-ONLY ledger skeleton (author mode's pass-0).
+
+    Carries only what load/QC/config produced. Interpretation keys (``zones``, ``summary``,
+    ``net_pay_total_m``, ``uncertainty``, ``figures``) and the gate verdict (tier/abstain/status)
+    are deliberately ABSENT — the agent authors the interpretation and ``finalize_run`` gates the
+    FINAL chain. Their absence makes the loop's ``_initial_valid`` start from an empty set.
+    """
+    ledger = {
+        "run": {
+            "uwi": uwi,
+            "variant": variant,
+            "variant_degraded": variant_degraded,
+            "curve_provenance": raw_mnemonics,
+            "well_metadata": well_metadata,
+            "environmental_corrections": "none_applied",
+            "authoring_mode": "agent",
+        },
+        "parameters": emit_parameters(params, {}),
+        "calibration": {},
+        "objections": [],
+        "edits": edits,
+    }
+    out = Path(out_dir) / f"{uwi}_ledger.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(ledger, indent=2))
+    return ledger
 
 
 def emit(state: PipelineState) -> dict[str, Any]:
