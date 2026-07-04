@@ -154,6 +154,14 @@ def test_compare_methods_unknown_property_notes():
     assert "unknown property" in obs["note"]
 
 
+def test_vintage_neut_unlocks_phie_without_density():
+    # class-B wells (GR+NEUT+RT, no RHOB/NPHI) must still walk the chain (CXR-6)
+    vintage = {"GR", "NEUT", "RT"}
+    assert "compute_phie" not in available_actions(set(), vintage)  # still needs vsh first
+    assert "compute_phie" in available_actions({"vsh"}, vintage)
+    assert "electrofacies" not in available_actions({"vsh"}, vintage)  # needs RHOB/NPHI
+
+
 def test_recompute_invalidates_transitive_dependents():
     valid = {"vsh", "phie", "sw", "netpay", "uncertainty", "permeability"}
     after = invalidate_downstream(valid, "vsh")

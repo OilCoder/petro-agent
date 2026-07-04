@@ -28,3 +28,20 @@ def test_countrate_rejects_degenerate_anchors():
         phi_neutron_countrate(np.array([1.0]), 1000.0, 1000.0)
     with pytest.raises(ValueError):
         phi_neutron_countrate(np.array([1.0]), 2000.0, 500.0, phi_dense=0.0)
+
+
+def test_phie_step_countrate_dispatch_with_engine_anchors():
+    from src.orchestrator.steps import phie_step
+
+    n = 300
+    gr = np.concatenate([np.full(100, 100.0), np.full(200, 40.0)])  # shaly top, clean below
+    neut = np.concatenate([np.full(100, 600.0), np.linspace(900.0, 2000.0, 200)])
+    curves = {"GR": gr, "NEUT": neut}
+    p = {"rho_ma": 2.71, "rho_fl": 1.0, "phie_max": 0.45, "phi_sh_d": 0.1, "phi_sh_n": 0.35}
+    arr, cal = phie_step(curves, np.zeros(n), p, method="phi_neutron_countrate")
+    anchors = cal["countrate_anchors"]["value"]
+    assert anchors["n_shale"] < anchors["n_dense"]
+    finite = arr[np.isfinite(arr)]
+    assert finite.size == n and finite.min() >= 0.0 and finite.max() <= 0.45
+    # dense (high-count) samples must read lower porosity than the shaly low-count top
+    assert np.mean(arr[200:]) < np.mean(arr[:100])

@@ -48,6 +48,7 @@ PRODUCES: dict[str, str] = {
 _REQUIRES: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
     "compute_vsh": ((), ("GR",)),
     "compute_phie": (("vsh",), ("RHOB", "NPHI")),
+    # NOTE: compute_phie also unlocks via _CURVE_ALTERNATIVES (vintage NEUT path).
     "compute_sw": (("phie",), ("RT",)),
     "apply_cutoffs": (("sw",), ()),
     "run_uncertainty": (("netpay",), ()),
@@ -56,6 +57,11 @@ _REQUIRES: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
     "electrofacies": ((), ("GR", "RHOB", "NPHI")),
     "lithology": ((), ("RHOB", "NPHI")),
     "derived_parameters": (("phie", "sw"), ()),
+}
+
+# Curve ALTERNATIVES per action: any one set present unlocks it (vintage class-B paths).
+_CURVE_ALTERNATIVES: dict[str, tuple[frozenset[str], ...]] = {
+    "compute_phie": (frozenset({"RHOB", "NPHI"}), frozenset({"NEUT"})),
 }
 
 # Dependency graph (property -> the properties it directly depends on), for recompute invalidation.
@@ -100,7 +106,10 @@ def available_actions(valid: set[str], curves: set[str], vision: bool = False) -
     """
     actions: list[str] = []
     for action, (deps, need_curves) in _REQUIRES.items():
-        if all(d in valid for d in deps) and all(c in curves for c in need_curves):
+        curves_ok = all(c in curves for c in need_curves)
+        if not curves_ok and action in _CURVE_ALTERNATIVES:
+            curves_ok = any(alt <= curves for alt in _CURVE_ALTERNATIVES[action])
+        if all(d in valid for d in deps) and curves_ok:
             actions.append(action)
     # observation actions
     for obs, needs in _OBSERVE_NEEDS.items():

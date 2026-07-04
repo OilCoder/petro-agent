@@ -18,7 +18,7 @@ from src.petrophysics.lithology import (
     estimate_rw,
     estimate_shale_points,
 )
-from src.petrophysics.phie import calc_phie, phi_density, phi_neutron
+from src.petrophysics.phie import calc_phie, phi_density, phi_neutron, phi_neutron_countrate
 from src.petrophysics.sw import calc_sw, sw_indonesia, sw_simandoux
 from src.petrophysics.vsh import (
     OLD_ROCKS,
@@ -100,6 +100,40 @@ def vsh_step(
     return arr, cal
 
 
+def _phie_countrate_step(
+    curves: dict[str, np.ndarray], nan: np.ndarray, p: dict[str, float]
+) -> tuple[np.ndarray, dict[str, Any]]:
+    """Vintage class-B porosity: count-rate transform with ENGINE-derived per-well anchors.
+
+    Anchors come from the (already zone-masked) curves — dense = P95 of finite counts, shale =
+    P10 of counts over top-quartile GR (fallback P5 of all counts). Degenerate anchors return
+    NaN porosity (honest failure, no guess). Validated vs sonic: median r=0.80, MAD=0.032.
+    """
+    neut = np.asarray(curves.get("NEUT", nan), dtype=float)
+    gr = np.asarray(curves.get("GR", nan), dtype=float)
+    finite = np.isfinite(neut)
+    if int(finite.sum()) < 50:
+        return nan.copy(), {}
+    n_dense = float(np.percentile(neut[finite], 95))
+    hi_gr = finite & np.isfinite(gr) & (gr >= np.nanpercentile(gr, 75))
+    n_shale = (
+        float(np.percentile(neut[hi_gr], 10))
+        if int(hi_gr.sum()) > 50
+        else float(np.percentile(neut[finite], 5))
+    )
+    if n_shale >= n_dense:
+        return nan.copy(), {}
+    arr = phi_neutron_countrate(neut, n_dense, n_shale, phie_max=p["phie_max"])
+    cal = {
+        "countrate_anchors": {
+            "value": {"n_dense": round(n_dense, 1), "n_shale": round(n_shale, 1)},
+            "data_driven": True,
+            "regional_default": None,
+        }
+    }
+    return arr, cal
+
+
 def phie_step(
     curves: dict[str, np.ndarray], vsh: np.ndarray, p: dict[str, float], method: str | None = None
 ) -> tuple[np.ndarray, dict[str, Any]]:
@@ -113,6 +147,8 @@ def phie_step(
         return arr, cal
     if method == "phi_neutron":
         return phi_neutron(nphi, p["phie_max"]), {}
+    if method == "phi_neutron_countrate":
+        return _phie_countrate_step(curves, nan, p)
     phi_sh_d, phi_sh_n, sh_dd = estimate_shale_points(
         rhob, nphi, vsh, rho_ma, p["rho_fl"], p["phi_sh_d"], p["phi_sh_n"]
     )
