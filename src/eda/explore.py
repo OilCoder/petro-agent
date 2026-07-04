@@ -159,6 +159,46 @@ def badhole_summary(quality_map: np.ndarray) -> dict[str, Any]:
     }
 
 
+def invasion_scan(
+    rt: np.ndarray,
+    rxo: np.ndarray | None = None,
+    rmed: np.ndarray | None = None,
+) -> dict[str, Any]:
+    """Summarize the invasion profile from multi-depth resistivities (raw-curve facts only).
+
+    In water-based mud, a shallow reading above the deep one (``Rxo/RT > 1``) marks invaded —
+    hence permeable — rock. Returns fractions and median ratios; never a permeability number.
+
+    Args:
+        rt: deep resistivity (ohm-m).
+        rxo: shallow/flushed-zone resistivity (ohm-m), optional.
+        rmed: medium resistivity (ohm-m), optional.
+
+    Returns:
+        ``{n, frac_invaded, frac_reversed, median_rxo_rt, median_rmed_rt}`` — ratio keys only
+        where the corresponding curve overlaps; ``{"n": 0}`` when nothing overlaps.
+    """
+    rt_a = np.asarray(rt, dtype=float)
+    out: dict[str, Any] = {"n": 0}
+    if rxo is not None:
+        rxo_a = np.asarray(rxo, dtype=float)
+        ok = np.isfinite(rt_a) & np.isfinite(rxo_a) & (rt_a > 0) & (rxo_a > 0)
+        n = int(ok.sum())
+        out["n"] = n
+        if n:
+            ratio = rxo_a[ok] / rt_a[ok]
+            out["frac_invaded"] = round(float(np.mean(ratio > 1.2)), 3)
+            out["frac_reversed"] = round(float(np.mean(ratio < 0.8)), 3)
+            out["median_rxo_rt"] = round(float(np.median(ratio)), 3)
+    if rmed is not None:
+        rmed_a = np.asarray(rmed, dtype=float)
+        ok_m = np.isfinite(rt_a) & np.isfinite(rmed_a) & (rt_a > 0) & (rmed_a > 0)
+        if int(ok_m.sum()):
+            out["median_rmed_rt"] = round(float(np.median(rmed_a[ok_m] / rt_a[ok_m])), 3)
+            out["n"] = max(out["n"], int(ok_m.sum()))
+    return out
+
+
 def build_eda_digest(ctx: dict[str, Any]) -> dict[str, Any]:
     """Pre-compute the compact EDA observations the agent reads (it observes, never computes).
 
@@ -178,6 +218,8 @@ def build_eda_digest(ctx: dict[str, Any]) -> dict[str, Any]:
         digest["gr_baseline"] = gr_baseline_check(curves["GR"])
     if "RT" in curves:
         digest["low_resistivity"] = low_resistivity_scan(curves["RT"], depth)
+    if "RT" in curves and ("RXO" in curves or "RMED" in curves):
+        digest["invasion"] = invasion_scan(curves["RT"], curves.get("RXO"), curves.get("RMED"))
     if "RHOB" in curves and "NPHI" in curves:
         cp = crossplot_density_neutron(curves["RHOB"], curves["NPHI"])
         # surface the neutral point-shares only — never the 'nearest' label (that is the analyst's)

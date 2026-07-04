@@ -487,6 +487,21 @@ def _resistivity_analysis(ledger: dict[str, Any]) -> str:
         if lr
         else "Resistivity present; no low-resistivity scan in the EDA digest."
     )
+    inv = ledger.get("run", {}).get("eda", {}).get("invasion")
+    if inv and inv.get("n"):
+        body += (
+            f"\n\nInvasion profile (multi-depth resistivities, {inv['n']} samples): "
+            f"fraction with shallow reading above deep (Rxo/RT > 1.2, invaded/permeable "
+            f"indication): {_fmt(inv.get('frac_invaded'), 3)}; reversed (< 0.8): "
+            f"{_fmt(inv.get('frac_reversed'), 3)}; median Rxo/RT "
+            f"{_fmt(inv.get('median_rxo_rt'), 3)}"
+            + (
+                f"; median Rmed/RT {_fmt(inv.get('median_rmed_rt'), 3)}"
+                if inv.get("median_rmed_rt") is not None
+                else ""
+            )
+            + ". Raw-curve facts; naming moveable hydrocarbon is the analyst's judgement."
+        )
     return f"## Resistivity analysis\n\n{body}\n"
 
 
