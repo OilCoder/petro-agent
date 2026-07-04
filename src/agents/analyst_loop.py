@@ -250,6 +250,8 @@ def observation_text(
     actions: list[str],
     order: list[str] | None = None,
     last_obs: dict[str, Any] | None = None,
+    field_context: dict[str, Any] | None = None,
+    case_file: str | None = None,
 ) -> str:
     """STATE digest + the report-in-progress (so the agent sees the document it is building).
 
@@ -291,6 +293,10 @@ def observation_text(
         "optionals_not_yet_added": {a: _OPTIONAL_DESC.get(a, a) for a in optionals_available},
         "zone_of_interest": ledger.get("zone_of_interest", "full logged interval (not restricted)"),
         "baseline_complete": not stale,
+        # GA-1: the field-study evidence pack (engine medians/tops facts; interpretation is the
+        # agent's). GA-4: the agent's own notes from prior wells in this batch.
+        **({"field_context": field_context} if field_context else {}),
+        **({"your_prior_field_notes": case_file[-1500:]} if case_file else {}),
         "report_so_far": _report_outline(ledger, order or []),
         "eda": ledger.get("run", {}).get("eda", {}),
         "hint": "A MECHANICAL objection MIGHT improve with a different vetted method (try at most "
@@ -298,7 +304,7 @@ def observation_text(
         "for it; what it depends on is in its computed_from. Optional analyses do not need "
         "convergence. Pick 'finish' when your choices are made.",
     }
-    return "STATE:\n" + json.dumps(state, indent=1, default=str)[:5200]
+    return "STATE:\n" + json.dumps(state, indent=1, default=str)[:6500]
 
 
 # Factual one-liners: WHAT each optional computes + its inputs (an affordance, not a nudge).
@@ -648,6 +654,8 @@ def run_analyst_loop(
     fallback_model: str = "",
     max_steps: int = 12,
     author: bool = False,
+    field_context: dict[str, Any] | None = None,
+    case_file: str | None = None,
 ) -> dict[str, Any]:
     """Run the observe→decide→compute loop; return ``{section_plan, graph, fell_back}``.
 
@@ -679,7 +687,7 @@ def run_analyst_loop(
         actions = available_actions(
             valid, curves, vision=vision_on
         )  # offer everything; no-ops are measured, not hidden
-        obs = observation_text(ledger, valid, actions, order, last_obs)
+        obs = observation_text(ledger, valid, actions, order, last_obs, field_context, case_file)
         choice, empty, from_default = _decide(obs, actions, valid, curves, chats, system)
         empty_returns += empty
         action = choice["action"]
