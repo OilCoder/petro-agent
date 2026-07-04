@@ -775,6 +775,7 @@ def run_analyst_loop(
             for o in cross_objs
         )
 
+    field_notes = _write_field_notes(ledger, chats, author)
     ledger.setdefault("run", {})["analyst_loop"] = {
         "steps_taken": steps_taken,
         "agent_steps": agent_steps,
@@ -789,6 +790,7 @@ def run_analyst_loop(
         "vision_enabled": vision_on,
         "author_mode": author,
         "observation_steps": observation_steps,
+        "field_notes": field_notes,
     }
     ledger["run"]["methodology_graph"] = graph.to_json()
     # Re-persist: pass-0's emit wrote a pre-loop snapshot; the agent's choices must be auditable.
@@ -799,7 +801,52 @@ def run_analyst_loop(
         # fell_back means the agent contributed NO decision of its own (every executed step was the
         # deterministic default) — a 100%-default run must not read as the agent's analysis.
         "fell_back": agent_steps == 0,
+        "field_notes": field_notes,
     }
+
+
+# GA-4 writer contract: the agent's OWN words, qualitative only. Numbers are scrubbed
+# mechanically afterwards — the ledger holds the numbers; notes hold the judgement.
+_NOTES_SYSTEM = """You are the same analyst closing your field notebook for this well. Write a
+SHORT field note (max 120 words, plain text) that you — on the NEXT well of this field — will read
+before starting. QUALITATIVE only: what you chose and why, what surprised you, what you would
+watch for next time. HEDGE anything uncertain (this is one well, not the field). Write NO numbers
+— any digit you write will be removed. Do not tell your future self what to decide; record what
+you saw and judged here."""
+
+_DIGITS = re.compile(r"\d+(?:\.\d+)?")
+
+
+def _write_field_notes(
+    ledger: dict[str, Any], chats: list[tuple[ChatFn | None, str]], author: bool
+) -> str | None:
+    """One-shot field note at author finish (GA-4): the agent's own qualitative words.
+
+    The engine hands only ledger-derived facts as context; the reply is mechanically scrubbed of
+    every number (notes feed the NEXT wells' observations, and an unledgered number must never
+    propagate). Returns None outside author mode or when no chat backend answers.
+    """
+    if not author:
+        return None
+    summary = {
+        "vsh_method": ledger.get("vsh_comparison", {}).get("selected"),
+        "phie_method": ledger.get("porosity_comparison", {}).get("selected"),
+        "sw_method": ledger.get("sw_summary", {}).get("method"),
+        "zone_of_interest_set": ledger.get("zone_of_interest") is not None,
+        "n_zones": len(ledger.get("zones") or []),
+        "objections": [o.get("validator_id") for o in ledger.get("objections", [])][:6],
+        "optional_analyses": sorted((ledger.get("tool_results") or {}).keys()),
+    }
+    for fn, _model in chats:
+        if fn is None:
+            continue
+        try:
+            raw = str(fn(_NOTES_SYSTEM, json.dumps(summary))).strip()
+        except Exception:  # noqa: BLE001 — notes are best-effort; the run must not die here
+            continue
+        if raw:
+            return _DIGITS.sub("[n]", raw)[:900]
+    return None
 
 
 def _optionals_in(order: list[str]) -> list[str]:

@@ -160,6 +160,47 @@ def test_observation_steps_and_evidence_efficiency_measured(tmp_path):
     assert br["evidence_efficiency"] == round(br["interpretive_choices"] / 2, 3)
 
 
+def test_field_notes_written_scrubbed_and_carried_to_next_well(tmp_path):
+    # GA-4: at author finish the agent writes ONE qualitative note; every digit is scrubbed
+    # mechanically; the next well reads it via case_file -> your_prior_field_notes.
+    ledger, ctx = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
+    it = iter(_AUTHOR_SCRIPT)
+
+    def chat(system, user):
+        if "SKEPTICAL" in system:
+            return json.dumps({"objections": []})
+        if "field notebook" in system:
+            return "Chose Simandoux over Archie; porosity near 0.25 looked optimistic up top."
+        try:
+            return json.dumps(next(it))
+        except StopIteration:
+            return json.dumps({"action": "finish"})
+
+    res = run_analyst_loop(ledger, ctx, "free", chat, "fake", max_steps=16, author=True)
+    notes = res["field_notes"]
+    assert notes == ledger["run"]["analyst_loop"]["field_notes"]
+    assert "Simandoux" in notes
+    assert "0.25" not in notes and "[n]" in notes  # unledgered number never propagates
+    # non-author runs write no notes
+    ledger2, ctx2 = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
+    res2 = run_analyst_loop(ledger2, ctx2, "free", _scripted([]), "fake", max_steps=2)
+    assert res2["field_notes"] is None
+    # the next well sees the carried notes in its observations
+    ledger3, ctx3 = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
+    seen: list[str] = []
+
+    def spy_chat(system, user):
+        if "SKEPTICAL" in system:
+            return json.dumps({"objections": []})
+        seen.append(user)
+        return json.dumps({"action": "finish"})
+
+    run_analyst_loop(
+        ledger3, ctx3, "free", spy_chat, "fake", max_steps=4, author=True, case_file=notes
+    )
+    assert any("your_prior_field_notes" in obs and "Simandoux" in obs for obs in seen)
+
+
 def test_author_compare_methods_feeds_the_next_decision(tmp_path):
     ledger, ctx = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
     script = [
