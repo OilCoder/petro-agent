@@ -85,8 +85,19 @@ def _build_quality_map(
         else np.zeros(n, bool)
     )
 
+    # Porosity coverage: triple-combo (RHOB+NPHI) when present; the vintage count-rate neutron
+    # (class-B wells) is a valid porosity source too — a missing density pair on those wells is
+    # a CLASS caveat, not an unusable depth. No porosity source at all -> degraded.
+    neut = curves.get("NEUT")
+    if rhob is not None or nphi is not None:
+        porosity_bad = rhob_bad | nphi_bad | rhob_low
+    elif neut is not None:
+        porosity_bad = np.isnan(np.asarray(neut, dtype=float))
+    else:
+        porosity_bad = np.ones(n, bool)
+
     excluded = gr_bad | rt_bad  # need GR and RT to compute anything
-    degraded = (~excluded) & (rhob_bad | nphi_bad | rhob_low)
+    degraded = (~excluded) & porosity_bad
     if bad_hole is not None:
         degraded = degraded | ((~excluded) & bad_hole)
 

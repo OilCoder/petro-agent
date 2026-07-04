@@ -19,6 +19,7 @@ KS_BASELINE_LAT = 40.0
 SIXTH_PM_LON = -97.3667
 MILES_PER_DEG_LAT = 69.05
 MILES_PER_DEG_LON_EQ = 69.17  # scaled by cos(lat)
+PLSS_PRECISION_KM = 1.6  # declared section-center precision
 TOWNSHIP_MILES = 6.0
 
 # Section numbering is boustrophedon starting at the NE corner: row 0 (north) runs E→W
@@ -69,4 +70,8 @@ def plss_to_latlon(
     lat = KS_BASELINE_LAT - ((twn - 1) + (row + 0.5) / 6.0) * (TOWNSHIP_MILES / MILES_PER_DEG_LAT)
     lon_miles_per_deg = MILES_PER_DEG_LON_EQ * math.cos(math.radians(lat))
     lon = SIXTH_PM_LON - ((rng - 1) + (col + 0.5) / 6.0) * (TOWNSHIP_MILES / lon_miles_per_deg)
-    return {"latitude": round(lat, 5), "longitude": round(lon, 5), "precision_km": 1.6}
+    return {
+        "latitude": round(lat, 5),
+        "longitude": round(lon, 5),
+        "precision_km": PLSS_PRECISION_KM,
+    }
