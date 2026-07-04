@@ -98,6 +98,21 @@ def _header(run: dict[str, Any]) -> str:
         meta_rows += f"| **Log date** | {meta['log_date']} |\n"
     if meta.get("service_company"):
         meta_rows += f"| **Service company** | {meta['service_company']} |\n"
+    acq = run.get("acquisition", {})
+    if acq.get("DATE"):
+        meta_rows += f"| **Acquisition date (header)** | {acq['DATE']} |\n"
+    bht = acq.get("BHT", {})
+    if isinstance(bht, dict) and isinstance(bht.get("value"), (int, float)):
+        meta_rows += f"| **BHT (measured)** | {bht['value']:g} {bht.get('unit') or '°F'} |\n"
+    for key, label in (("RM", "Mud resistivity (RM)"), ("RMF", "Mud filtrate (RMF)")):
+        v = acq.get(key, {})
+        if isinstance(v, dict) and isinstance(v.get("value"), (int, float)):
+            meta_rows += f"| **{label}** | {v['value']:g} {v.get('unit') or 'ohm-m'} |\n"
+    if acq.get("SECT") and acq.get("TOWN") and acq.get("RANG"):
+        meta_rows += (
+            f"| **PLSS location** | Sec {acq['SECT']} T{acq['TOWN']} R{acq['RANG']} "
+            "(map precision ±1.6 km) |\n"
+        )
     return (
         f"# Petrophysical Interpretation Report — {run.get('uwi', 'UNKNOWN')}\n\n"
         "| | |\n|---|---|\n"

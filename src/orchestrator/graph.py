@@ -105,6 +105,7 @@ def run_descriptive_pass(
     ledger["run"]["config_hash_sha256"] = config_hash(config_path) if config_path else config_hash()
     ledger["run"]["versions"] = pin_versions()
     ledger["run"]["unmapped_curves"] = well.unmapped
+    ledger["run"]["acquisition"] = well.acquisition  # header params (BHT/RMF/PLSS/date)
 
     ctx = {
         "curves": qc.curves,
@@ -166,6 +167,7 @@ def run_pipeline(
     ledger["run"]["config_hash_sha256"] = config_hash(config_path) if config_path else config_hash()
     ledger["run"]["versions"] = pin_versions()
     ledger["run"]["unmapped_curves"] = well.unmapped  # raw curves dropped at load (transparency)
+    ledger["run"]["acquisition"] = well.acquisition  # header params (BHT/RMF/PLSS/date)
 
     if uncertainty:
         cal = final.get("calibration", {})

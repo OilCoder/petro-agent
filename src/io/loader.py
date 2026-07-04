@@ -8,6 +8,7 @@ Phase 0 and moves to ``src/params/mnemonic_aliases.json`` in Phase 2.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
 import lasio
@@ -53,6 +54,7 @@ class WellData:
     raw_mnemonics: dict[str, str] = field(default_factory=dict)  # canonical -> raw
     metadata: dict[str, str] = field(default_factory=dict)  # well/tool provenance
     unmapped: list[str] = field(default_factory=list)  # raw mnemonics dropped (no canonical alias)
+    acquisition: dict[str, object] = field(default_factory=dict)  # header params (BHT/RMF/PLSS…)
 
 
 def _match(mnemonic: str) -> tuple[str, int] | None:
@@ -76,6 +78,45 @@ def _header(las: lasio.LASFile, key: str, default: str = "") -> str:
     except (KeyError, AttributeError):
         pass
     return default
+
+
+# Acquisition header params worth carrying to the ledger: mud/temperature/elevation numerics
+# and location/date text. Read from BOTH ~Parameter and ~Well blocks (vendors vary).
+_ACQ_NUMERIC = ("BHT", "RM", "RMF", "RMC", "RMB", "MFT", "EMT", "MCST", "EKB", "EGL", "EDF")
+_ACQ_TEXT = ("DATE", "DFT", "SECT", "TOWN", "RANG", "LOC", "COUN")
+
+
+def _param_lookup(las: lasio.LASFile, key: str) -> tuple[object, str] | None:
+    """Find a header item by mnemonic in ~Parameter then ~Well; None when absent/empty."""
+    for block in (las.params, las.well):
+        try:
+            if key in block:
+                item = block[key]
+                if item.value not in (None, ""):
+                    return item.value, str(item.unit or "").strip()
+        except (KeyError, AttributeError):
+            continue
+    return None
+
+
+def _acquisition(las: lasio.LASFile) -> dict[str, object]:
+    """Extract acquisition header params (numeric parsed, unit kept) from ~Parameter/~Well."""
+    out: dict[str, object] = {}
+    for key in _ACQ_NUMERIC:
+        hit = _param_lookup(las, key)
+        if hit is None:
+            continue
+        raw, unit = hit
+        cleaned = re.sub(r"[^\d.+-]", "", str(raw))  # "2306'" -> "2306"; "110 DEGF" -> "110"
+        try:
+            out[key] = {"value": float(cleaned), "unit": unit}
+        except (TypeError, ValueError):
+            out[key] = {"value": str(raw).strip(), "unit": unit}
+    for key in _ACQ_TEXT:
+        hit = _param_lookup(las, key)
+        if hit is not None:
+            out[key] = str(hit[0]).strip()
+    return out
 
 
 def _normalize_depth(depth: np.ndarray, unit: str) -> tuple[np.ndarray, bool]:
@@ -174,4 +215,5 @@ def load_las(path: str) -> WellData:
         raw_mnemonics=raw,
         metadata={k: v for k, v in metadata.items() if v},
         unmapped=unmapped,
+        acquisition=_acquisition(las),
     )
