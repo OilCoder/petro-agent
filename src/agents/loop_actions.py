@@ -328,6 +328,14 @@ def _exec_optional(action, ctx, ledger, method, args, valid):  # noqa: ANN001
     requested = method
     tool = method or _OPTIONAL_DEFAULT_TOOL[action]
     coerced = False
+    # Analyst indirection: swirr="buckles" resolves to the Buckles-fit Swirr already computed
+    # by the derived tool (engine number; the agent only points at it, never authors it).
+    if args and args.get("swirr") == "buckles":
+        fit = ledger.get("tool_results", {}).get("bvw", {}).get("value", {}).get("swirr_mean")
+        if fit is not None:
+            args = {**args, "swirr": fit}
+        else:
+            args = {k: v for k, v in args.items() if k != "swirr"}
     try:
         result = _OPTIONAL_RUNNERS[action](tool, ctx, args)
     except KeyError:  # hallucinated/unknown method -> coerce to the action's default

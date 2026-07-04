@@ -519,6 +519,13 @@ def _rw(ledger: dict[str, Any]) -> str:
     ]
     if rw_swing is not None:
         rows.append(f"- Net-pay sensitivity to Rw: {_fmt(rw_swing, 1)} m swing.")
+    rwt = ledger.get("tool_results", {}).get("rw_temperature", {}).get("value", {})
+    if rwt.get("rw_formation") is not None:
+        rows.append(
+            f"- Formation-temperature correction (Arps, regional gradient): Rw ≈ "
+            f"{_fmt(rwt.get('rw_formation'), 4)} ohm-m at {_fmt(rwt.get('t_formation_c'), 1)} °C "
+            "(evidence only — Sw uses the calibrated Rw; the gradient is a regional default)."
+        )
     return "\n".join(rows) + "\n"
 
 

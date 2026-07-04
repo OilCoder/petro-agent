@@ -10,6 +10,26 @@ def test_verify_keyed_passes_on_ledger_numbers():
     assert verify_keyed(report, ledger)["passed"] is True
 
 
+def test_verify_keyed_rounding_floors_accept_honest_renders():
+    # a 1-decimal render of a ledger float must not read as authored (1.8 vs 1.8288)
+    ledger = {"zones": [{"net_pay_m": 1.8288}], "summary": {"avg_vsh": 0.0332}}
+    report = "run of 1.8 m with average Vsh 0.033"
+    assert verify_keyed(report, ledger)["passed"] is True
+
+
+def test_verify_keyed_still_flags_authored_values():
+    ledger = {"summary": {"avg_phie": 0.162}}
+    assert verify_keyed("porosity is 0.31", ledger)["passed"] is False  # invented
+    assert verify_keyed("net pay is 240.7 m", ledger)["passed"] is False  # no source
+
+
+def test_verify_keyed_extra_allowed_admits_declared_constants():
+    ledger = {"summary": {}}
+    report = "merged intervals (gap tolerance 1.5 m)"
+    assert verify_keyed(report, ledger)["passed"] is False
+    assert verify_keyed(report, ledger, extra_allowed=(1.5,))["passed"] is True
+
+
 def test_verify_keyed_flags_hallucination():
     ledger = {"run": {"net_pay": 12.5}}
     report = "Net pay is 12.5 m and Sw is 0.37."  # 0.37 not in ledger
