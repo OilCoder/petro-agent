@@ -21,12 +21,14 @@ from src.agents.tool_dispatch import (
     _run_rock_quality_method,
 )
 from src.eda import explore
+from src.eda.field_study import agreement_stats
 from src.gating.rules import high_leverage_flag
 from src.orchestrator.stages import zonate
 from src.orchestrator.steps import default_vsh_key, phie_step, sw_step, vsh_step
 from src.petrophysics.phie import porosity_method_comparison
-from src.petrophysics.sw import sw_method_comparison
-from src.petrophysics.vsh import vsh_method_comparison
+from src.petrophysics.sonic import phi_sonic_wyllie
+from src.petrophysics.sw import calc_sw, sw_method_comparison
+from src.petrophysics.vsh import calc_vsh, vsh_method_comparison, vsh_neutron_density
 from src.uncertainty.montecarlo import build_method_alts, multi_seed_robustness, propagate_net_pay
 from src.uncertainty.sensitivity import sensitivity_net_pay
 
@@ -87,6 +89,7 @@ _OBSERVE_NEEDS: dict[str, tuple[str, ...]] = {
     "low_res_scan": ("__curves__:RT",),
     "compare_methods": (),  # property chosen at call time; prerequisites checked by the runner
     "request_tool": (),  # records a missing-computation request (GA-2); never executes anything
+    "validate_choice": (),  # engine cross-check of a chosen property vs an independent contrast
 }
 
 
@@ -576,23 +579,116 @@ def _compare_methods(ctx: dict[str, Any], ledger: dict[str, Any], prop: str) -> 
     return {"note": f"unknown property '{prop}' — use vsh, porosity, or sw"}
 
 
+# Sonic contrast presets (declared constants, limestone matrix / fresh-mud fluid, us/ft).
+_DT_MATRIX_LS = 47.5
+_DT_FLUID = 189.0
+
+
+def _validate_porosity(ctx: dict[str, Any]) -> dict[str, Any]:
+    """Chosen PHIE vs an independent contrast: sonic Wyllie (DT) or the service PHID curve."""
+    cf = ctx.get("curves_full", ctx["curves"])
+    pf = _pf(ctx)
+    if "DT" in cf:
+        contrast = phi_sonic_wyllie(cf["DT"], _DT_MATRIX_LS, _DT_FLUID, pf["phie_max"])
+        label = f"phi_sonic_wyllie (dt_ma={_DT_MATRIX_LS}, dt_fl={_DT_FLUID}, limestone preset)"
+    elif "PHID_SVC" in cf:
+        svc = np.asarray(cf["PHID_SVC"], dtype=float)
+        finite = svc[np.isfinite(svc)]
+        if finite.size and float(np.median(finite)) > 1.0:  # service curve logged in percent
+            svc = svc / 100.0
+        contrast, label = svc, "PHID_SVC (service-computed density porosity)"
+    else:
+        return {
+            "property": "porosity",
+            "note": "no independent contrast available (no DT, no PHID_SVC)",
+        }
+    return {"property": "porosity", "contrast": label, **agreement_stats(ctx["phie"], contrast)}
+
+
+def _validate_vsh(ctx: dict[str, Any], ledger: dict[str, Any]) -> dict[str, Any]:
+    """Chosen Vsh vs the OTHER indicator family (GR-based <-> neutron-density-based)."""
+    curves, p, pf = ctx["curves"], ctx["params"], _pf(ctx)
+    selected = str(ledger.get("vsh_comparison", {}).get("selected", ""))
+    nd_family = selected in ("vsh_neutron_density", "vsh_multimineral")
+    if not nd_family and {"RHOB", "NPHI"} <= set(curves):
+        contrast = vsh_neutron_density(
+            curves["NPHI"],
+            curves["RHOB"],
+            pf["rho_ma"],
+            pf["rho_fl"],
+            pf["phi_sh_n"],
+            pf["phi_sh_d"],
+        )
+        label = "vsh_neutron_density (non-GR clay indicator)"
+    elif nd_family and "GR" in curves:
+        contrast = calc_vsh(
+            curves["GR"], float(p["gr_min"].value), float(p["gr_max"].value), ctx["variant"]
+        )
+        label = "GR Larionov (non-N-D clay indicator)"
+    else:
+        return {"property": "vsh", "note": "no independent contrast family computable here"}
+    return {"property": "vsh", "contrast": label, **agreement_stats(ctx["vsh"], contrast)}
+
+
+def _validate_sw(ctx: dict[str, Any], ledger: dict[str, Any]) -> dict[str, Any]:
+    """Chosen Sw vs plain Archie on the same PHIE/Rw (structural delta of the shaly-sand term)."""
+    summary = ledger.get("sw_summary", {})
+    if str(summary.get("method", "")) == "sw_archie":
+        return {"property": "sw", "note": "chosen method IS Archie -- no independent contrast"}
+    pf = _pf(ctx)
+    rw = float(summary.get("rw", pf["Rw"]))
+    contrast = calc_sw(ctx["curves"]["RT"], ctx["phie"], pf["a"], pf["m"], pf["n"], rw)
+    return {
+        "property": "sw",
+        "contrast": f"sw_archie (same a/m/n, Rw={rw})",
+        **agreement_stats(ctx["sw"], contrast),
+    }
+
+
+def _validate_choice(ctx: dict[str, Any], ledger: dict[str, Any], prop: str) -> dict[str, Any]:
+    """Engine cross-check (GA-3): agreement (n, r, MAD, bias) between the CHOSEN property and an
+    independent contrast the engine computes. Facts only -- whether the agreement is acceptable is
+    the analyst's judgement; without a contrast the note says so honestly."""
+    ready = {"porosity": "phie", "vsh": "vsh", "sw": "sw"}
+    if prop not in ready:
+        return {"note": f"unknown property '{prop}' -- use vsh, porosity, or sw"}
+    if ctx.get(ready[prop]) is None:
+        return {
+            "property": prop,
+            "note": f"compute {ready[prop]} first -- nothing chosen to validate",
+        }
+    if prop == "porosity":
+        return _validate_porosity(ctx)
+    if prop == "vsh":
+        return _validate_vsh(ctx, ledger)
+    return _validate_sw(ctx, ledger)
+
+
 def observe(
     action: str, ctx: dict[str, Any], ledger: dict[str, Any], target=None, args=None
 ) -> dict[str, Any]:  # noqa: ANN001
     """Read-only observation: zone summary / distribution / point value (never the raw array)."""
     args = args or {}
     tgt = target or args.get("target")
-    if action == "zone_stats":
-        zones = ledger.get("zones", [])[:15]
-        return {"n_zones": len(ledger.get("zones", [])), "zones": zones}
-    if action == "examine_figures":
-        return _examine_figures(ctx)
-    if action == "depth_quality":
-        return depth_quality_profile(ctx.get("curves_full", ctx["curves"]), ctx["depth_m"])
-    if action == "compare_methods":
-        return _compare_methods(ctx, ledger, str(args.get("property", tgt or "")))
-    if action == "request_tool":
-        return _request_tool(ledger, args)
+    named = {
+        "zone_stats": lambda: {
+            "n_zones": len(ledger.get("zones", [])),
+            "zones": ledger.get("zones", [])[:15],
+        },
+        "examine_figures": lambda: _examine_figures(ctx),
+        "depth_quality": lambda: depth_quality_profile(
+            ctx.get("curves_full", ctx["curves"]), ctx["depth_m"]
+        ),
+        "compare_methods": lambda: _compare_methods(
+            ctx, ledger, str(args.get("property", tgt or ""))
+        ),
+        "request_tool": lambda: _request_tool(ledger, args),
+        "validate_choice": lambda: _validate_choice(
+            ctx, ledger, str(args.get("property", tgt or ""))
+        ),
+    }
+    if action in named:
+        return named[action]()
     if action in ("percentiles", "value_at", "extremes"):
         return _point_obs(action, _resolve_target(tgt, ctx), tgt, ctx, args)
     return _observe_eda(action, ctx, tgt)

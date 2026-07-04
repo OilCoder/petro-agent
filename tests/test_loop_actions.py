@@ -163,6 +163,49 @@ def test_request_tool_records_and_never_executes():
     assert "needs args" in empty["note"]
 
 
+def test_validate_choice_always_offered():
+    assert "validate_choice" in available_actions(set(), _FULL)
+    assert "validate_choice" in available_actions(set(), {"GR"})  # runner notes unmet prereqs
+
+
+def test_validate_choice_vsh_contrasts_the_other_family():
+    ctx = _cmp_ctx()
+    ledger = {"vsh_comparison": {"selected": "vsh_linear"}}
+    out = observe("validate_choice", ctx, ledger, args={"property": "vsh"})
+    assert "vsh_neutron_density" in out["contrast"]  # GR-based choice -> N-D contrast
+    assert out["n"] == 30 and {"r", "mad", "bias"} <= set(out)
+
+
+def test_validate_choice_porosity_uses_dt_or_notes():
+    ctx = _cmp_ctx()
+    out = observe("validate_choice", ctx, {}, args={"property": "porosity"})
+    assert "no independent contrast" in out["note"]  # no DT, no PHID_SVC
+    ctx["curves_full"] = {**ctx["curves"], "DT": np.linspace(55.0, 90.0, 30)}
+    out2 = observe("validate_choice", ctx, {}, args={"property": "porosity"})
+    assert "phi_sonic_wyllie" in out2["contrast"] and out2["n"] == 30
+
+
+def test_validate_choice_sw_archie_choice_is_honest():
+    ctx = _cmp_ctx()
+    ctx["sw"] = np.linspace(0.3, 0.9, 30)
+    out = observe(
+        "validate_choice", ctx, {"sw_summary": {"method": "sw_archie"}}, args={"property": "sw"}
+    )
+    assert "no independent contrast" in out["note"]
+    ledger = {"sw_summary": {"method": "sw_simandoux", "rw": 0.04}}
+    out2 = observe("validate_choice", ctx, ledger, args={"property": "sw"})
+    assert "sw_archie" in out2["contrast"] and out2["n"] == 30
+
+
+def test_validate_choice_needs_the_property_computed_first():
+    ctx = _cmp_ctx()
+    ctx["phie"] = None
+    out = observe("validate_choice", ctx, {}, args={"property": "porosity"})
+    assert "compute phie first" in out["note"]
+    unknown = observe("validate_choice", ctx, {}, args={"property": "bogus"})
+    assert "unknown property" in unknown["note"]
+
+
 def test_vintage_neut_unlocks_phie_without_density():
     # class-B wells (GR+NEUT+RT, no RHOB/NPHI) must still walk the chain (CXR-6)
     vintage = {"GR", "NEUT", "RT"}

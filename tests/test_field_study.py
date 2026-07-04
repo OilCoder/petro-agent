@@ -3,6 +3,7 @@
 import numpy as np
 
 from src.eda.field_study import (
+    agreement_stats,
     build_field_context,
     competent_top_m,
     field_tops_summary,
@@ -52,6 +53,27 @@ def test_observation_surfaces_field_context_and_notes():
     # absent by default (no key noise when not provided)
     obs2 = observation_text(ledger, set(), ["finish"], [], None)
     assert "field_context" not in obs2 and "your_prior_field_notes" not in obs2
+
+
+def test_agreement_stats_known_offset_and_gating():
+    # GA-3 golden: b = a + 0.05 -> perfect correlation, MAD 0.05, bias (median a-b) = -0.05
+    a = np.linspace(0.05, 0.25, 50)
+    s = agreement_stats(a, a + 0.05)
+    assert s["n"] == 50 and s["r"] == 1.0
+    assert s["mad"] == 0.05 and s["bias"] == -0.05
+    # identical arrays -> zero disagreement
+    ident = agreement_stats(a, a.copy())
+    assert ident["r"] == 1.0 and ident["mad"] == 0.0 and ident["bias"] == 0.0
+    # < 30 finite overlapping samples -> only the honest count
+    short = agreement_stats(a[:10], a[:10])
+    assert short == {"n": 10}
+    # NaNs shrink the overlap, never crash
+    b = a.copy()
+    b[:25] = np.nan
+    assert agreement_stats(a, b) == {"n": 25}
+    # zero-variance input -> r reported as 0.0, never NaN
+    flat = agreement_stats(np.full(40, 0.1), np.linspace(0.0, 1.0, 40))
+    assert flat["r"] == 0.0
 
 
 def test_field_context_shape():

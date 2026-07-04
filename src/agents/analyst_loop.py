@@ -87,7 +87,9 @@ exactly ONE next action:
   judgement; compare_methods, args {"property": "vsh"|"porosity"|"sw"}, returns the engine-computed
   mean of every vetted method for that property — evidence you may read BEFORE choosing a method;
   request_tool, args {"spec": "<computation you lack>"}, records the request for human vetting — it
-  executes nothing now;
+  executes nothing now; validate_choice, args {"property": "vsh"|"porosity"|"sw"}, returns the
+  engine-computed agreement (n, r, MAD, bias) between your chosen result and an independent
+  contrast, when one exists;
 - RESTRICT the analysis to a depth interval with set_zone_of_interest, args {"top": <m>,
   "bottom": <m>} (recomputes over that zone) if your reading of the data warrants it;
 - RECOMPUTE a core property with a different vetted method (at most once per property) when the
@@ -111,7 +113,9 @@ exactly ONE next action:
   judgement; compare_methods, args {"property": "vsh"|"porosity"|"sw"}, returns the engine-computed
   mean of every vetted method for that property — evidence you may read BEFORE choosing a method;
   request_tool, args {"spec": "<computation you lack>"}, records the request for human vetting — it
-  executes nothing now;
+  executes nothing now; validate_choice, args {"property": "vsh"|"porosity"|"sw"}, returns the
+  engine-computed agreement (n, r, MAD, bias) between your chosen result and an independent
+  contrast, when one exists;
 - DECIDE whether to RESTRICT the analysis to a depth interval with set_zone_of_interest, args
   {"top": <m>, "bottom": <m>}, if your reading of the data warrants it;
 - COMPUTE each core property (vsh, phie, sw, cutoffs, uncertainty), choosing its method ONCE — pass

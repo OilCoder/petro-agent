@@ -97,6 +97,31 @@ def field_tops_summary(tops: list[float | None]) -> dict[str, Any]:
     return out
 
 
+def agreement_stats(a: np.ndarray, b: np.ndarray) -> dict[str, Any]:
+    """Agreement between two per-depth estimates: r, median-absolute-difference, bias.
+
+    The same trio the count-rate-vs-sonic validation gate used. Facts only — whether the
+    agreement is acceptable is the analyst's judgement.
+
+    Returns:
+        ``{n, r, mad, bias}`` — ``{"n": 0}`` when fewer than 30 finite overlapping samples.
+    """
+    x = np.asarray(a, dtype=float)
+    y = np.asarray(b, dtype=float)
+    ok = np.isfinite(x) & np.isfinite(y)
+    n = int(ok.sum())
+    if n < 30:
+        return {"n": n}
+    xa, ya = x[ok], y[ok]
+    r = float(np.corrcoef(xa, ya)[0, 1]) if float(np.std(xa)) > 0 and float(np.std(ya)) > 0 else 0.0
+    return {
+        "n": n,
+        "r": round(r, 3),
+        "mad": round(float(np.median(np.abs(xa - ya))), 4),
+        "bias": round(float(np.median(xa - ya)), 4),
+    }
+
+
 def build_field_context(
     this_well_bins: dict[str, Any],
     this_well_top: float | None,
