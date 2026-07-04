@@ -238,6 +238,61 @@ def test_regional_brief_surfaces_only_in_author_mode(tmp_path):
     assert not any("regional_reference" in obs for obs in base_seen)
 
 
+def test_zone_restriction_measures_gross_over_the_analyzed_window(tmp_path):
+    # v11 investigation bug: a restricted run rendered the FULL logged gross, diluting NTG and
+    # contradicting the analysis performed. Gross/NTG must measure the analyzed window, and §7
+    # must declare the restriction.
+    ledger, ctx = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
+    script = [
+        {"action": "set_zone_of_interest", "args": {"top": 1500.0, "bottom": 1520.0}},
+        {"action": "finish"},
+    ]
+    res = run_analyst_loop(
+        ledger, ctx, "free", _scripted(script), "fake", max_steps=16, author=True
+    )
+    s = ledger["summary"]
+    zoi = ledger["zone_of_interest"]
+    span = zoi["bottom_m"] - zoi["top_m"]
+    assert abs(s["gross_m"] - span) < 1.0  # window, not the logged interval
+    assert abs(s["ntg"] - ledger["net_pay_total_m"] / s["gross_m"]) < 1e-9
+    md = compose_report(ledger, res["section_plan"], "free", res["graph"], {})
+    assert "Analysis window (analyst-restricted)" in md
+    # unrestricted runs keep the logged-interval gross and show no window line
+    ledger2, ctx2 = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
+    res2 = run_analyst_loop(
+        ledger2, ctx2, "free", _scripted(_AUTHOR_SCRIPT), "fake", max_steps=16, author=True
+    )
+    md2 = compose_report(ledger2, res2["section_plan"], "free", res2["graph"], {})
+    assert "Analysis window" not in md2
+
+
+def test_mc_ranges_override_narrows_band_and_records_provenance(tmp_path):
+    # Summit v3: an analyst-declared Rw band (SP evidence) parameterizes the MC — never new math.
+    ledger, ctx = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
+    run_analyst_loop(
+        ledger, ctx, "free", _scripted(_AUTHOR_SCRIPT), "fake", max_steps=16, author=True
+    )
+    assert "ranges_provenance" not in ledger["uncertainty"]
+
+    ledger2, ctx2 = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
+    ctx2["mc_ranges_override"] = {
+        "ranges": {"Rw": (0.041, 0.054)},
+        "provenance": "SP-evidence field band (offset-median RMF), summit v3",
+    }
+    run_analyst_loop(
+        ledger2, ctx2, "free", _scripted(_AUTHOR_SCRIPT), "fake", max_steps=16, author=True
+    )
+    unc = ledger2["uncertainty"]
+    assert unc["ranges_provenance"].startswith("SP-evidence")
+    assert unc["ranges_override"]["Rw"] == (0.041, 0.054)
+    # the override took effect: the distribution differs from the default-ranges run
+    assert (unc["net_pay_p10"], unc["net_pay_p50"], unc["net_pay_p90"]) != (
+        ledger["uncertainty"]["net_pay_p10"],
+        ledger["uncertainty"]["net_pay_p50"],
+        ledger["uncertainty"]["net_pay_p90"],
+    )
+
+
 def test_author_compare_methods_feeds_the_next_decision(tmp_path):
     ledger, ctx = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
     script = [

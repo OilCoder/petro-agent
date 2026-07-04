@@ -161,7 +161,10 @@ def zonate(state: PipelineState) -> dict[str, Any]:
         else:
             i += 1
     total = float(sum(z["net_pay_m"] for z in zones))
-    summary = _well_summary(flag, depth, vsh, phie, sw, total, len(zones))
+    zoi = state.get("zoi")
+    summary = _well_summary(
+        flag, depth, vsh, phie, sw, total, len(zones), zoi if isinstance(zoi, tuple) else None
+    )
     return {"zones": zones, "net_pay_total_m": total, "summary": summary}
 
 
@@ -173,9 +176,18 @@ def _well_summary(
     sw: Any,
     net_pay_total_m: float,
     n_zones_raw: int,
+    zoi: tuple[float, float] | None = None,
 ) -> dict[str, Any]:
-    """Well-level aggregates over the net-pay interval (deterministic, ledger-bound)."""
-    gross_m = float(depth[-1] - depth[0]) if np.asarray(depth).size > 1 else 0.0
+    """Well-level aggregates over the net-pay interval (deterministic, ledger-bound).
+
+    When the analysis was restricted to a zone of interest, ``gross_m`` (and therefore NTG)
+    measures the ANALYZED window, not the full logged interval — otherwise a restricted run
+    would render a diluted NTG that contradicts the analysis actually performed.
+    """
+    if zoi is not None:
+        gross_m = float(zoi[1] - zoi[0])
+    else:
+        gross_m = float(depth[-1] - depth[0]) if np.asarray(depth).size > 1 else 0.0
     pay = np.asarray(flag, dtype=bool)
     return {
         "gross_m": gross_m,

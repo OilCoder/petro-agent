@@ -15,5 +15,6 @@
   "DCAL": ["DCAL", "CALX", "CALY", "HDCAL"],
   "DRHO": ["RHOC", "DRHO", "ZCOR"],
   "DT":   ["DT", "AC", "SONIC", "DTC", "SON", "DTC1"],
-  "PEF":  ["PEF", "PE"]
+  "PEF":  ["PEF", "PE"],
+  "SP":   ["SP"]
 }

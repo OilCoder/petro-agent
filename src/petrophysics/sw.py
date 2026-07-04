@@ -154,3 +154,39 @@ def sw_indonesia(
     sw = np.clip(sw, 0.0, 1.0)
     sw[_undefined_mask(rt_arr, phie_arr)] = np.nan
     return sw
+
+
+def movable_hydrocarbon_index(
+    rt: np.ndarray,
+    rxo: np.ndarray,
+    rw: float,
+    rmf: float,
+) -> np.ndarray:
+    """Movable-hydrocarbon index MHI = Sw/Sxo via the resistivity ratio method.
+
+    ``(Sw/Sxo)^2 = (Rxo/Rt) * (Rw/Rmf)`` (Archie in the invaded and uninvaded zones with
+    the same F), so ``MHI = sqrt((Rxo/Rt) * (Rw/Rmf))``. MHI < ~0.7 indicates movable
+    hydrocarbons (Asquith); MHI near 1 reads as no movement (water or residual). An
+    indicator profile, not a saturation — reported as evidence only.
+
+    Args:
+        rt: true resistivity (ohm-m). NaN/non-positive propagates to NaN.
+        rxo: flushed-zone resistivity (ohm-m). NaN/non-positive propagates to NaN.
+        rw: formation-water resistivity (ohm-m).
+        rmf: mud-filtrate resistivity at formation temperature (ohm-m).
+
+    Returns:
+        MHI array (dimensionless, NaN where undefined).
+
+    Raises:
+        ValueError: if ``rw`` or ``rmf`` is not positive.
+    """
+    if rw <= 0.0 or rmf <= 0.0:
+        raise ValueError(f"rw and rmf must be positive, got rw={rw}, rmf={rmf}")
+    rt_arr = np.asarray(rt, dtype=float)
+    rxo_arr = np.asarray(rxo, dtype=float)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        mhi = np.sqrt((rxo_arr / rt_arr) * (rw / rmf))
+    bad = ~np.isfinite(rt_arr) | ~np.isfinite(rxo_arr) | (rt_arr <= 0) | (rxo_arr <= 0)
+    mhi[bad] = np.nan
+    return mhi

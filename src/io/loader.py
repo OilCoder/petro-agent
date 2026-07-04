@@ -53,6 +53,7 @@ ALIASES: dict[str, list[str]] = {
     "DRHO": ["RHOC", "DRHO", "ZCOR"],
     "DT": ["DT", "AC", "SONIC", "DTC", "SON", "DTC1"],
     "PEF": ["PEF", "PE"],
+    "SP": ["SP"],
 }
 
 # Phase 2: prefer the versioned alias table in src/params; fall back to the map above.

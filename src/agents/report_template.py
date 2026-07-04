@@ -452,10 +452,18 @@ def _intervals(ledger: dict[str, Any]) -> str:
     s = ledger.get("summary", {})
     wm = ledger.get("run", {}).get("well_metadata", {})
     nz = s.get("n_zones_raw")
+    zoi = ledger.get("zone_of_interest")
+    zone_line = (
+        f"- Analysis window (analyst-restricted): {zoi['top_m']}–{zoi['bottom_m']} m — gross and "
+        "NTG are measured over this window\n"
+        if zoi
+        else ""
+    )
     return (
         "## Interval definition\n\n"
         f"- Logged interval: {wm.get('depth_start_m', '—')}–{wm.get('depth_stop_m', '—')} m\n"
-        f"- Gross evaluated interval: {_fmt(s.get('gross_m'), 1)} m\n"
+        + zone_line
+        + f"- Gross evaluated interval: {_fmt(s.get('gross_m'), 1)} m\n"
         f"- Computed net-pay runs (pre-merge): {nz if nz is not None else '—'}\n"
         "- Zonation is computed by depth (no formation tops in LAS).\n"
     )

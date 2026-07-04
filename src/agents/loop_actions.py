@@ -29,7 +29,12 @@ from src.petrophysics.phie import porosity_method_comparison
 from src.petrophysics.sonic import phi_sonic_wyllie
 from src.petrophysics.sw import calc_sw, sw_method_comparison
 from src.petrophysics.vsh import calc_vsh, vsh_method_comparison, vsh_neutron_density
-from src.uncertainty.montecarlo import build_method_alts, multi_seed_robustness, propagate_net_pay
+from src.uncertainty.montecarlo import (
+    DEFAULT_RANGES,
+    build_method_alts,
+    multi_seed_robustness,
+    propagate_net_pay,
+)
 from src.uncertainty.sensitivity import sensitivity_net_pay
 
 # Property produced by each compute action.
@@ -269,6 +274,7 @@ def _exec_cutoffs(ctx, ledger, method, args, valid):  # noqa: ANN001
         "depth_m": ctx["depth_m"],
         "step_m": ctx["step_m"],
         "params": ctx["params"],
+        "zoi": ctx.get("zoi"),  # restricted runs measure gross/NTG over the analyzed window
     }
     z = zonate(state)
     ledger.update(z)
@@ -299,8 +305,20 @@ def _exec_uncertainty(ctx, ledger, method, args, valid):  # noqa: ANN001
         pf["phi_sh_d"],
         pf["phi_sh_n"],
     )
+    # Analyst-declared parameter ranges (e.g. an SP-evidence Rw band) override the defaults;
+    # the override and its provenance are recorded — parameterization, never new math.
+    override = ctx.get("mc_ranges_override")
+    ranges = {**DEFAULT_RANGES, **override["ranges"]} if override else None
     mc = propagate_net_pay(
-        ctx["vsh"], ctx["phie"], rt, base, cutoffs, step, vsh_alts=vsh_alts, phie_alts=phie_alts
+        ctx["vsh"],
+        ctx["phie"],
+        rt,
+        base,
+        cutoffs,
+        step,
+        ranges=ranges,
+        vsh_alts=vsh_alts,
+        phie_alts=phie_alts,
     )
     sens = sensitivity_net_pay(ctx["vsh"], ctx["phie"], rt, base, cutoffs, step)
     warn = high_leverage_flag(sens["dominant_parameter"], ctx["params"])
@@ -310,6 +328,11 @@ def _exec_uncertainty(ctx, ledger, method, args, valid):  # noqa: ANN001
         "sensitivity": sens,
         "high_leverage_warning": warn,
         "robustness": rob,
+        **(
+            {"ranges_override": {**override["ranges"]}, "ranges_provenance": override["provenance"]}
+            if override
+            else {}
+        ),
     }
     ledger["run"]["net_pay_p10_p50_p90"] = [mc["net_pay_p10"], mc["net_pay_p50"], mc["net_pay_p90"]]
     nv = set(valid)
