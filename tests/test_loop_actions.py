@@ -154,6 +154,15 @@ def test_compare_methods_unknown_property_notes():
     assert "unknown property" in obs["note"]
 
 
+def test_request_tool_records_and_never_executes():
+    ledger: dict = {}
+    out = observe("request_tool", _cmp_ctx(), ledger, args={"spec": "Rxo/RT moveable-oil ratio"})
+    assert "recorded" in out["note"]
+    assert ledger["run"]["tool_requests"] == ["Rxo/RT moveable-oil ratio"]
+    empty = observe("request_tool", _cmp_ctx(), {}, args={})
+    assert "needs args" in empty["note"]
+
+
 def test_vintage_neut_unlocks_phie_without_density():
     # class-B wells (GR+NEUT+RT, no RHOB/NPHI) must still walk the chain (CXR-6)
     vintage = {"GR", "NEUT", "RT"}

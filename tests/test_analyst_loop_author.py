@@ -137,6 +137,29 @@ def test_objection_scope_is_typed_per_validator():
     assert "zone" not in legend  # the false universal is gone
 
 
+def test_observation_steps_and_evidence_efficiency_measured(tmp_path):
+    # GA-2: commitment is a score — observations counted, efficiency = choices/observations
+    ledger, ctx = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
+    script = [
+        {"action": "compare_methods", "args": {"property": "vsh"}},
+        {"action": "compute_vsh", "method": "vsh_linear"},
+        {"action": "compare_methods", "args": {"property": "porosity"}},
+        {"action": "compute_phie", "method": "phi_density"},
+        {"action": "compute_sw", "method": "sw_simandoux"},
+        {"action": "apply_cutoffs"},
+        {"action": "run_uncertainty"},
+        {"action": "finish"},
+    ]
+    res = run_analyst_loop(
+        ledger, ctx, "free", _scripted(script), "fake", max_steps=16, author=True
+    )
+    loop = ledger["run"]["analyst_loop"]
+    assert loop["observation_steps"] == 2  # the two compare_methods reads in the script
+    br = completeness_breakdown(ledger, res["section_plan"])
+    assert br["observation_steps"] == 2
+    assert br["evidence_efficiency"] == round(br["interpretive_choices"] / 2, 3)
+
+
 def test_author_compare_methods_feeds_the_next_decision(tmp_path):
     ledger, ctx = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
     script = [

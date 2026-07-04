@@ -86,6 +86,8 @@ exactly ONE next action:
 - OBSERVE the data (depth_quality, distributions, scans, crossplot, examine_figures) to inform your
   judgement; compare_methods, args {"property": "vsh"|"porosity"|"sw"}, returns the engine-computed
   mean of every vetted method for that property — evidence you may read BEFORE choosing a method;
+  request_tool, args {"spec": "<computation you lack>"}, records the request for human vetting — it
+  executes nothing now;
 - RESTRICT the analysis to a depth interval with set_zone_of_interest, args {"top": <m>,
   "bottom": <m>} (recomputes over that zone) if your reading of the data warrants it;
 - RECOMPUTE a core property with a different vetted method (at most once per property) when the
@@ -108,6 +110,8 @@ exactly ONE next action:
 - OBSERVE the data (depth_quality, distributions, scans, crossplot, examine_figures) to inform your
   judgement; compare_methods, args {"property": "vsh"|"porosity"|"sw"}, returns the engine-computed
   mean of every vetted method for that property — evidence you may read BEFORE choosing a method;
+  request_tool, args {"spec": "<computation you lack>"}, records the request for human vetting — it
+  executes nothing now;
 - DECIDE whether to RESTRICT the analysis to a depth interval with set_zone_of_interest, args
   {"top": <m>, "bottom": <m>}, if your reading of the data warrants it;
 - COMPUTE each core property (vsh, phie, sw, cutoffs, uncertainty), choosing its method ONCE — pass
@@ -672,7 +676,7 @@ def run_analyst_loop(
     valid = _initial_valid(ctx, ledger)
     order = _seed_order(valid)
     system = _prepare_loop(ledger, ctx, author)
-    steps_taken = recomputes = empty_returns = wasted = 0
+    steps_taken = recomputes = empty_returns = wasted = observation_steps = 0
     agent_steps = default_steps = 0
     # Vision track: offer examine_figures only when a vision chat + figures are wired into ctx.
     vision_on = bool(ctx.get("vision_chat") and ctx.get("figure_paths"))
@@ -730,6 +734,8 @@ def run_analyst_loop(
         _record_tool_call(graph, action, choice.get("args", {}), choice.get("method"))
         _extend_order(order, action)
         steps_taken += 1
+        # read-only step counter (GA-2: commitment is measured, not assumed)
+        observation_steps += int(PRODUCES.get(action) is None and action != "set_zone_of_interest")
         _maybe_revalidate(action, valid, ledger, ctx)
 
     # ----------------------------------------
@@ -778,6 +784,7 @@ def run_analyst_loop(
         "reclosed_steps": reclosed,
         "vision_enabled": vision_on,
         "author_mode": author,
+        "observation_steps": observation_steps,
     }
     ledger["run"]["methodology_graph"] = graph.to_json()
     # Re-persist: pass-0's emit wrote a pre-loop snapshot; the agent's choices must be auditable.

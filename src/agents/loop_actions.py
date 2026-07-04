@@ -86,6 +86,7 @@ _OBSERVE_NEEDS: dict[str, tuple[str, ...]] = {
     "crossplot": ("__curves__:RHOB,NPHI",),
     "low_res_scan": ("__curves__:RT",),
     "compare_methods": (),  # property chosen at call time; prerequisites checked by the runner
+    "request_tool": (),  # records a missing-computation request (GA-2); never executes anything
 }
 
 
@@ -590,17 +591,27 @@ def observe(
         return depth_quality_profile(ctx.get("curves_full", ctx["curves"]), ctx["depth_m"])
     if action == "compare_methods":
         return _compare_methods(ctx, ledger, str(args.get("property", tgt or "")))
-    arr = _resolve_target(tgt, ctx)
-    if action == "percentiles":
-        finite = arr[np.isfinite(arr)] if arr is not None else np.array([])
-        if finite.size == 0:
-            return {"target": tgt, "note": "no finite data"}
-        return {
-            "target": tgt,
-            "p10": round(float(np.percentile(finite, 10)), 4),
-            "p50": round(float(np.percentile(finite, 50)), 4),
-            "p90": round(float(np.percentile(finite, 90)), 4),
-        }
+    if action == "request_tool":
+        return _request_tool(ledger, args)
+    if action in ("percentiles", "value_at", "extremes"):
+        return _point_obs(action, _resolve_target(tgt, ctx), tgt, ctx, args)
+    return _observe_eda(action, ctx, tgt)
+
+
+def _request_tool(ledger: dict[str, Any], args: dict[str, Any]) -> dict[str, Any]:
+    """Record a missing-computation request (GA-2). Executes nothing — human vetting follows."""
+    spec = str(args.get("spec", "")).strip()
+    if not spec:
+        return {"note": "request_tool needs args {'spec': <what computation you lack>}"}
+    ledger.setdefault("run", {}).setdefault("tool_requests", []).append(spec[:300])
+    return {
+        "note": "request recorded — a human vets and builds it for a future re-run",
+        "spec": spec[:300],
+    }
+
+
+def _point_obs(action, arr, tgt, ctx, args):  # noqa: ANN001
+    """Distribution/point observations over a resolved target array (summaries, never arrays)."""
     if action == "value_at":
         depth = float(args.get("depth", ctx["depth_m"][0]))
         idx = int(np.argmin(np.abs(ctx["depth_m"] - depth)))
@@ -611,16 +622,21 @@ def observe(
                 round(float(arr[idx]), 4) if arr is not None and np.isfinite(arr[idx]) else None
             ),
         }
-    if action == "extremes":
-        finite = arr[np.isfinite(arr)] if arr is not None else np.array([])
-        if finite.size == 0:
-            return {"target": tgt, "note": "no finite data"}
+    finite = arr[np.isfinite(arr)] if arr is not None else np.array([])
+    if finite.size == 0:
+        return {"target": tgt, "note": "no finite data"}
+    if action == "percentiles":
         return {
             "target": tgt,
-            "min": round(float(finite.min()), 4),
-            "max": round(float(finite.max()), 4),
+            "p10": round(float(np.percentile(finite, 10)), 4),
+            "p50": round(float(np.percentile(finite, 50)), 4),
+            "p90": round(float(np.percentile(finite, 90)), 4),
         }
-    return _observe_eda(action, ctx, tgt)
+    return {
+        "target": tgt,
+        "min": round(float(finite.min()), 4),
+        "max": round(float(finite.max()), 4),
+    }
 
 
 def _observe_eda(action: str, ctx: dict[str, Any], tgt: Any) -> dict[str, Any]:

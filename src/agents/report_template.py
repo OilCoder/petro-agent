@@ -769,6 +769,13 @@ def _recommendations(ledger: dict[str, Any]) -> str:
         )
     if missing:
         rows.append(f"- Standard curves absent: {', '.join(missing)}.")
+    requests = ledger.get("run", {}).get("tool_requests", [])
+    if requests:
+        rows.append(
+            "\nComputations the analyst requested but the vetted toolbox lacks "
+            "(each awaits human vetting before a re-run):"
+        )
+        rows += [f"- {r}" for r in requests[:8]]
     return "\n".join(rows) + "\n"
 
 

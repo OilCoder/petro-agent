@@ -108,6 +108,10 @@ def completeness_breakdown(ledger: dict[str, Any], section_plan: dict[str, Any])
         "core_methods_defaulted": core_methods_defaulted,
         "zone_restricted": zone_restricted,
         "agent_steps": loop.get("agent_steps", 0),
+        "observation_steps": loop.get("observation_steps", 0),
+        "evidence_efficiency": round(
+            interpretive_choices / max(1, loop.get("observation_steps", 0)), 3
+        ),
         "default_steps": loop.get("default_steps", 0),
         "wasted_steps": loop.get("wasted_steps", 0),
     }
