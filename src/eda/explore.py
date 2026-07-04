@@ -199,6 +199,50 @@ def invasion_scan(
     return out
 
 
+def service_porosity_summary(curves: dict[str, Any]) -> dict[str, float]:
+    """Mean of the service-company porosity curves (fractions), for the §14 cross-check.
+
+    PHID_SVC/NPHI_DOL/NPHI_SS arrive in PU (%) on most vintages — a median above 1.5 marks
+    percent units and is divided by 100. Evidence for the report; never a substitute for the
+    engine's computed porosity.
+    """
+    out: dict[str, float] = {}
+    for name in ("PHID_SVC", "NPHI_DOL", "NPHI_SS"):
+        arr = curves.get(name)
+        if arr is None:
+            continue
+        a = np.asarray(arr, dtype=float)
+        finite = a[np.isfinite(a)]
+        if finite.size < 20:
+            continue
+        if float(np.median(finite)) > 1.5:  # percent units
+            finite = finite / 100.0
+        out[name.lower() + "_mean"] = round(float(np.mean(finite)), 4)
+    return out
+
+
+def microlog_scan(mnor: np.ndarray | None, minv: np.ndarray | None) -> dict[str, Any]:
+    """Microlog separation summary: positive MNOR-MINV separation marks mudcake (permeable).
+
+    Returns ``{n, frac_permeable, median_separation}`` or ``{"n": 0}`` without overlap.
+    Raw-curve facts; the permeability CALL stays with the analyst.
+    """
+    if mnor is None or minv is None:
+        return {"n": 0}
+    a = np.asarray(mnor, dtype=float)
+    b = np.asarray(minv, dtype=float)
+    ok = np.isfinite(a) & np.isfinite(b)
+    n = int(ok.sum())
+    if not n:
+        return {"n": 0}
+    sep = a[ok] - b[ok]
+    return {
+        "n": n,
+        "frac_permeable": round(float(np.mean(sep > 0.0)), 3),
+        "median_separation": round(float(np.median(sep)), 3),
+    }
+
+
 def build_eda_digest(ctx: dict[str, Any]) -> dict[str, Any]:
     """Pre-compute the compact EDA observations the agent reads (it observes, never computes).
 
@@ -220,6 +264,12 @@ def build_eda_digest(ctx: dict[str, Any]) -> dict[str, Any]:
         digest["low_resistivity"] = low_resistivity_scan(curves["RT"], depth)
     if "RT" in curves and ("RXO" in curves or "RMED" in curves):
         digest["invasion"] = invasion_scan(curves["RT"], curves.get("RXO"), curves.get("RMED"))
+    svc = service_porosity_summary(curves)
+    if svc:
+        digest["service_porosity"] = svc
+    ml = microlog_scan(curves.get("MNOR"), curves.get("MINV"))
+    if ml.get("n"):
+        digest["microlog"] = ml
     if "RHOB" in curves and "NPHI" in curves:
         cp = crossplot_density_neutron(curves["RHOB"], curves["NPHI"])
         # surface the neutral point-shares only — never the 'nearest' label (that is the analyst's)

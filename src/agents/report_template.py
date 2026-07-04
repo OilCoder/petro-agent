@@ -596,6 +596,14 @@ def _porosity(ledger: dict[str, Any]) -> str:
     ]
     for m, v in methods.items():
         rows.append(f"| {m} | {_fmt(v, 3)} | {'✓' if m == selected else ''} |")
+    svc = ledger.get("run", {}).get("eda", {}).get("service_porosity")
+    if svc:
+        pairs = ", ".join(f"{k.replace('_mean', '')}: {_fmt(v, 3)}" for k, v in svc.items())
+        rows.append(
+            f"\nService-company porosity curves (cross-check evidence, full-column means): "
+            f"{pairs}. Matrix assumptions differ per curve; agreement/disagreement is the "
+            "analyst's reading."
+        )
     return "\n".join(rows) + "\n"
 
 
@@ -633,6 +641,13 @@ def _permeability_section(ledger: dict[str, Any]) -> str:
         v = results.get(key, {}).get("value", {})
         if v:
             rows.append(f"- {key}: mean k = {_fmt(v.get('mean_k_md'), 2)} mD")
+    ml = ledger.get("run", {}).get("eda", {}).get("microlog")
+    if ml and ml.get("n"):
+        rows.append(
+            f"- Microlog separation (qualitative permeability indicator): fraction with "
+            f"positive MNOR−MINV (mudcake) {_fmt(ml.get('frac_permeable'), 3)} over "
+            f"{ml['n']} samples"
+        )
     if not rows:
         return "## Permeability (uncalibrated)\n\n_Not computed — no permeability tool result._\n"
     return (

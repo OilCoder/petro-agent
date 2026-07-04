@@ -119,6 +119,16 @@ def qc_gate(well: WellData, bit_size: float = 8.5) -> QCResult:
 
     bad_hole, e = bad_hole_mask(curves.get("CALI"), curves.get("DCAL"), bit_size)
     edits += e
+    # Badhole v2 (CXR-5): a large density CORRECTION (|DRHO| > 0.25 g/cc) is the density tool
+    # itself reporting an unreliable compensation — an objective, mechanical quality criterion.
+    if "DRHO" in curves and "RHOB" in curves:
+        drho = np.asarray(curves["DRHO"], dtype=float)
+        drho_bad = np.isfinite(drho) & (np.abs(drho) > 0.25)
+        if bool(drho_bad.any()):
+            edits.append(
+                {"type": "degradation", "detail": f"drho_gt_0.25_masked_{int(drho_bad.sum())}"}
+            )
+            bad_hole = drho_bad if bad_hole is None else (bad_hole | drho_bad)
     if bad_hole is not None:
         for name in ("RHOB", "NPHI"):
             if name in curves:
