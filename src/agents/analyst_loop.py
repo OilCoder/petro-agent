@@ -89,7 +89,9 @@ exactly ONE next action:
   request_tool, args {"spec": "<computation you lack>"}, records the request for human vetting — it
   executes nothing now; validate_choice, args {"property": "vsh"|"porosity"|"sw"}, returns the
   engine-computed agreement (n, r, MAD, bias) between your chosen result and an independent
-  contrast, when one exists;
+  contrast, when one exists; rw_evidence returns an engine-computed SP-derived Rw estimate with
+  its declared assumptions, when readable; mhi_scan returns the Rxo/Rt movable-hydrocarbon
+  indicator profile, when those curves exist;
 - RESTRICT the analysis to a depth interval with set_zone_of_interest, args {"top": <m>,
   "bottom": <m>} (recomputes over that zone) if your reading of the data warrants it;
 - RECOMPUTE a core property with a different vetted method (at most once per property) when the
@@ -115,7 +117,9 @@ exactly ONE next action:
   request_tool, args {"spec": "<computation you lack>"}, records the request for human vetting — it
   executes nothing now; validate_choice, args {"property": "vsh"|"porosity"|"sw"}, returns the
   engine-computed agreement (n, r, MAD, bias) between your chosen result and an independent
-  contrast, when one exists;
+  contrast, when one exists; rw_evidence returns an engine-computed SP-derived Rw estimate with
+  its declared assumptions, when readable; mhi_scan returns the Rxo/Rt movable-hydrocarbon
+  indicator profile, when those curves exist;
 - DECIDE whether to RESTRICT the analysis to a depth interval with set_zone_of_interest, args
   {"top": <m>, "bottom": <m>}, if your reading of the data warrants it;
 - COMPUTE each core property (vsh, phie, sw, cutoffs, uncertainty), choosing its method ONCE — pass
@@ -261,6 +265,7 @@ def observation_text(
     field_context: dict[str, Any] | None = None,
     case_file: str | None = None,
     regional_brief: str | None = None,
+    journal: list[dict[str, Any]] | None = None,
 ) -> str:
     """STATE digest + the report-in-progress (so the agent sees the document it is building).
 
@@ -296,6 +301,8 @@ def observation_text(
         "valid_actions": actions,
         "diagnostics": _diagnostics(ledger),
         "last_observation": last_obs or "none yet (call an observation to inspect the data)",
+        # GB-1: every read already executed this well (repeating one is a measured no-op)
+        **({"observations_so_far": journal} if journal else {}),
         "computed": computed,
         "stale_or_pending": stale,
         # factual affordance: what each still-available optional COMPUTES (never a nudge to add it)
@@ -305,7 +312,7 @@ def observation_text(
         # GA-1: the field-study evidence pack (engine medians/tops facts; interpretation is the
         # agent's). GA-4: the agent's own notes from prior wells in this batch.
         **({"field_context": field_context} if field_context else {}),
-        **({"your_prior_field_notes": case_file[-1500:]} if case_file else {}),
+        **({"your_prior_field_notes": case_file[-2500:]} if case_file else {}),
         # GA-5: cited background DATA (author mode only); facts with source class, never a nudge.
         **({"regional_reference": regional_brief[:1800]} if regional_brief else {}),
         "report_so_far": _report_outline(ledger, order or []),
@@ -401,6 +408,94 @@ def _is_noop(
         # stops capable models from rabbit-holing on a data-driven objection no method can fix).
         return chosen == current or current != default
     return False
+
+
+def _obs_key(action: str, choice: dict[str, Any]) -> str:
+    args = json.dumps(choice.get("args") or {}, sort_keys=True, default=str)
+    return f"{action}|{args}|{choice.get('method') or ''}"
+
+
+def _journal_add(
+    journal: dict[str, dict[str, Any]],
+    epoch: int,
+    action: str,
+    choice: dict[str, Any],
+    summary: dict[str, Any],
+) -> None:
+    """Record an executed read in the within-well journal (GB-1). Compact: one line per read."""
+    journal[_obs_key(action, choice)] = {
+        "epoch": epoch,
+        "action": action,
+        "args": choice.get("args") or {},
+        "summary": json.dumps(summary, default=str)[:220],
+    }
+
+
+def _journal_view(journal: dict[str, dict[str, Any]], limit: int = 12) -> list[dict[str, Any]]:
+    """The journal as the agent sees it: newest-last, capped, without epochs."""
+    entries = list(journal.values())[-limit:]
+    return [
+        {
+            "action": e["action"],
+            **({"args": e["args"]} if e["args"] else {}),
+            "summary": e["summary"],
+        }
+        for e in entries
+    ]
+
+
+def _track_read(
+    journal: dict[str, dict[str, Any]],
+    epoch: int,
+    action: str,
+    choice: dict[str, Any],
+    summary: dict[str, Any],
+) -> int:
+    """Journal a read; a state-changing action instead bumps the epoch (old reads re-readable)."""
+    if PRODUCES.get(action) is None and action != "set_zone_of_interest":
+        _journal_add(journal, epoch, action, choice, summary)
+        return epoch
+    return epoch + 1
+
+
+def _skip_reason(
+    action: str,
+    choice: dict[str, Any],
+    ledger: dict[str, Any],
+    ctx: dict[str, Any],
+    valid: set[str],
+    journal: dict[str, dict[str, Any]],
+    epoch: int,
+) -> dict[str, Any] | None:
+    """A no-op verdict for this choice: compute no-op, or a same-epoch REPEAT of a read (GB-1).
+
+    Repeats were the dominant v11 waste (~80% of observations): with only ``last_observation``
+    in view the models re-bought evidence they already owned. The journal makes the read visible
+    and the repeat a measured no-op — after a state-changing action the same read is valid again.
+    """
+    if _is_noop(action, choice.get("method"), ledger, ctx, valid, choice.get("args")):
+        return {
+            "repeat": False,
+            "obs": {
+                "action": action,
+                "result": f"NO-OP: '{action}' had no effect — already done, same method, or same "
+                "zone. Pick a DIFFERENT action (an optional analysis) or finish.",
+            },
+        }
+    if PRODUCES.get(action) is not None or action == "set_zone_of_interest":
+        return None
+    ent = journal.get(_obs_key(action, choice))
+    if ent is None or ent["epoch"] != epoch:
+        return None
+    return {
+        "repeat": True,
+        "obs": {
+            "action": action,
+            "result": "NO-OP repeat: you already own this read — its summary is in "
+            "observations_so_far. Pick a DIFFERENT action or finish.",
+            "cached_summary": ent["summary"],
+        },
+    }
 
 
 def _obs_result(action: str, summary: dict[str, Any]) -> dict[str, Any] | None:
@@ -685,7 +780,9 @@ def run_analyst_loop(
     order = _seed_order(valid)
     system = _prepare_loop(ledger, ctx, author)
     steps_taken = recomputes = empty_returns = wasted = observation_steps = 0
-    agent_steps = default_steps = 0
+    agent_steps = default_steps = repeated_observations = 0
+    journal: dict[str, dict[str, Any]] = {}
+    epoch = 0
     # Vision track: offer examine_figures only when a vision chat + figures are wired into ctx.
     vision_on = bool(ctx.get("vision_chat") and ctx.get("figure_paths"))
     finished = False
@@ -708,6 +805,7 @@ def run_analyst_loop(
             field_context,
             case_file,
             regional_brief if author else None,  # GA-5: background data is an author-mode input
+            _journal_view(journal),
         )
         choice, empty, from_default = _decide(obs, actions, valid, curves, chats, system)
         empty_returns += empty
@@ -726,16 +824,13 @@ def run_analyst_loop(
         if _is_stalled(recent):
             stalled = True
             break
-        # No-op (re-add a done optional / recompute same method): record + skip, keep report clean.
-        if _is_noop(action, choice.get("method"), ledger, ctx, valid, choice.get("args")):
+        # No-op (compute repeat) or same-epoch observation repeat (GB-1): record + skip.
+        skip = _skip_reason(action, choice, ledger, ctx, valid, journal, epoch)
+        if skip is not None:
             wasted += 1
+            repeated_observations += int(skip["repeat"])
             graph.add("decision", {"rationale": f"wasted no-op: {action}", "chosen": action})
-            # Tell the agent its choice had no effect so it stops repeating it (was looping blind).
-            last_obs = {
-                "action": action,
-                "result": f"NO-OP: '{action}' had no effect — already done, same method, or same "
-                "zone. Pick a DIFFERENT action (an optional analysis) or finish.",
-            }
+            last_obs = skip["obs"]
             continue
 
         default_steps += int(from_default)
@@ -748,6 +843,7 @@ def run_analyst_loop(
         )
         # Feed an observation's result into the next decision (reads are no longer fire-and-forget).
         last_obs = _obs_result(action, _summary) or last_obs
+        epoch = _track_read(journal, epoch, action, choice, _summary)
         _record_tool_call(graph, action, choice.get("args", {}), choice.get("method"))
         _extend_order(order, action)
         steps_taken += 1
@@ -803,6 +899,7 @@ def run_analyst_loop(
         "vision_enabled": vision_on,
         "author_mode": author,
         "observation_steps": observation_steps,
+        "repeated_observations": repeated_observations,
         "field_notes": field_notes,
     }
     ledger["run"]["methodology_graph"] = graph.to_json()

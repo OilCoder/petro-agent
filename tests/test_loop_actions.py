@@ -206,6 +206,43 @@ def test_validate_choice_needs_the_property_computed_first():
     assert "unknown property" in unknown["note"]
 
 
+def test_rw_evidence_and_mhi_scan_gating_and_honest_notes():
+    # GB-4: offered only when their curves exist; runners answer honestly without field context
+    assert "rw_evidence" not in available_actions(set(), _FULL)  # no SP in _FULL
+    assert "rw_evidence" in available_actions(set(), _FULL | {"SP"})
+    assert "mhi_scan" not in available_actions(set(), {"GR", "RT"})
+    assert "mhi_scan" in available_actions(set(), {"GR", "RT", "RXO"})
+    ctx = _cmp_ctx()
+    assert "context" in observe("rw_evidence", ctx, {})["note"]  # no sp_field_ctx wired
+    assert "context" in observe("mhi_scan", ctx, {})["note"]
+
+
+def test_rw_evidence_reads_synthetic_ssp():
+    n = 1200
+    gr = np.where((np.arange(n) // 300) % 2 == 0, 120.0, 20.0)
+    sp = np.where(gr > 100, 0.0, -60.0)
+    ctx = _cmp_ctx()
+    ctx["curves"]["GR"] = gr
+    ctx["curves_full"] = {**ctx["curves"], "SP": sp, "GR": gr}
+    ctx["sp_field_ctx"] = {"rmf_offset_median": 0.11, "temp_c": 46.1}
+    out = observe("rw_evidence", ctx, {})
+    assert out["ssp_mv"] < -50 and 0.01 < out["rw_ohmm"] < 0.2
+    assert "offset-header median" in out["assumptions"]
+
+
+def test_mhi_scan_profile_stats():
+    n = 200
+    ctx = _cmp_ctx()
+    ctx["curves"]["RT"] = np.full(n, 10.0)
+    ctx["curves"]["GR"] = np.full(n, 50.0)
+    ctx["curves_full"] = {**ctx["curves"], "RXO": np.full(n, 4.9)}
+    ctx["sp_field_ctx"] = {"rmf_offset_median": 0.05, "temp_c": 46.1}
+    out = observe("mhi_scan", ctx, {"calibration": {"Rw": {"value": 0.05}}})
+    # rw/rmf = 1 -> MHI = sqrt(4.9/10) = 0.7 everywhere
+    assert out["p50_mhi"] == 0.7 and out["n"] == n
+    assert "not a saturation" in out["note"]
+
+
 def test_vintage_neut_unlocks_phie_without_density():
     # class-B wells (GR+NEUT+RT, no RHOB/NPHI) must still walk the chain (CXR-6)
     vintage = {"GR", "NEUT", "RT"}

@@ -55,3 +55,11 @@ def test_brief_contains_no_directed_imperatives():
 def test_brief_marks_unverified_claims():
     # honesty contract: lease-level specifics the project has not verified say so
     assert "por confirmar" in BRIEF or "unverified" in BRIEF
+
+
+def test_brief_carries_identity_but_no_technical_field_specs():
+    # GB-3 user rule: naming the field is OK; technical specifications of it are NOT.
+    assert "Schaben" in BRIEF and "Ness County" in BRIEF
+    banned = ("Mississippian", "dolomit", "limestone", "chert", "brine", "salinit", "Osagian")
+    hits = [t for t in banned if t.lower() in BRIEF.lower()]
+    assert hits == [], f"technical field specs leaked into the brief: {hits}"

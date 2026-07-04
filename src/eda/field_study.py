@@ -21,28 +21,45 @@ def well_depth_bins(
     curves: dict[str, np.ndarray],
     depth: np.ndarray,
     bin_m: float = 100.0,
+    fine_bin_m: float = 50.0,
+    fine_tail_m: float = 500.0,
 ) -> dict[str, Any]:
     """Median of each key curve per depth bin — the well's structure at a glance.
+
+    The deepest ``fine_tail_m`` metres bin at ``fine_bin_m`` (GB-5): thin deep targets
+    disappear inside coarse medians, and the deep tail is where consolidated reservoirs
+    live in this dataset. Pure resolution — same medians, same row gating.
 
     Args:
         curves: canonical curve arrays.
         depth: depth index (m).
-        bin_m: bin height (m).
+        bin_m: bin height above the fine tail (m).
+        fine_bin_m: bin height inside the fine tail (m).
+        fine_tail_m: length of the fine-binned deepest section (m).
 
     Returns:
-        ``{bin_m, rows: [{top, <curve>: median…}, …]}`` — a row only where any curve has
-        >=10 finite samples in the bin; medians rounded to 2 decimals.
+        ``{bin_m, fine_bin_m, rows: [{top, <curve>: median…}, …]}`` — a row only where
+        any curve has >=10 finite samples in the bin; medians rounded to 2 decimals.
     """
     d = np.asarray(depth, dtype=float)
     if d.size == 0:
-        return {"bin_m": bin_m, "rows": []}
-    start = float(np.floor(d.min() / bin_m) * bin_m)
+        return {"bin_m": bin_m, "fine_bin_m": fine_bin_m, "rows": []}
+    d_max = float(d.max())
+    fine_start = max(float(d.min()), d_max - fine_tail_m)
+    edges: list[tuple[float, float]] = []
+    lo = float(np.floor(d.min() / bin_m) * bin_m)
+    while lo < fine_start:
+        edges.append((lo, min(lo + bin_m, fine_start)))
+        lo += bin_m
+    lo = fine_start
+    while lo < d_max:
+        edges.append((lo, lo + fine_bin_m))
+        lo += fine_bin_m
     rows: list[dict[str, float]] = []
-    lo = start
-    while lo < float(d.max()):
-        row: dict[str, float] = {"top": lo}
+    for lo, hi in edges:
+        row: dict[str, float] = {"top": round(lo, 1)}
         keep = False
-        in_bin = (d >= lo) & (d < lo + bin_m)
+        in_bin = (d >= lo) & (d < hi)
         for k in _BIN_KEYS:
             arr = curves.get(k)
             if arr is None:
@@ -54,8 +71,7 @@ def well_depth_bins(
                 keep = True
         if keep:
             rows.append(row)
-        lo += bin_m
-    return {"bin_m": bin_m, "rows": rows}
+    return {"bin_m": bin_m, "fine_bin_m": fine_bin_m, "rows": rows}
 
 
 def competent_top_m(

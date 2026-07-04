@@ -27,7 +27,8 @@ from src.orchestrator.stages import zonate
 from src.orchestrator.steps import default_vsh_key, phie_step, sw_step, vsh_step
 from src.petrophysics.phie import porosity_method_comparison
 from src.petrophysics.sonic import phi_sonic_wyllie
-from src.petrophysics.sw import calc_sw, sw_method_comparison
+from src.petrophysics.sp_rw import rw_from_ssp, sp_ssp
+from src.petrophysics.sw import calc_sw, movable_hydrocarbon_index, sw_method_comparison
 from src.petrophysics.vsh import calc_vsh, vsh_method_comparison, vsh_neutron_density
 from src.uncertainty.montecarlo import (
     DEFAULT_RANGES,
@@ -95,6 +96,8 @@ _OBSERVE_NEEDS: dict[str, tuple[str, ...]] = {
     "compare_methods": (),  # property chosen at call time; prerequisites checked by the runner
     "request_tool": (),  # records a missing-computation request (GA-2); never executes anything
     "validate_choice": (),  # engine cross-check of a chosen property vs an independent contrast
+    "rw_evidence": ("__curves__:SP,GR",),  # SP-derived Rw estimate (declared assumptions)
+    "mhi_scan": ("__curves__:RXO,RT",),  # Rxo/Rt movable-hydrocarbon indicator profile
 }
 
 
@@ -602,6 +605,58 @@ def _compare_methods(ctx: dict[str, Any], ledger: dict[str, Any], prop: str) -> 
     return {"note": f"unknown property '{prop}' — use vsh, porosity, or sw"}
 
 
+def _rw_evidence(ctx: dict[str, Any]) -> dict[str, Any]:
+    """SP-derived Rw for THIS well (GB-4): engine-computed evidence with declared assumptions.
+
+    Needs the field SP context (offset-median RMF + field temperature) the driver computes once;
+    without it, or with an unreadable SSP, the note says so honestly. Facts only — whether this
+    estimate outranks the regional default is the analyst's judgement."""
+    fc = ctx.get("sp_field_ctx") or {}
+    if not fc.get("rmf_offset_median"):
+        return {"note": "no offset RMF/temperature context available for this batch"}
+    curves = ctx.get("curves_full", ctx["curves"])
+    sp, gr = curves.get("SP"), curves.get("GR")
+    fin = gr[np.isfinite(gr)] if gr is not None else np.array([])
+    if sp is None or fin.size < 500:
+        return {"note": "SP or GR insufficient to read a static SP in this well"}
+    ssp = sp_ssp(sp, gr, float(np.percentile(fin, 5)), float(np.percentile(fin, 95)))
+    if not np.isfinite(ssp["ssp_mv"]):
+        return {"note": "static SP unreadable (thin clean/shale populations)", **ssp}
+    rw = rw_from_ssp(ssp["ssp_mv"], float(fc["rmf_offset_median"]), float(fc["temp_c"]))
+    return {
+        **ssp,
+        **rw,
+        "assumptions": "RMF = offset-header median (cross-well); temperature = field BHT median",
+        "rmf_offset_median": fc["rmf_offset_median"],
+        "temp_c": fc["temp_c"],
+    }
+
+
+def _mhi_scan(ctx: dict[str, Any], ledger: dict[str, Any]) -> dict[str, Any]:
+    """Rxo/Rt movable-hydrocarbon indicator profile (GB-4). An indicator, not a saturation."""
+    fc = ctx.get("sp_field_ctx") or {}
+    if not fc.get("rmf_offset_median"):
+        return {"note": "no offset RMF context available for this batch"}
+    curves = ctx.get("curves_full", ctx["curves"])
+    rxo, rt = curves.get("RXO"), ctx["curves"].get("RT")
+    if rxo is None or rt is None:
+        return {"note": "RXO/RT not both present"}
+    cal_rw = ledger.get("calibration", {}).get("Rw", {}).get("value")
+    rw_used = float(cal_rw) if cal_rw is not None else _pf(ctx)["Rw"]
+    mhi = movable_hydrocarbon_index(rt, rxo, rw_used, float(fc["rmf_offset_median"]))
+    fin = mhi[np.isfinite(mhi)]
+    if fin.size < 100:
+        return {"note": "too few overlapping RXO/RT samples for a profile"}
+    return {
+        "p50_mhi": round(float(np.median(fin)), 3),
+        "frac_below_0p7": round(float(np.mean(fin < 0.7)), 3),
+        "n": int(fin.size),
+        "rw_used": round(rw_used, 4),
+        "note": "MHI = Sw/Sxo ratio indicator; < ~0.7 suggests movable hydrocarbons — "
+        "an indicator profile, not a saturation",
+    }
+
+
 # Sonic contrast presets (declared constants, limestone matrix / fresh-mud fluid, us/ft).
 _DT_MATRIX_LS = 47.5
 _DT_FLUID = 189.0
@@ -709,6 +764,8 @@ def observe(
         "validate_choice": lambda: _validate_choice(
             ctx, ledger, str(args.get("property", tgt or ""))
         ),
+        "rw_evidence": lambda: _rw_evidence(ctx),
+        "mhi_scan": lambda: _mhi_scan(ctx, ledger),
     }
     if action in named:
         return named[action]()

@@ -228,7 +228,7 @@ def test_regional_brief_surfaces_only_in_author_mode(tmp_path):
         author=True,
         regional_brief=brief,
     )
-    assert any("regional_reference" in obs and "Mississippian" in obs for obs in author_seen)
+    assert any("regional_reference" in obs and "Schaben" in obs for obs in author_seen)
 
     ledger2, ctx2 = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
     base_seen: list[str] = []
@@ -291,6 +291,47 @@ def test_mc_ranges_override_narrows_band_and_records_provenance(tmp_path):
         ledger["uncertainty"]["net_pay_p50"],
         ledger["uncertainty"]["net_pay_p90"],
     )
+
+
+def test_observation_journal_blocks_repeats_and_surfaces_history(tmp_path):
+    # GB-1: ~80% of v11 observations were repeats (single last_obs slot = amnesia). A repeated
+    # read in the same epoch is a measured no-op with the cached summary; the journal is visible;
+    # a state-changing action re-opens the read (results may legitimately change).
+    ledger, ctx = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
+    seen: list[str] = []
+    script = [
+        {"action": "compare_methods", "args": {"property": "vsh"}},
+        {"action": "compare_methods", "args": {"property": "vsh"}},  # repeat -> no-op
+        {"action": "compute_vsh", "method": "vsh_linear"},  # state change -> epoch bump
+        {"action": "compare_methods", "args": {"property": "vsh"}},  # re-read OK now
+        {"action": "compute_phie"},
+        {"action": "compute_sw"},
+        {"action": "apply_cutoffs"},
+        {"action": "run_uncertainty"},
+        {"action": "finish"},
+    ]
+    it = iter(script)
+
+    def chat(system, user):
+        if "SKEPTICAL" in system:
+            return json.dumps({"objections": []})
+        if "field notebook" in system:
+            return "note"
+        seen.append(user)
+        try:
+            return json.dumps(next(it))
+        except StopIteration:
+            return json.dumps({"action": "finish"})
+
+    run_analyst_loop(ledger, ctx, "free", chat, "fake", max_steps=20, author=True)
+    loop = ledger["run"]["analyst_loop"]
+    assert loop["repeated_observations"] == 1  # only the same-epoch repeat
+    assert loop["wasted_steps"] >= 1
+    # post-epoch re-read executed: two real compare_methods reads counted
+    assert loop["observation_steps"] == 2
+    # the journal is visible to the agent and the repeat reply carries the cached summary
+    assert any("observations_so_far" in obs for obs in seen)
+    assert any("NO-OP repeat" in obs and "cached_summary" in obs for obs in seen)
 
 
 def test_author_compare_methods_feeds_the_next_decision(tmp_path):

@@ -247,6 +247,28 @@ def write_field_narrative(agg: dict[str, Any], chat: ChatFn) -> dict[str, str]:
 # ----------------------------------------
 
 
+def well_analysis_digest(ledger: dict[str, Any]) -> str:
+    """Engine-composed factual digest of one completed well for the cross-well case file (GB-2).
+
+    Ledger facts only (methods + source, zone, outcome) — nothing here is the model's prose, so
+    nothing needs scrubbing. The agent's own qualitative note travels separately (scrubbed)."""
+    z = ledger.get("zone_of_interest")
+    vsh = ledger.get("vsh_comparison") or {}
+    por = ledger.get("porosity_comparison") or {}
+    sw = ledger.get("sw_summary") or {}
+    p50 = (ledger.get("run", {}).get("net_pay_p10_p50_p90") or [None, None, None])[1]
+    parts = [
+        f"zone={z['top_m']}-{z['bottom_m']}m" if z else "zone=none (full interval)",
+        f"vsh={vsh.get('selected')}[{(vsh.get('method_source') or '?')[0]}]",
+        f"phie={por.get('selected')}[{(por.get('method_source') or '?')[0]}]",
+        f"sw={sw.get('method')}[{(sw.get('method_source') or '?')[0]}]",
+        f"netpay_p50={round(p50, 1)}m" if p50 is not None else "netpay_p50=none",
+        f"abstain={bool(ledger.get('run', {}).get('abstain'))}",
+        f"objections={len(ledger.get('objections') or [])}",
+    ]
+    return "; ".join(parts)
+
+
 def well_report_filename(uwi: str) -> str:
     """The per-well report filename the field chapter links to (kept in sync with the writer)."""
     return "report_" + uwi.replace(",", "").replace(" ", "") + ".md"
