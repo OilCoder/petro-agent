@@ -102,8 +102,17 @@ def bad_hole_mask(
 # "infinite" resistivity) and are MASKED to NaN, not just warned — they corrupt Sw/net pay.
 _HARD_RANGES = {
     "RT": (0.0, 40000.0),
+    "RXO": (0.0, 40000.0),
+    "RMED": (0.0, 40000.0),
+    "MNOR": (0.0, 40000.0),
+    "MINV": (0.0, 40000.0),
     "RHOB": (0.5, 5.0),
+    "DRHO": (-1.0, 1.0),
     "NPHI": (-0.15, 1.5),
+    "NPHI_DOL": (-15.0, 100.0),
+    "NPHI_SS": (-15.0, 100.0),
+    "PHID_SVC": (-15.0, 100.0),
+    "NEUT": (0.0, 100000.0),
 }
 
 

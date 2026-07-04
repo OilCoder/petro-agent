@@ -1,10 +1,19 @@
 {
-  "GR":   ["GR", "GRD", "GRGC", "GR_EDTC", "SGR", "CGR", "GAMMA"],
-  "RHOB": ["RHOB", "RHOZ", "DEN", "RHOG", "DENS", "ZDEN", "RHOC"],
+  "GR":   ["GR", "GRGC", "GR_EDTC", "SGR", "CGR", "GAMMA", "GCGR", "GRSG"],
+  "RHOB": ["RHOB", "RHOZ", "DEN", "RHOG", "DENS", "ZDEN"],
   "NPHI": ["NPHI", "NPOR", "TNPH", "CN", "PHIN", "CNLS", "CNPOR", "NPRL"],
-  "RT":   ["RT", "ILD", "LLD", "AT90", "RDEEP", "RILD", "RESD", "RD", "RES"],
+  "NPHI_DOL": ["CNDL"],
+  "NPHI_SS": ["CNSS"],
+  "PHID_SVC": ["DPOR", "DPHI"],
+  "NEUT": ["NEUT", "NEU"],
+  "RT":   ["RT", "ILD", "LLD", "AT90", "RDEEP", "RILD", "RESD", "RD", "RES", "LL", "GUARD", "GRD", "SGRD", "LGRD"],
+  "RXO":  ["RXO", "RLL3", "LL8", "SFL", "SFLU", "LLS", "MLL"],
+  "RMED": ["RILM", "ILM", "RMED"],
+  "MNOR": ["MNOR"],
+  "MINV": ["MINV"],
   "CALI": ["CALI", "CAL", "C1", "CALP"],
   "DCAL": ["DCAL", "CALX", "CALY", "HDCAL"],
-  "DT":   ["DT", "AC", "SONIC", "DTC"],
+  "DRHO": ["RHOC", "DRHO", "ZCOR"],
+  "DT":   ["DT", "AC", "SONIC", "DTC", "SON", "DTC1"],
   "PEF":  ["PEF", "PE"]
 }

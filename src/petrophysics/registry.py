@@ -24,7 +24,7 @@ from src.petrophysics import (
     volumetrics,
     vsh,
 )
-from src.petrophysics.phie import calc_phie, phi_density, phi_neutron
+from src.petrophysics.phie import calc_phie, phi_density, phi_neutron, phi_neutron_countrate
 from src.validators.model_mismatch import neutron_density_crossplot
 
 VERSION = "0.1.0"
@@ -95,6 +95,13 @@ METHOD_REGISTRY: dict[str, MethodSpec] = {
     ),
     "phi_neutron": MethodSpec(
         "phi_neutron", "porosity", phi_neutron, ("NPHI",), "Neutron porosity (single-curve)"
+    ),
+    "phi_neutron_countrate": MethodSpec(
+        "phi_neutron_countrate",
+        "porosity",
+        phi_neutron_countrate,
+        ("NEUT",),
+        "Vintage count-rate neutron, two-point semilog (class-B, engine-anchored)",
     ),
     "phi_sonic_wyllie": MethodSpec(
         "phi_sonic_wyllie", "porosity", sonic.phi_sonic_wyllie, ("DT",), "Wyllie 1956 time-average"

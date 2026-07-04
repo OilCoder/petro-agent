@@ -155,3 +155,50 @@ def phi_neutron(nphi: np.ndarray, phie_max: float = 0.45) -> np.ndarray:
     phi = np.clip(nphi_arr, 0.0, phie_max)
     phi[np.isnan(nphi_arr)] = np.nan
     return phi
+
+
+def phi_neutron_countrate(
+    neut: np.ndarray,
+    n_dense: float,
+    n_shale: float,
+    phi_dense: float = 0.02,
+    phi_shale: float = 0.30,
+    phie_max: float = 0.45,
+) -> np.ndarray:
+    """Porosity from a VINTAGE count-rate neutron via the classic two-point semilog transform.
+
+    Count-rate neutron logs (counts/sec) predate porosity-calibrated tools: counts fall
+    log-linearly as porosity rises, so two anchors define the transform::
+
+        log10(phi) = log10(phi_dense) + (N - n_dense) *
+                     (log10(phi_shale) - log10(phi_dense)) / (n_shale - n_dense)
+
+    Anchors must be ENGINE-DERIVED per well (high-count percentile of the tight block, low-count
+    shale response) with the anchor porosities as declared regional constants — a structural
+    approximation the report must caveat (class-B, bracketed tier).
+
+    Args:
+        neut: count-rate neutron array (counts/sec or API-counts).
+        n_dense: counts at the dense (low-porosity) anchor.
+        n_shale: counts at the shale (high-apparent-porosity) anchor.
+        phi_dense: porosity assigned to the dense anchor (regional constant).
+        phi_shale: apparent porosity assigned to the shale anchor (regional constant).
+        phie_max: physical-plausibility ceiling (v/v).
+
+    Returns:
+        Porosity array in [0, phie_max] (NaN where NEUT is NaN).
+
+    Raises:
+        ValueError: If the anchors coincide or an anchor porosity is non-positive.
+    """
+    if n_dense == n_shale:
+        raise ValueError("count-rate anchors must be distinct (n_dense == n_shale)")
+    if phi_dense <= 0.0 or phi_shale <= 0.0:
+        raise ValueError("anchor porosities must be positive for the semilog transform")
+    n_arr = np.asarray(neut, dtype=float)
+    slope = (np.log10(phi_shale) - np.log10(phi_dense)) / (n_shale - n_dense)
+    with np.errstate(invalid="ignore"):
+        phi = 10.0 ** (np.log10(phi_dense) + (n_arr - n_dense) * slope)
+    phi = np.clip(phi, 0.0, phie_max)
+    phi[np.isnan(n_arr)] = np.nan
+    return phi
