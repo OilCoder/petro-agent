@@ -201,6 +201,43 @@ def test_field_notes_written_scrubbed_and_carried_to_next_well(tmp_path):
     assert any("your_prior_field_notes" in obs and "Simandoux" in obs for obs in seen)
 
 
+def test_regional_brief_surfaces_only_in_author_mode(tmp_path):
+    # GA-5: the brief is background DATA for the author; baseline mode never sees it
+    from src.params.config_loader import load_regional_brief
+
+    brief = load_regional_brief()
+
+    def spy(seen):
+        def chat(system, user):
+            if "SKEPTICAL" in system:
+                return json.dumps({"objections": []})
+            seen.append(user)
+            return json.dumps({"action": "finish"})
+
+        return chat
+
+    ledger, ctx = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
+    author_seen: list[str] = []
+    run_analyst_loop(
+        ledger,
+        ctx,
+        "free",
+        spy(author_seen),
+        "fake",
+        max_steps=4,
+        author=True,
+        regional_brief=brief,
+    )
+    assert any("regional_reference" in obs and "Mississippian" in obs for obs in author_seen)
+
+    ledger2, ctx2 = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
+    base_seen: list[str] = []
+    run_analyst_loop(
+        ledger2, ctx2, "free", spy(base_seen), "fake", max_steps=4, regional_brief=brief
+    )
+    assert not any("regional_reference" in obs for obs in base_seen)
+
+
 def test_author_compare_methods_feeds_the_next_decision(tmp_path):
     ledger, ctx = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
     script = [

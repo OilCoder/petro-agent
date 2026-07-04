@@ -16,6 +16,7 @@ VERSION = "0.1.0"
 
 _DEFAULTS_PATH = Path(__file__).with_name("regional_defaults.json")
 _ALIASES_PATH = Path(__file__).with_name("mnemonic_aliases.json")
+_BRIEF_PATH = Path(__file__).with_name("regional_brief_kansas.md")
 
 _PROV_TO_VARIANT = {"paleozoic": "old_rocks", "tertiary": "tertiary"}
 
@@ -28,6 +29,15 @@ def load_config(path: str | Path = _DEFAULTS_PATH) -> dict:
 def load_aliases(path: str | Path = _ALIASES_PATH) -> dict[str, list[str]]:
     """Load the canonical mnemonic alias map."""
     return json.loads(Path(path).read_text())
+
+
+def load_regional_brief(path: str | Path = _BRIEF_PATH) -> str:
+    """Load the regional background brief (GA-5): cited DATA for the author-mode observation.
+
+    The file is leak-gated by ``tests/test_regional_brief_leak.py`` — it must never contain a
+    method id, a loop action id, or a directed imperative.
+    """
+    return Path(path).read_text()
 
 
 def config_hash(path: str | Path = _DEFAULTS_PATH) -> str:

@@ -260,6 +260,7 @@ def observation_text(
     last_obs: dict[str, Any] | None = None,
     field_context: dict[str, Any] | None = None,
     case_file: str | None = None,
+    regional_brief: str | None = None,
 ) -> str:
     """STATE digest + the report-in-progress (so the agent sees the document it is building).
 
@@ -305,6 +306,8 @@ def observation_text(
         # agent's). GA-4: the agent's own notes from prior wells in this batch.
         **({"field_context": field_context} if field_context else {}),
         **({"your_prior_field_notes": case_file[-1500:]} if case_file else {}),
+        # GA-5: cited background DATA (author mode only); facts with source class, never a nudge.
+        **({"regional_reference": regional_brief[:1800]} if regional_brief else {}),
         "report_so_far": _report_outline(ledger, order or []),
         "eda": ledger.get("run", {}).get("eda", {}),
         "hint": "A MECHANICAL objection MIGHT improve with a different vetted method (try at most "
@@ -664,6 +667,7 @@ def run_analyst_loop(
     author: bool = False,
     field_context: dict[str, Any] | None = None,
     case_file: str | None = None,
+    regional_brief: str | None = None,
 ) -> dict[str, Any]:
     """Run the observe→decide→compute loop; return ``{section_plan, graph, fell_back}``.
 
@@ -695,7 +699,16 @@ def run_analyst_loop(
         actions = available_actions(
             valid, curves, vision=vision_on
         )  # offer everything; no-ops are measured, not hidden
-        obs = observation_text(ledger, valid, actions, order, last_obs, field_context, case_file)
+        obs = observation_text(
+            ledger,
+            valid,
+            actions,
+            order,
+            last_obs,
+            field_context,
+            case_file,
+            regional_brief if author else None,  # GA-5: background data is an author-mode input
+        )
         choice, empty, from_default = _decide(obs, actions, valid, curves, chats, system)
         empty_returns += empty
         action = choice["action"]
