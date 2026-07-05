@@ -100,3 +100,78 @@ def write_narrative(ledger: dict[str, Any], chat: ChatFn, feedback: str = "") ->
         "executive_summary": chat(_SYSTEM, exec_user).strip(),
         "conclusions": chat(_SYSTEM, concl_user).strip(),
     }
+
+
+_REVISE_SYSTEM = """You are the same petrophysicist REREADING YOUR OWN draft report before
+signing it. Judge your prose as a reader would: is the rock story clear, is the tone bound to
+the confidence tier, does any sentence claim more than the FACTS support? If you would improve
+your prose, return revised sections; if the draft already reads right, return it unchanged.
+Return ONLY a JSON object: {"executive_summary": "...", "conclusions": "..."}.
+The ABSOLUTE RULES of the first draft still apply: prose only; ONLY numbers copied verbatim
+from FACTS; tone bound to the tier; no figures ever seen."""
+
+
+def revise_narrative(
+    ledger: dict[str, Any],
+    render_fn: Any,
+    narrative: dict[str, str],
+    chat: ChatFn,
+    max_rounds: int = 2,
+) -> dict[str, str]:
+    """Draft -> reread -> revise loop over the agent's OWN report prose (GD).
+
+    Each round the writer rereads its full rendered draft (``render_fn(narrative)``) and may
+    revise its prose sections. A revision that introduces a number the ledger cannot back is
+    mechanically REJECTED (claim verifier over the revised prose) and the previous draft
+    stands — the rejection is recorded, never hidden. Stats land in
+    ``ledger.run.report_revisions``.
+
+    Args:
+        ledger: the completed ledger (facts digest + verifier pool source).
+        render_fn: callable ``narrative -> rendered report markdown`` (re-render per round).
+        narrative: the first draft from :func:`write_narrative`.
+        chat: the same writer chat function.
+        max_rounds: maximum reread/revise rounds.
+
+    Returns:
+        The final narrative dict (revised or original).
+    """
+    import json as _json
+    import re as _re
+
+    from src.agents.claim_verifier import verify_keyed
+
+    stats = {"rounds": 0, "revised": 0, "rejected": 0, "unchanged": 0}
+    current = dict(narrative)
+    for _ in range(max_rounds):
+        stats["rounds"] += 1
+        draft_md = str(render_fn(current))
+        user = (
+            f"YOUR CURRENT DRAFT (rendered report, trimmed):\n{draft_md[:7000]}\n\n"
+            f"FACTS (the ONLY numbers you may use):\n{_facts(ledger)}\n\n"
+            "Reread your prose sections and return the JSON."
+        )
+        raw = chat(_REVISE_SYSTEM, user)
+        m = _re.search(r"\{.*\}", str(raw), _re.DOTALL)
+        try:
+            data = _json.loads(m.group(0)) if m else None
+        except (ValueError, TypeError):
+            data = None
+        if not isinstance(data, dict) or not str(data.get("executive_summary", "")).strip():
+            stats["unchanged"] += 1
+            break
+        cand = {
+            "executive_summary": str(data.get("executive_summary", "")).strip(),
+            "conclusions": str(data.get("conclusions", current.get("conclusions", ""))).strip(),
+        }
+        if cand == current:
+            stats["unchanged"] += 1
+            break
+        check = verify_keyed(cand["executive_summary"] + "\n" + cand["conclusions"], ledger)
+        if not check["passed"]:
+            stats["rejected"] += 1
+            break
+        current = cand
+        stats["revised"] += 1
+    ledger.setdefault("run", {})["report_revisions"] = stats
+    return current
