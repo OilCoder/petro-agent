@@ -94,6 +94,8 @@ exactly ONE next action:
   indicator profile, when those curves exist; interval_stats, args {"top": <m>, "bottom": <m>},
   returns curve medians over ANY interval you propose — test a hypothesis before committing;
   objection_profile shows, per depth bin, where your current pay samples and their PHIE live;
+  review_attempts, args {"attempt": <n>} or empty, returns the full engine record of your OWN
+  prior attempts on this well (complete history, on demand);
 - RESTRICT the analysis to a depth interval with set_zone_of_interest, args {"top": <m>,
   "bottom": <m>} (recomputes over that zone) if your reading of the data warrants it;
 - RECOMPUTE a core property with a different vetted method (at most once per property) when the
@@ -124,6 +126,8 @@ exactly ONE next action:
   indicator profile, when those curves exist; interval_stats, args {"top": <m>, "bottom": <m>},
   returns curve medians over ANY interval you propose — test a hypothesis before committing;
   objection_profile shows, per depth bin, where your current pay samples and their PHIE live;
+  review_attempts, args {"attempt": <n>} or empty, returns the full engine record of your OWN
+  prior attempts on this well (complete history, on demand);
 - DECIDE whether to RESTRICT the analysis to a depth interval with set_zone_of_interest, args
   {"top": <m>, "bottom": <m>}, if your reading of the data warrants it;
 - COMPUTE each core property (vsh, phie, sw, cutoffs, uncertainty), choosing its method ONCE — pass

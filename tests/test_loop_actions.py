@@ -281,6 +281,22 @@ def test_objection_profile_localizes_the_pay_mass():
     assert "compute the chain" in observe("objection_profile", ctx2, {})["note"]
 
 
+def test_review_attempts_pulls_own_full_history():
+    # GC-5 (self-management): complete records of the agent's OWN prior attempts, on demand
+    ctx = _cmp_ctx()
+    assert "no prior attempts" in observe("review_attempts", ctx, {})["note"]
+    ctx["attempt_history"] = [
+        {"digest": "zone=none; abstain=True", "objections": ["net_pay_plausibility"]},
+        {"digest": "zone=900-1300; abstain=True", "objections": ["net_pay_plausibility"]},
+    ]
+    out = observe("review_attempts", ctx, {})
+    assert out["n_attempts"] == 2 and len(out["records"]) == 2
+    one = observe("review_attempts", ctx, {}, args={"attempt": 1})
+    assert one["attempt"] == 1 and "zone=none" in one["record"]["digest"]
+    assert "does not exist" in observe("review_attempts", ctx, {}, args={"attempt": 9})["note"]
+    assert "review_attempts" in available_actions(set(), {"GR"})  # always offered
+
+
 def test_vintage_neut_unlocks_phie_without_density():
     # class-B wells (GR+NEUT+RT, no RHOB/NPHI) must still walk the chain (CXR-6)
     vintage = {"GR", "NEUT", "RT"}

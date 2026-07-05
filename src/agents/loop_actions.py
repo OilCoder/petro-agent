@@ -100,6 +100,7 @@ _OBSERVE_NEEDS: dict[str, tuple[str, ...]] = {
     "mhi_scan": ("__curves__:RXO,RT",),  # Rxo/Rt movable-hydrocarbon indicator profile
     "interval_stats": (),  # curve stats over an agent-proposed interval (hypothesis test)
     "objection_profile": ("netpay",),  # depth-localized profile of the current pay/PHIE mass
+    "review_attempts": (),  # full engine records of the agent's OWN prior attempts (pull, not push)
 }
 
 
@@ -729,6 +730,27 @@ def _objection_profile(ctx: dict[str, Any], ledger: dict[str, Any]) -> dict[str,
     return {"bin_m": 100, "pay_bins": bins[:20], "n_bins_total": len(bins)}
 
 
+def _review_attempts(ctx: dict[str, Any], args: dict[str, Any]) -> dict[str, Any]:
+    """Self-management (GC-5): the agent pulls the FULL record of its own prior attempts.
+
+    The pushed prior-attempt view is compact/recent; this observation guarantees complete
+    information about the agent's own work on demand — engine-composed records (digest,
+    objections, its own note), never advice. ``args {"attempt": <n>}`` for one, omit for all."""
+    hist = ctx.get("attempt_history") or []
+    if not hist:
+        return {"note": "no prior attempts recorded for this well"}
+    want = args.get("attempt")
+    if want is not None:
+        try:
+            idx = int(want)
+        except (TypeError, ValueError):
+            return {"note": f"attempt must be an integer 1..{len(hist)}"}
+        if not 1 <= idx <= len(hist):
+            return {"note": f"attempt {idx} does not exist (1..{len(hist)})"}
+        return {"attempt": idx, "record": hist[idx - 1]}
+    return {"n_attempts": len(hist), "records": hist[-8:]}
+
+
 # Sonic contrast presets (declared constants, limestone matrix / fresh-mud fluid, us/ft).
 _DT_MATRIX_LS = 47.5
 _DT_FLUID = 189.0
@@ -840,6 +862,7 @@ def observe(
         "mhi_scan": lambda: _mhi_scan(ctx, ledger),
         "interval_stats": lambda: _interval_stats(ctx, args),
         "objection_profile": lambda: _objection_profile(ctx, ledger),
+        "review_attempts": lambda: _review_attempts(ctx, args),
     }
     if action in named:
         return named[action]()
