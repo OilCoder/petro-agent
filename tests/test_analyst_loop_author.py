@@ -334,6 +334,31 @@ def test_observation_journal_blocks_repeats_and_surfaces_history(tmp_path):
     assert any("NO-OP repeat" in obs and "cached_summary" in obs for obs in seen)
 
 
+def test_prior_attempt_surfaces_as_evidence(tmp_path):
+    # GC-3: the agent's own failed attempt (digest + objections) is evidence for the retry;
+    # absent by default so first attempts carry no key noise.
+    ledger, ctx = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
+    seen: list[str] = []
+
+    def chat(system, user):
+        if "SKEPTICAL" in system:
+            return json.dumps({"objections": []})
+        seen.append(user)
+        return json.dumps({"action": "finish"})
+
+    attempt1 = "zone=none; sw=sw_archie[e]; abstain=True; objections=net_pay_plausibility"
+    run_analyst_loop(
+        ledger, ctx, "free", chat, "fake", max_steps=4, author=True, prior_attempt=attempt1
+    )
+    assert any(
+        "your_prior_attempt_on_this_well" in obs and "net_pay_plausibility" in obs for obs in seen
+    )
+    ledger2, ctx2 = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
+    seen.clear()
+    run_analyst_loop(ledger2, ctx2, "free", chat, "fake", max_steps=4, author=True)
+    assert not any("your_prior_attempt_on_this_well" in obs for obs in seen)
+
+
 def test_author_compare_methods_feeds_the_next_decision(tmp_path):
     ledger, ctx = run_descriptive_pass(FIXTURE, out_dir=str(tmp_path))
     script = [

@@ -91,7 +91,9 @@ exactly ONE next action:
   engine-computed agreement (n, r, MAD, bias) between your chosen result and an independent
   contrast, when one exists; rw_evidence returns an engine-computed SP-derived Rw estimate with
   its declared assumptions, when readable; mhi_scan returns the Rxo/Rt movable-hydrocarbon
-  indicator profile, when those curves exist;
+  indicator profile, when those curves exist; interval_stats, args {"top": <m>, "bottom": <m>},
+  returns curve medians over ANY interval you propose — test a hypothesis before committing;
+  objection_profile shows, per depth bin, where your current pay samples and their PHIE live;
 - RESTRICT the analysis to a depth interval with set_zone_of_interest, args {"top": <m>,
   "bottom": <m>} (recomputes over that zone) if your reading of the data warrants it;
 - RECOMPUTE a core property with a different vetted method (at most once per property) when the
@@ -119,7 +121,9 @@ exactly ONE next action:
   engine-computed agreement (n, r, MAD, bias) between your chosen result and an independent
   contrast, when one exists; rw_evidence returns an engine-computed SP-derived Rw estimate with
   its declared assumptions, when readable; mhi_scan returns the Rxo/Rt movable-hydrocarbon
-  indicator profile, when those curves exist;
+  indicator profile, when those curves exist; interval_stats, args {"top": <m>, "bottom": <m>},
+  returns curve medians over ANY interval you propose — test a hypothesis before committing;
+  objection_profile shows, per depth bin, where your current pay samples and their PHIE live;
 - DECIDE whether to RESTRICT the analysis to a depth interval with set_zone_of_interest, args
   {"top": <m>, "bottom": <m>}, if your reading of the data warrants it;
 - COMPUTE each core property (vsh, phie, sw, cutoffs, uncertainty), choosing its method ONCE — pass
@@ -266,6 +270,7 @@ def observation_text(
     case_file: str | None = None,
     regional_brief: str | None = None,
     journal: list[dict[str, Any]] | None = None,
+    prior_attempt: str | None = None,
 ) -> str:
     """STATE digest + the report-in-progress (so the agent sees the document it is building).
 
@@ -301,6 +306,9 @@ def observation_text(
         "valid_actions": actions,
         "diagnostics": _diagnostics(ledger),
         "last_observation": last_obs or "none yet (call an observation to inspect the data)",
+        # GC-3: the agent's own PRIOR attempt on this well (decisions + measured outcome) —
+        # consequence as evidence, never direction; what to change is the agent's call.
+        **({"your_prior_attempt_on_this_well": prior_attempt[:1200]} if prior_attempt else {}),
         # GB-1: every read already executed this well (repeating one is a measured no-op)
         **({"observations_so_far": journal} if journal else {}),
         "computed": computed,
@@ -763,6 +771,7 @@ def run_analyst_loop(
     field_context: dict[str, Any] | None = None,
     case_file: str | None = None,
     regional_brief: str | None = None,
+    prior_attempt: str | None = None,
 ) -> dict[str, Any]:
     """Run the observe→decide→compute loop; return ``{section_plan, graph, fell_back}``.
 
@@ -806,6 +815,7 @@ def run_analyst_loop(
             case_file,
             regional_brief if author else None,  # GA-5: background data is an author-mode input
             _journal_view(journal),
+            prior_attempt,
         )
         choice, empty, from_default = _decide(obs, actions, valid, curves, chats, system)
         empty_returns += empty

@@ -98,6 +98,8 @@ _OBSERVE_NEEDS: dict[str, tuple[str, ...]] = {
     "validate_choice": (),  # engine cross-check of a chosen property vs an independent contrast
     "rw_evidence": ("__curves__:SP,GR",),  # SP-derived Rw estimate (declared assumptions)
     "mhi_scan": ("__curves__:RXO,RT",),  # Rxo/Rt movable-hydrocarbon indicator profile
+    "interval_stats": (),  # curve stats over an agent-proposed interval (hypothesis test)
+    "objection_profile": ("netpay",),  # depth-localized profile of the current pay/PHIE mass
 }
 
 
@@ -657,6 +659,76 @@ def _mhi_scan(ctx: dict[str, Any], ledger: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _interval_stats(ctx: dict[str, Any], args: dict[str, Any]) -> dict[str, Any]:
+    """Curve facts over an interval the AGENT proposes (GC-1): hypothesis test, no commitment.
+
+    The agent picks top/bottom; the engine answers medians and sample counts over the FULL
+    (unmasked) curves so any interval can be probed before committing a zone. Facts only."""
+    if "top" not in args or "bottom" not in args:
+        return {"note": "interval_stats needs args {'top': <m>, 'bottom': <m>}"}
+    lo, hi = float(args["top"]), float(args["bottom"])
+    if lo > hi:
+        lo, hi = hi, lo
+    depth = np.asarray(ctx["depth_m"], dtype=float)
+    in_iv = (depth >= lo) & (depth <= hi)
+    if int(in_iv.sum()) < 10:
+        return {"top_m": lo, "bottom_m": hi, "note": "fewer than 10 samples in that interval"}
+    curves = ctx.get("curves_full", ctx["curves"])
+    out: dict[str, Any] = {"top_m": lo, "bottom_m": hi, "n_samples": int(in_iv.sum())}
+    for k in ("GR", "RHOB", "NPHI", "NEUT", "RT", "SP", "DT"):
+        arr = curves.get(k)
+        if arr is None:
+            continue
+        vals = np.asarray(arr, dtype=float)[in_iv]
+        vals = vals[np.isfinite(vals)]
+        if vals.size >= 10:
+            out[f"{k.lower()}_p50"] = round(float(np.median(vals)), 3)
+    rhob = curves.get("RHOB")
+    if rhob is not None:
+        r = np.asarray(rhob, dtype=float)[in_iv]
+        r = r[np.isfinite(r)]
+        if r.size >= 10:
+            out["frac_rhob_above_2p35"] = round(float(np.mean(r > 2.35)), 3)
+    return out
+
+
+def _objection_profile(ctx: dict[str, Any], ledger: dict[str, Any]) -> dict[str, Any]:
+    """Depth-localized profile of the CURRENT pay (GC-2): where the flagged mass lives.
+
+    A plausibility objection is a verdict on an average; this shows, per depth bin, how many
+    pay samples contribute and their mean PHIE — a compiler error with line numbers on the
+    agent's own computation. Facts only; what to do about it stays the agent's call."""
+    phie, sw, vsh = ctx.get("phie"), ctx.get("sw"), ctx.get("vsh")
+    if phie is None or sw is None:
+        return {"note": "compute the chain first — nothing to profile"}
+    p = ctx["params"]
+    flag = (
+        (np.asarray(vsh, float) <= float(p["vsh_cutoff"].value))
+        & (np.asarray(phie, float) >= float(p["phie_cutoff"].value))
+        & (np.asarray(sw, float) <= float(p["sw_cutoff"].value))
+    )
+    depth = np.asarray(ctx["depth_m"], dtype=float)
+    if not bool(np.any(flag)):
+        return {"note": "no pay-flagged samples under the current cutoffs"}
+    bins: list[dict[str, Any]] = []
+    lo = float(np.floor(depth[flag].min() / 100.0) * 100.0)
+    top_end = float(depth[flag].max())
+    ph = np.asarray(phie, float)
+    while lo <= top_end:
+        in_bin = flag & (depth >= lo) & (depth < lo + 100.0)
+        n = int(in_bin.sum())
+        if n:
+            bins.append(
+                {
+                    "top_m": lo,
+                    "n_pay_samples": n,
+                    "avg_phie_pay": round(float(np.nanmean(ph[in_bin])), 3),
+                }
+            )
+        lo += 100.0
+    return {"bin_m": 100, "pay_bins": bins[:20], "n_bins_total": len(bins)}
+
+
 # Sonic contrast presets (declared constants, limestone matrix / fresh-mud fluid, us/ft).
 _DT_MATRIX_LS = 47.5
 _DT_FLUID = 189.0
@@ -766,6 +838,8 @@ def observe(
         ),
         "rw_evidence": lambda: _rw_evidence(ctx),
         "mhi_scan": lambda: _mhi_scan(ctx, ledger),
+        "interval_stats": lambda: _interval_stats(ctx, args),
+        "objection_profile": lambda: _objection_profile(ctx, ledger),
     }
     if action in named:
         return named[action]()

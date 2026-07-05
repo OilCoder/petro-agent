@@ -243,6 +243,44 @@ def test_mhi_scan_profile_stats():
     assert "not a saturation" in out["note"]
 
 
+def test_interval_stats_probes_any_interval_without_commitment():
+    # GC-1: the agent proposes top/bottom; the engine answers curve facts over the FULL curves
+    ctx = _cmp_ctx()
+    ctx["depth_m"] = np.linspace(100.0, 129.0, 30)
+    out = observe("interval_stats", ctx, {}, args={"top": 110.0, "bottom": 125.0})
+    assert out["n_samples"] >= 10 and "gr_p50" in out and "rt_p50" in out
+    assert 0.0 <= out["frac_rhob_above_2p35"] <= 1.0
+    assert "needs args" in observe("interval_stats", ctx, {}, args={})["note"]
+    tiny = observe("interval_stats", ctx, {}, args={"top": 100.0, "bottom": 101.0})
+    assert "fewer than 10" in tiny["note"]
+    assert "interval_stats" in available_actions(set(), {"GR"})  # always offered
+
+
+def test_objection_profile_localizes_the_pay_mass():
+    # GC-2: per-bin pay-sample counts + mean PHIE — line numbers on the agent's own result
+    n = 200
+    depth = np.linspace(0.0, 199.0, n)
+    ctx = _cmp_ctx()
+    ctx["depth_m"] = depth
+    ctx["vsh"] = np.full(n, 0.1)
+    ctx["sw"] = np.full(n, 0.2)
+    phie = np.full(n, 0.02)
+    phie[(depth >= 100) & (depth < 150)] = 0.35  # the flagged mass lives in 100-150 m
+    ctx["phie"] = phie
+    ctx["params"]["vsh_cutoff"] = _pv(0.5)
+    ctx["params"]["phie_cutoff"] = _pv(0.08)
+    ctx["params"]["sw_cutoff"] = _pv(0.6)
+    out = observe("objection_profile", ctx, {})
+    tops = [b["top_m"] for b in out["pay_bins"]]
+    assert tops == [100.0] and out["pay_bins"][0]["avg_phie_pay"] == 0.35
+    # gated on netpay at the frontier; honest note when the chain is missing
+    assert "objection_profile" not in available_actions({"vsh", "phie", "sw"}, _FULL)
+    assert "objection_profile" in available_actions({"vsh", "phie", "sw", "netpay"}, _FULL)
+    ctx2 = _cmp_ctx()
+    ctx2["sw"] = None
+    assert "compute the chain" in observe("objection_profile", ctx2, {})["note"]
+
+
 def test_vintage_neut_unlocks_phie_without_density():
     # class-B wells (GR+NEUT+RT, no RHOB/NPHI) must still walk the chain (CXR-6)
     vintage = {"GR", "NEUT", "RT"}
