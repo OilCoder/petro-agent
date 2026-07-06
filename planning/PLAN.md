@@ -157,6 +157,16 @@ Done when: en modo autor el pass-0 es solo descriptivo, el agente autora la inte
 - [x] R14-E loop autor: kwarg `author`, `_LOOP_SYSTEM_AUTHOR` (auditado 7 focos), salta `seed_baseline_sections`, `vsh` en stale_or_pending; tests/test_analyst_loop_author.py (scripted authored_core==3; modelo-basura → reclose + fell_back) (2026-07-02)
 - [x] R14-F driver `debug/gen_field_report_v8_author.py` + smoke local + batch free en `outputs/v8` + lectura A/B vs v7 en bitácora (leg de pago solo con OK del usuario) (2026-07-02)
 
+### Phase R15 — Ciclo final: condiciones naturales del ingeniero (GA+GB+GC+GD) (COMPLETED — veredicto: la metodología + thinking produce zonificadores profundos en 4 familias de modelos)
+Done when: el agente trabaja con las condiciones de un ingeniero real (memoria intra-ciclo, memoria entre pozos, hipótesis, consecuencia, borradores, thinking), cada palanca con golden tests y medida en batch; veredicto final y calibración junior/senior en bitácora. Rama: `experiment/claude-analyst`.
+- [x] GA: field pack (src/eda/field_study.py) + evidence_efficiency/request_tool + validate_choice + field notes cross-well + brief regional con doble gate anti-fuga (2026-07-04)
+- [x] GB: journal de observaciones (repeticiones = no-ops medidos; mató ~80% de relecturas) + digest de análisis cross-well + brief solo-identidad + rw_evidence/mhi_scan + bins finos profundos (2026-07-05)
+- [x] GC: interval_stats + objection_profile + reintento con el propio fracaso (publica SIEMPRE el intento 2) + review_attempts (2026-07-05)
+- [x] GD: revise_narrative — el escritor relee su borrador renderizado; el verifier rechaza revisiones con números sin respaldo (src/agents/writer.py) (2026-07-05)
+- [x] Cliente: `make_chat(reasoning=True)` — thinking opt-in OpenRouter; los nemotron híbridos corrían apagados (src/agents/client.py) (2026-07-06)
+- [x] Summit v3 (72/72 verifier PASS): sp_rw (banda 0.041–0.054 confirma el default 0.04) + mhi + gross/NTG sobre la ventana analizada (2026-07-04)
+- [x] Medición final: iterate15 (la iteración amplifica lo que el modelo es) + matriz v13↔v14 free/pago × thinking + calibración junior/senior — bitácoras 2026-07-04/05/06 (2026-07-06)
+
 ## Conventions
 - Cada fórmula nueva entra al registry SOLO con golden test (bounds, monotonía, caso analítico, NaN passthrough).
 - Una sección [MODELO] aparece SOLO si existe su tool_result de respaldo (sin theater).
