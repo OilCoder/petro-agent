@@ -37,6 +37,7 @@ def make_chat(
     host: str | None = None,
     seed: int = 42,
     backend: str = "auto",
+    reasoning: bool = False,
 ) -> ChatFn:
     """Build a deterministic ``chat(system, user) -> str`` callable.
 
@@ -47,6 +48,8 @@ def make_chat(
         seed: Decoding seed (best-effort on cloud providers).
         backend: ``"auto"`` (route to OpenRouter when ``"/"`` is in ``model``,
             else Ollama), or force ``"ollama"`` / ``"openrouter"``.
+        reasoning: request the model's thinking mode (OpenRouter ``reasoning`` param;
+            hybrid models like the nemotrons run direct without it). Ollama ignores it.
 
     Returns:
         A ChatFn closure over the chosen backend.
@@ -59,7 +62,7 @@ def make_chat(
     if backend == "ollama":
         return _make_ollama_chat(model, host, seed)
     if backend == "openrouter":
-        return _make_openrouter_chat(model, seed)
+        return _make_openrouter_chat(model, seed, reasoning)
     raise ValueError(f"unknown backend: {backend!r}")
 
 
@@ -163,7 +166,7 @@ def _make_ollama_chat(model: str, host: str | None, seed: int) -> ChatFn:
     return chat
 
 
-def _make_openrouter_chat(model: str, seed: int) -> ChatFn:
+def _make_openrouter_chat(model: str, seed: int, reasoning: bool = False) -> ChatFn:
     """Build a ChatFn backed by OpenRouter — a ceiling-control instrument only.
 
     Cloud is never the report runtime; it answers "is it the flow or the model?"
@@ -192,6 +195,8 @@ def _make_openrouter_chat(model: str, seed: int) -> ChatFn:
             "temperature": 0.0,
             "seed": seed,
         }
+        if reasoning:
+            payload["reasoning"] = {"effort": "medium"}
         return _openrouter_request(api_key, payload)
 
     return chat
