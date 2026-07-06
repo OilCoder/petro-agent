@@ -1,5 +1,9 @@
 # MHI (movable hydrocarbon index): hidrocarburo móvil desde el contraste Rxo/Rt
 
+> **Dominio**: petróleo / petrofísica
+> **Prerrequisitos**: [[02_ecuaciones_core_petrofisica]], [[04_sp_ssp_rw]]
+> **Dificultad**: intermedio
+
 ## Intuición
 
 Cuando se perfora, el filtrado de lodo invade la zona cercana al pozo y desplaza los
@@ -46,6 +50,13 @@ consolidado — un hallazgo que ninguna curva individual muestra por sí sola.
   Rmf viene de la mediana de offset con asunción declarada.
 - En el summit v3 aparece como evidencia en prosa con sus asunciones; la nota clave del
   contrato: es un **perfil indicador, nunca una saturación**.
+
+## Por qué esto y no la alternativa
+
+La alternativa directa (calcular Sxo con Archie en zona lavada y restar) exige F y
+porosidad confiables; el método ratio cancela F y sobrevive con solo cuatro
+resistividades. El costo: es un indicador cualitativo — por eso el contrato del
+proyecto lo prohíbe como saturación.
 
 ## Autoevaluación
 

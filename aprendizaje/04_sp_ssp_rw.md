@@ -1,5 +1,9 @@
 # SP estático (SSP) → Rw: la resistividad del agua desde el potencial espontáneo
 
+> **Dominio**: petróleo / petrofísica
+> **Prerrequisitos**: [[02_ecuaciones_core_petrofisica]]
+> **Dificultad**: intermedio
+
 ## Intuición
 
 La curva SP mide un voltaje natural entre el lodo del pozo y el agua de formación:
@@ -53,6 +57,13 @@ regional 0.04** que hasta entonces era solo una asunción.
 - Evidencia para el agente: observación `rw_evidence` (`src/agents/loop_actions.py`).
 - En el summit v3 la banda parametrizó el rango Rw del Monte Carlo con provenance
   registrado (`mc_ranges_override`).
+
+## Por qué esto y no la alternativa
+
+La alternativa a Rw-desde-SP es el catálogo de aguas producidas (no disponible para
+estas leases) o el Rwa por zona limpia (circular: depende de la porosidad calculada).
+El SP es la única medición independiente presente en los LAS — con la asunción de RMF
+de offset declarada, es evidencia; sin declararla, sería contaminación.
 
 ## Autoevaluación
 
