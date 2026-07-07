@@ -61,7 +61,7 @@ Done when: `vsh_clavier`, `vsh_steiber`, `phi_density`, `phi_neutron` existen, g
 - [x] Golden tests por método + test de la sección de comparación (2026-06-28)
 - ~~litho_mn~~ (diferido a R4: crossplot [MODELO], requiere DT)
 
-### Phase R4 — Métodos [MODELO] de profundidad + sus secciones (mostly done)
+### Phase R4 — Métodos [MODELO] de profundidad + sus secciones (COMPLETED)
 Done when: permeabilidad, derivados, electrofacies, rock typing y crossplots extra existen como tools seleccionables, cada uno respaldado por tool_result, con su sección opcional.
 - [x] src/petrophysics/permeability.py (Timur/Coates, MODELO con caveat — DV2-18) (2026-06-28)
 - [x] src/petrophysics/rock_quality.py (RQI/FZI/Winland) (2026-06-28)
@@ -76,18 +76,18 @@ Done when: dado un set de LAS se produce un capítulo de campo (estadística cro
 - [x] Selección 1-fijo + 2-libres (`select_wells`) (2026-06-28)
 - [x] Tests de agregación (never-sum) + render + selección (2026-06-28)
 
-### Phase R6 — Cablear el split [FIJO]/[MODELO] definitivo
+### Phase R6 — Cablear el split [FIJO]/[MODELO] definitivo (COMPLETED)
 Done when: `_MANDATORY_BODY` = [FIJO] acordados; `OPTIONAL_SECTIONS` + `OPTIONAL_REQUIRES` = [MODELO] con su tool de respaldo; modos respetan el split.
 - [x] Reparto [FIJO]/[MODELO] fijado por el usuario (DV2-18, 2026-06-28)
 - [x] Piso FIJO cableado en `_MANDATORY_BODY` (R2/R3 + Porosidad/Sw) (2026-06-28)
 - [x] Secciones [MODELO] en `OPTIONAL_SECTIONS` + `OPTIONAL_REQUIRES` (shaly/sonic/permeability/rock_quality/electrofacies) (2026-06-28)
 - [x] Catálogo de secciones opcionales expuesto al prompt del analista (src/agents/analyst.py) (2026-06-28)
 
-### Phase R7 — Verificación e2e + medición por modelo + docs (mostly done)
+### Phase R7 — Verificación e2e + medición por modelo + docs (COMPLETED)
 Done when: corrida e2e produce el informe completo ([FIJO] todas + [MODELO] elegidas con número real); el leaderboard mide profundidad por modelo; specs/manifest/PLAN actualizados.
 - [x] Métrica `depth_backed` (secciones [MODELO] respaldadas) en objective_score + leaderboard (2026-06-28)
 - [x] E2E determinista: modelo elige Simandoux+permeabilidad+rock_quality+electrofacies → 4 secciones con número real, depth_backed=4, claim_verifier PASS (2026-06-28)
-- [ ] Regenerar los 2 informes de muestra con Ollama (requiere modelos levantados)
+- ~~Regenerar los 2 informes de muestra con Ollama~~ (discarded 2026-07-07: superado por los informes finales v14/opus publicados en docs/reports/; el proyecto cerró con el veredicto R15)
 
 ### Phase R8 — Auditoría y remediación de fuga de interpretación (COMPLETED)
 Done when: ninguna superficie código→agente orienta el análisis (zona, método, litología, conclusión); base-por-fallo siempre señalada en superficie; completitud medible separando piso [código] de contribución interpretativa [agente]; congelado por tests.
@@ -166,6 +166,24 @@ Done when: el agente trabaja con las condiciones de un ingeniero real (memoria i
 - [x] Cliente: `make_chat(reasoning=True)` — thinking opt-in OpenRouter; los nemotron híbridos corrían apagados (src/agents/client.py) (2026-07-06)
 - [x] Summit v3 (72/72 verifier PASS): sp_rw (banda 0.041–0.054 confirma el default 0.04) + mhi + gross/NTG sobre la ventana analizada (2026-07-04)
 - [x] Medición final: iterate15 (la iteración amplifica lo que el modelo es) + matriz v13↔v14 free/pago × thinking + calibración junior/senior — bitácoras 2026-07-04/05/06 (2026-07-06)
+
+### Phase R16 — Vara del summit, ciclo 1: sensibilidad numérica de las ventanas
+Done when: `debug/dbg_vara_sensitivity.py` recalcula precisión/cobertura de zona y el leaderboard bajo perturbaciones de las ventanas del summit (shift ±50 m y ±100 m; bordes contraídos/expandidos 10%) para cada corrida de config final (v12–v14: opus, glm, gpt-5, ultra-think, super, qwen-thinking reconstruido), y `planning/specs/verificacion-vara-summit.md` §1 presenta las tablas por escenario con un veredicto explícito de estabilidad del ranking. Todo determinista (numpy/json sobre outputs/ existentes) — CERO LLM en el análisis.
+- [ ] `debug/dbg_vara_sensitivity.py`: cargar ventanas del summit (`outputs/claude_report/wells_metrics.json`, campo `zone`) y las corridas finales reutilizando la lógica de carga de `debug/dbg_final_evaluation.py` (incluida la reconstrucción de qwen-thinking desde run.log)
+- [ ] Implementar los escenarios de perturbación y recalcular por agente: zona-profunda (tope ≥700 m), precisión/cobertura de solape mediana, y posición en el ranking por escenario
+- [ ] Crear `planning/specs/verificacion-vara-summit.md` con §0 (propósito: la vara es baseline declarado, no verdad de terreno) y §1 (tablas + veredicto de estabilidad: qué cambia y qué no con la vara temblando)
+
+### Phase R17 — Vara del summit, ciclo 2: refutación determinista de los bordes
+Done when: para cada pozo usado en las comparaciones finales, los criterios físicos de borde se recomputan desde el LAS crudo (`data/`, vía lasio/numpy: primer tramo con RHOB sostenido >2.35 g/cc en ventana móvil de 50 m, y última profundidad con curvas válidas) y cada borde de ventana del summit queda clasificado `defendido` / `débil` con su ventana alternativa defendible cuando aplique; resultados en §2 del spec. Sin tocar `src/` y sin LLM: el "adversario" es el criterio físico recomputado, no una relectura.
+- [ ] `debug/dbg_vara_refute.py`: para los pozos comparados (los de las corridas v12–v14), recomputar desde el LAS el tope de roca consolidada (RHOB sostenido >2.35 g/cc) y la base con datos válidos, y contrastar contra `zone.top_m`/`zone.bottom_m` del summit
+- [ ] Clasificar cada borde (defendido si |delta| ≤ 50 m; débil si >50 m) y derivar la ventana alternativa anclada al criterio físico para los débiles
+- [ ] Escribir §2 del spec con la tabla pozo a pozo (borde summit vs borde físico vs delta) y el veredicto por pozo
+
+### Phase R18 — Vara del summit, ciclo 3: peor caso combinado y veredicto
+Done when: `debug/dbg_vara_worstcase.py` recalcula el leaderboard completo usando como vara las ventanas alternativas más hostiles que sobrevivieron R16+R17 (por pozo: la física de R17 si difiere, y el peor escenario de R16), y §3 del spec responde explícitamente: (1) ¿opus sigue 4/4 zonas y primero?, (2) ¿la conclusión "metodología+thinking → zonificadores profundos en 4 familias" aguanta?, (3) ¿qué cifras del informe de evaluación deben re-enunciarse con banda en vez de punto? Resumen ejecutivo al tope del spec.
+- [ ] `debug/dbg_vara_worstcase.py`: construir la vara hostil combinada (R17 física por pozo + peor escenario R16) y recalcular precisión/cobertura/ranking finales
+- [ ] Escribir §3 del spec (veredicto a las 3 preguntas) + resumen ejecutivo en §0
+- [ ] Registrar el ciclo en `planning/bitacora/2026-07-07.md` (sección nueva, con errores y hallazgos)
 
 ## Conventions
 - Cada fórmula nueva entra al registry SOLO con golden test (bounds, monotonía, caso analítico, NaN passthrough).
