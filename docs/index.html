@@ -194,6 +194,8 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
   <a href="#invariante"><span data-lang="es">El invariante</span><span data-lang="en">The invariant</span></a>
   <a href="#metodologia"><span data-lang="es">Metodología</span><span data-lang="en">Methodology</span></a>
   <a href="#resultados"><span data-lang="es">Resultados</span><span data-lang="en">Results</span></a>
+  <a href="#evolucion"><span data-lang="es">La evolución v7→v14</span><span data-lang="en">The v7→v14 evolution</span></a>
+  <a href="#narrativas"><span data-lang="es">Tres narrativas</span><span data-lang="en">Three narratives</span></a>
   <a href="#informes"><span data-lang="es">Informes finales</span><span data-lang="en">Final reports</span></a>
   <a href="#veredicto"><span data-lang="es">¿Junior o senior?</span><span data-lang="en">Junior or senior?</span></a>
   <a href="#honestidad"><span data-lang="es">Honestidad</span><span data-lang="en">Honesty</span></a>
@@ -219,8 +221,8 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
   <div class="tiles">
     <div class="tile"><div class="v mono">0</div><div class="l"><span data-lang="es">números escritos por el LLM</span><span data-lang="en">numbers written by the LLM</span></div></div>
     <div class="tile"><div class="v water">198</div><div class="l"><span data-lang="es">pozos Kansas cargados; regresión en VOLVE</span><span data-lang="en">Kansas wells loaded; VOLVE regression</span></div></div>
-    <div class="tile"><div class="v oil">7×</div><div class="l"><span data-lang="es">elecciones interpretativas al pasar de revisor a autor</span><span data-lang="en">interpretive choices going reviewer → author</span></div></div>
-    <div class="tile"><div class="v">88–98%</div><div class="l"><span data-lang="es">cobertura real de las bandas P10–P90 (nominal 80%)</span><span data-lang="en">real P10–P90 band coverage (80% nominal)</span></div></div>
+    <div class="tile"><div class="v oil">4/4</div><div class="l"><span data-lang="es">zonas 100% en roca productora — el mejor agente final (opus-4.8)</span><span data-lang="en">zones 100% in producing rock — best final agent (opus-4.8)</span></div></div>
+    <div class="tile"><div class="v">80%→0</div><div class="l"><span data-lang="es">observaciones desperdiciadas antes y después de darle memoria</span><span data-lang="en">wasted observations before vs after giving it memory</span></div></div>
   </div>
 </section>
 
@@ -420,8 +422,8 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
     choice repeated, the number was bit-identical.</span>
   </p>
 
-  <h3><span data-lang="es">3 · La decisión que ningún modelo free toma — medida limpiamente</span>
-      <span data-lang="en">3 · The decision no free model makes — cleanly measured</span></h3>
+  <h3><span data-lang="es">3 · La decisión que ningún modelo tomaba — medida limpiamente (estado a v10)</span>
+      <span data-lang="en">3 · The decision no model would make — cleanly measured (as of v10)</span></h3>
   <p>
     <span data-lang="es">Restringir el intervalo de análisis (excluir el overburden que infla la
     porosidad) es la decisión madre — y ningún modelo free la tomó. Ejercimos las tres palancas
@@ -488,53 +490,124 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
     uncertainty, P10–P90 bands went from overconfident (2–35% coverage) to calibrated (88–98%
     vs the 80% nominal).</span>
   </p>
+  <aside class="note">
+    <span data-lang="es">Los resultados 1–3 son la fotografía a mitad del proyecto. Lo que pasó
+    después — cómo la zona pasó de imposible a sistemática — es la sección siguiente.</span>
+    <span data-lang="en">Results 1–3 are the mid-project snapshot. What happened next — how the
+    zone went from impossible to systematic — is the next section.</span>
+  </aside>
+</section>
+
+<section id="evolucion" class="reveal">
+  <h2><span data-lang="es">La evolución v7→v14: las condiciones naturales del ingeniero</span>
+      <span data-lang="en">The v7→v14 evolution: a real engineer's working conditions</span></h2>
+  <p>
+    <span data-lang="es">La segunda mitad del proyecto probó una tesis simple: dale al agente lo
+    que un ingeniero real da por sentado — ver su data y su trabajo cuantas veces quiera, probar
+    conjeturas, aprender de su propio fracaso, hacer borradores, pensar antes de responder — y
+    mide qué cambia. Cada palanca fue honesta (hechos, nunca dirección) y cada una produjo su
+    número:</span>
+    <span data-lang="en">The project's second half tested a simple thesis: give the agent what a
+    real engineer takes for granted — re-reading its data and its own work at will, testing
+    conjectures, learning from its own failure, drafting, thinking before answering — and measure
+    what changes. Every lever was honest (facts, never direction), and each produced its
+    number:</span>
+  </p>
+  <table>
+    <thead><tr>
+      <th><span data-lang="es">Ronda</span><span data-lang="en">Round</span></th>
+      <th><span data-lang="es">Condición añadida</span><span data-lang="en">Condition added</span></th>
+      <th><span data-lang="es">Efecto medido</span><span data-lang="en">Measured effect</span></th></tr></thead>
+    <tbody>
+      <tr><td>GA <span class="mono">(v11)</span></td>
+        <td><span data-lang="es">estudio de campo + evidencia comparativa + notas entre pozos</span><span data-lang="en">field study + comparison evidence + cross-well notes</span></td>
+        <td><b><span data-lang="es">la zona aparece: 1/24 → 13/15 pozos</span><span data-lang="en">the zone appears: 1/24 → 13/15 wells</span></b></td></tr>
+      <tr><td>GB <span class="mono">(v12)</span></td>
+        <td><span data-lang="es">journal de observaciones (memoria intra-pozo) + digest de análisis</span><span data-lang="en">observation journal (within-well memory) + analysis digest</span></td>
+        <td><b><span data-lang="es">relecturas desperdiciadas: ~80% → 0</span><span data-lang="en">wasted re-reads: ~80% → 0</span></b></td></tr>
+      <tr><td>GC <span class="mono">(v13)</span></td>
+        <td><span data-lang="es">reintento con su propio fracaso + hipótesis + error localizado</span><span data-lang="en">retry on its own failure + hypotheses + localized error</span></td>
+        <td><span data-lang="es">las zonas se MUEVEN: gpt-5 cruza a 900–1326 m y refina a 1040–1300</span><span data-lang="en">zones MOVE: gpt-5 crosses to 900–1326 m and refines to 1040–1300</span></td></tr>
+      <tr><td>GD <span class="mono">(v14)</span></td>
+        <td><span data-lang="es">ciclo de borradores (relee su informe) + thinking mode</span><span data-lang="en">draft cycle (rereads its report) + thinking mode</span></td>
+        <td><span data-lang="es">49 revisiones de prosa, 2 rechazadas por el verificador; ultra free: 0→3/3 zonas profundas; <b>opus: 4/4, precisión 1.00</b></span><span data-lang="en">49 prose revisions, 2 rejected by the verifier; free ultra: 0→3/3 deep zones; <b>opus: 4/4, precision 1.00</b></span></td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <div class="t"><span data-lang="es">El arco que cierra el proyecto</span><span data-lang="en">The arc that closes the project</span></div>
+    <span data-lang="es">El modelo que en v10 hizo <b>cero decisiones en 16 pasos</b>
+    (claude-opus-4.8) terminó siendo, con el stack completo, el único agente cuyas ventanas caen
+    al 100% en roca productora — y el único con convergencias legítimas con pay, incluida la del
+    pozo que todos los demás fallan. Las condiciones no fabrican juicio: lo revelan, lo
+    amplifican y lo miden.</span>
+    <span data-lang="en">The model that made <b>zero decisions in 16 steps</b> back in v10
+    (claude-opus-4.8) ended up, on the full stack, as the only agent whose windows sit 100%
+    inside producing rock — and the only one with legitimate pay-bearing convergences, including
+    the well every other model fails. The conditions don't manufacture judgment: they reveal it,
+    amplify it, and measure it.</span>
+  </div>
+</section>
+
+<section id="narrativas" class="reveal">
+  <h2><span data-lang="es">Tres narrativas, un mismo dato</span><span data-lang="en">Three narratives, one dataset</span></h2>
+  <p>
+    <span data-lang="es">El proyecto completo se puede leer por tres puertas, cada una con su
+    página dedicada:</span>
+    <span data-lang="en">The full project reads through three doors, each with its own page:</span>
+  </p>
+  <a class="report-card" href="petrolero.html" style="--g1:var(--oil);--g2:var(--oil-strong)">
+    <div class="doc"></div><div>
+    <h4>🛢️ <span data-lang="es">Para el petrofísico</span><span data-lang="en">For the petrophysicist</span></h4>
+    <div class="meta"><span data-lang="es">la roca, la zona, la evidencia SP→Rw, dónde fallan como analistas y la calibración junior/senior</span><span data-lang="en">the rock, the zone, the SP→Rw evidence, where they fail as analysts, and the junior/senior calibration</span></div></div>
+  </a>
+  <a class="report-card" href="ingenieria.html" style="--g1:var(--water);--g2:var(--cat-3)">
+    <div class="doc"></div><div>
+    <h4>🖥️ <span data-lang="es">Para el ingeniero de software</span><span data-lang="en">For the software engineer</span></h4>
+    <div class="meta"><span data-lang="es">la arquitectura, las 4 rondas de palancas con sus números, costos medidos y lecciones de sistemas de agentes</span><span data-lang="en">the architecture, the 4 lever rounds with their numbers, measured costs, and agent-system lessons</span></div></div>
+  </a>
+  <a class="report-card" href="proceso.html" style="--g1:var(--cat-5);--g2:var(--cat-2)">
+    <div class="doc"></div><div>
+    <h4>📓 <span data-lang="es">El proceso (bitácora)</span><span data-lang="en">The process (journal)</span></h4>
+    <div class="meta"><span data-lang="es">el diario de desarrollo completo, día a día — cada decisión de diseño con el error que la motivó</span><span data-lang="en">the full development journal, day by day — every design decision with the mistake that motivated it</span></div></div>
+  </a>
 </section>
 
 <section id="informes" class="reveal">
   <h2><span data-lang="es">Informes finales</span><span data-lang="en">Final reports</span></h2>
   <p>
-    <span data-lang="es">Estos son informes reales, íntegros, tal como los produjo cada modelo —
-    con sus figuras, sus tablas de método, su banner de abstención cuando corresponde y su grafo
-    de metodología. El mismo pozo (25945) aparece en modo revisor y en modo autor para que la
-    diferencia se lea directamente:</span>
-    <span data-lang="en">These are real, unabridged reports exactly as each model produced them —
-    figures, method tables, abstention banner where due, and the methodology graph. The same
-    well (25945) appears in reviewer and author mode so the difference reads directly:</span>
+    <span data-lang="es">Estos son los informes FINALES, íntegros, tal como los produjo cada
+    analista — figuras, tablas de método, banner de abstención cuando corresponde. El pozo
+    24,881 (el más difícil del set) aparece en la versión del summit y en la del mejor agente
+    para que la comparación se lea directamente:</span>
+    <span data-lang="en">These are the FINAL reports, unabridged, exactly as each analyst
+    produced them — figures, method tables, abstention banner where due. Well 24,881 (the
+    hardest in the set) appears in both the summit's version and the best agent's so the
+    comparison reads directly:</span>
   </p>
-  <a class="report-card" href="reports/v7_gpt5_25945.html" style="--g1:var(--cat-3);--g2:var(--water)">
+  <a class="report-card" href="reports/summit_field.html" style="--g1:var(--cat-5);--g2:var(--oil)">
     <div class="doc"></div><div>
-    <h4>15-135-25945 · <span class="mono">gpt-5</span></h4>
-    <div class="meta"><span data-lang="es">modo revisor (v7) · Simandoux · abstención declarada</span><span data-lang="en">reviewer mode (v7) · Simandoux · declared abstention</span></div></div>
+    <h4><span data-lang="es">Informe de campo</span><span data-lang="en">Field report</span> · <span class="mono">summit v3</span></h4>
+    <div class="meta"><span data-lang="es">72 pozos en dos clases etiquetadas · mapa PLSS · techo CONTAMINADO declarado (el analista conocía el proyecto)</span><span data-lang="en">72 wells in two labeled classes · PLSS map · declared CONTAMINATED ceiling (the analyst knew the project)</span></div></div>
   </a>
-  <a class="report-card" href="reports/v7_opus_25945.html" style="--g1:var(--cat-5);--g2:var(--water)">
+  <a class="report-card" href="reports/summit_24881.html" style="--g1:var(--cat-5);--g2:var(--water)">
     <div class="doc"></div><div>
-    <h4>15-135-25945 · <span class="mono">claude-opus-4.8</span></h4>
-    <div class="meta"><span data-lang="es">modo revisor (v7) · 12 pasos + lectura de figuras (visión)</span><span data-lang="en">reviewer mode (v7) · 12 steps + figure reading (vision)</span></div></div>
+    <h4>15-135-24,881 · <span class="mono">summit v3</span></h4>
+    <div class="meta"><span data-lang="es">zona 900–1382.6 m · evidencia SP→Rw con asunciones declaradas · MHI</span><span data-lang="en">zone 900–1382.6 m · SP→Rw evidence with declared assumptions · MHI</span></div></div>
   </a>
-  <a class="report-card" href="reports/v8_ultra_25945.html" style="--g1:var(--oil);--g2:var(--cat-2)">
+  <a class="report-card" href="reports/opus_24881.html" style="--g1:var(--oil);--g2:var(--oil-strong)">
     <div class="doc"></div><div>
-    <h4>15-135-25945 · <span class="mono">nemotron-ultra</span></h4>
-    <div class="meta"><span data-lang="es">modo AUTOR (v8) · 3/3 métodos propios + 4 opcionales · 7 elecciones</span><span data-lang="en">AUTHOR mode (v8) · 3/3 own methods + 4 optionals · 7 choices</span></div></div>
+    <h4>15-135-24,881 · <span class="mono">claude-opus-4.8</span> + thinking 🏆</h4>
+    <div class="meta"><span data-lang="es">EL MEJOR POZO DE AGENTE: zona 1150–1350 m · pay real 13.0 m · PHIE 0.146 plausible · convergencia legítima</span><span data-lang="en">THE BEST AGENT WELL: zone 1150–1350 m · real 13.0 m pay · plausible PHIE 0.146 · legitimate convergence</span></div></div>
   </a>
-  <a class="report-card" href="reports/v10_ultra_25945.html" style="--g1:var(--oil);--g2:var(--cat-4)">
+  <a class="report-card" href="reports/glm_25990.html" style="--g1:var(--water);--g2:var(--cat-3)">
     <div class="doc"></div><div>
-    <h4>15-135-25945 · <span class="mono">nemotron-ultra</span></h4>
-    <div class="meta"><span data-lang="es">modo autor + entorno veraz (v10) · objeciones mid-loop</span><span data-lang="en">author + truthful environment (v10) · mid-loop objections</span></div></div>
+    <h4>15-135-25990 · <span class="mono">glm-5.2</span> + thinking</h4>
+    <div class="meta"><span data-lang="es">zona 900–1376 m en su debut · ~$2 el batch — la frontera calidad/costo</span><span data-lang="en">zone 900–1376 m on debut · ~$2 per batch — the quality/cost frontier</span></div></div>
   </a>
-  <a class="report-card" href="reports/v10p_qwen_24938.html" style="--g1:var(--oil);--g2:var(--oil-strong)">
+  <a class="report-card" href="reports/ultra_think_25990.html" style="--g1:var(--oil);--g2:var(--cat-2)">
     <div class="doc"></div><div>
-    <h4>15-135-24,938 · <span class="mono">qwen3-max</span> 🎯</h4>
-    <div class="meta"><span data-lang="es">LA PRIMERA ZONA (v10 pago) · intervalo 265.5–353.6 m elegido por el agente</span><span data-lang="en">THE FIRST ZONE (v10 paid) · 265.5–353.6 m interval chosen by the agent</span></div></div>
-  </a>
-  <a class="report-card" href="reports/v7_gpt5_field.html" style="--g1:var(--cat-3);--g2:var(--cat-2)">
-    <div class="doc"></div><div>
-    <h4><span data-lang="es">Informe de campo</span><span data-lang="en">Field report</span> · <span class="mono">gpt-5</span></h4>
-    <div class="meta"><span data-lang="es">4 pozos autoelegidos · estadística cross-well (nunca suma)</span><span data-lang="en">4 self-selected wells · cross-well stats (never summed)</span></div></div>
-  </a>
-  <a class="report-card" href="reports/v8_ultra_field.html" style="--g1:var(--oil);--g2:var(--cat-5)">
-    <div class="doc"></div><div>
-    <h4><span data-lang="es">Informe de campo</span><span data-lang="en">Field report</span> · <span class="mono">nemotron-ultra</span> (author)</h4>
-    <div class="meta"><span data-lang="es">selección libre de pozos con inventario de calidad</span><span data-lang="en">free well selection over a quality inventory</span></div></div>
+    <h4>15-135-25990 · <span class="mono">nemotron-ultra</span> free + thinking</h4>
+    <div class="meta"><span data-lang="es">zona 700–1323 m · $0 · el mejor gratuito (0→3/3 profundas al encender el thinking)</span><span data-lang="en">zone 700–1323 m · $0 · best free model (0→3/3 deep zones once thinking is on)</span></div></div>
   </a>
 </section>
 
@@ -549,47 +622,54 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
     developer: <i>what did we learn building an agent system that can actually be measured?</i></span>
   </p>
 
-  <h3><span data-lang="es">Si eres petrofísico: no llegan a junior en lo decisivo</span>
-      <span data-lang="en">If you're a petrophysicist: they don't reach junior at what matters</span></h3>
+  <h3><span data-lang="es">Si eres petrofísico: un junior sólido rozando mid — cuando el modelo puede</span>
+      <span data-lang="en">If you're a petrophysicist: a solid junior nearing mid — when the model can</span></h3>
   <p>
-    <span data-lang="es">Delimitar el intervalo de análisis es lo <i>primero</i> que aprende un
-    analista de registros: un junior mira el composite, ve RHOB de 1.75 g/cc en el tramo somero y
-    recorta antes de calcular nada. Estos agentes lo hicieron <b>1 vez en 47 pozos-corrida</b> —
-    con el perfil de profundidad a demanda, la objeción de porosidad implausible en pantalla y el
-    texto diciéndoles la verdad. Los errores que sí cometen son de calibre pre-junior: elegir
-    Larionov <i>terciario</i> en roca paleozoica es no saber en qué cuenca estás parado. Y las
-    elecciones que sí toman flipean con la seed de muestreo (Simandoux↔Indonesia sin que la
-    evidencia cambie): son plausibles, no razonadas.</span>
-    <span data-lang="en">Delimiting the analysis interval is the <i>first</i> thing a log analyst
-    learns: a junior looks at the composite, sees 1.75 g/cc RHOB in the shallow section, and cuts
-    it before computing anything. These agents did it <b>once in 47 well-runs</b> — with the
-    depth profile on demand, the implausible-porosity objection on screen, and the text telling
-    them the truth. The errors they do make are pre-junior grade: picking <i>Tertiary</i>
-    Larionov on Paleozoic rock means not knowing which basin you're standing in. And the choices
-    they do make flip with the sampling seed (Simandoux↔Indonesia with unchanged evidence):
-    plausible, not reasoned.</span>
+    <span data-lang="es">A mitad del proyecto este veredicto decía "no llegan a junior en lo
+    decisivo": la zona de análisis apareció 1 vez en 47 pozos-corrida. El ciclo final lo cambió:
+    con las condiciones de trabajo de un ingeniero real (memoria, conjeturas, aprender del propio
+    fracaso, borradores, thinking), <b>los mejores agentes zonean sistemáticamente el bloque
+    productor</b> — y el mejor (opus-4.8) eligió 4/4 ventanas 100% dentro de mi roca productora,
+    más apretadas que las mías, con porosidad plausible y pays realistas de 2–13 m. Su perfil es
+    revelador: acepta los defaults de método del motor y concentra TODO el juicio en dónde está
+    la roca — el patrón de un senior delegando lo mecánico.</span>
+    <span data-lang="en">Mid-project this verdict read "they don't reach junior at what matters":
+    the analysis zone appeared once in 47 well-runs. The final cycle changed it: given a real
+    engineer's working conditions (memory, conjectures, learning from their own failure, drafts,
+    thinking), <b>the best agents zone the producing block systematically</b> — and the best one
+    (opus-4.8) chose 4/4 windows sitting 100% inside my producing rock, tighter than mine, with
+    plausible porosity and realistic 2–13 m pays. Its profile is telling: it accepts the engine's
+    method defaults and pours ALL its judgment into where the rock is — the pattern of a senior
+    delegating the mechanical work.</span>
   </p>
   <p>
-    <span data-lang="es">Donde sí rinden a nivel junior-competente: selección de métodos con el
-    encuadre limpio, selección de pozos sobre un inventario de calidad, redacción técnica, y una
-    diligencia inhumana — 4 pozos × 25 secciones en minutos, cada decisión trazada. La respuesta
-    corta: <b>no te reemplazan; te cambian el trabajo</b>. El sistema produce el borrador
-    completo, honesto y auditable que un junior tardaría días en armar — y tu oficio pasa de
-    escribir informes a revisar borradores. Lo que quedó medido como escaso es exactamente tu
-    parte: delimitar con contexto geológico, cuestionar el dato antes de calcular, y <i>resolver</i>
-    la abstención que el sistema declara con honestidad en su portada.</span>
-    <span data-lang="en">Where they do perform at competent-junior level: method selection under
-    a clean framing, well selection over a quality inventory, technical prose, and inhuman
-    diligence — 4 wells × 25 sections in minutes, every decision traced. The short answer:
-    <b>they don't replace you; they change your job</b>. The system produces the complete,
-    honest, auditable draft a junior would take days to build — and your craft shifts from
-    writing reports to reviewing drafts. What measured scarce is precisely your part: delimiting
-    with geological context, challenging the data before computing, and <i>resolving</i> the
-    abstention the system honestly declares on its front page.</span>
+    <span data-lang="es">La calibración honesta, por competencia: zonar el reservorio =
+    junior→mid (el logro del ciclo); elegir y defender métodos = junior alto (eligen bien,
+    justifican raso — nadie habla de sistema de lodo ni de era de herramienta); calibrar
+    Rw/m/n con datos duros = <b>nadie</b> (la evidencia SP→Rw existía y ningún agente la adoptó);
+    síntesis de campo, correlación y criterio económico = solo el humano. Y una precisión clave:
+    <b>la honestidad senior del informe es del SISTEMA</b> (trazabilidad, abstención, verificador
+    de cifras), no del modelo — quita el andamiaje y el mismo modelo vuelve a promediar
+    overburden. La respuesta corta sigue siendo: <b>no te reemplazan; te multiplican</b> — un
+    senior con este sistema revisa 10× más pozos porque el trabajo junior llega hecho, honesto y
+    auditado.</span>
+    <span data-lang="en">The honest calibration, by competency: zoning the reservoir =
+    junior→mid (the cycle's win); choosing and defending methods = high junior (they choose well
+    and justify thinly — nobody mentions mud systems or tool eras); calibrating Rw/m/n with hard
+    data = <b>nobody</b> (the SP→Rw evidence existed and no agent adopted it); field synthesis,
+    correlation and economic judgment = still human. And one key precision: <b>the report's
+    senior-grade honesty belongs to the SYSTEM</b> (traceability, abstention, claim verifier),
+    not the model — remove the scaffold and the same model goes back to averaging overburden.
+    The short answer still holds: <b>they don't replace you; they multiply you</b> — a senior
+    with this system reviews 10× more wells because the junior work arrives done, honest and
+    audited.</span>
+  </p>
+  <p class="sans" style="font-size:.9rem">
+    <a href="petrolero.html">→ <span data-lang="es">la narrativa petrofísica completa</span><span data-lang="en">the full petrophysical narrative</span></a>
   </p>
 
-  <h3><span data-lang="es">Si eres desarrollador: cuatro lecciones de un sistema medible</span>
-      <span data-lang="en">If you're a developer: four lessons from a measurable system</span></h3>
+  <h3><span data-lang="es">Si eres desarrollador: seis lecciones de un sistema medible</span>
+      <span data-lang="en">If you're a developer: six lessons from a measurable system</span></h3>
   <ul style="line-height:1.9">
     <li><span data-lang="es"><b>El techo de conducta puede ser tu entorno.</b> Cuatro familias
       frontier convergían al mismo perfil pobre — no porque los modelos no pudieran, sino porque
@@ -630,7 +710,31 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
       variation — which is why the same system doubles as a behavioral benchmark: seeds,
       environments and models compare over identical arithmetic. Separating decision from
       computation isn't just safety; it's what turns the agent into a measurable object.</span></li>
+    <li><span data-lang="es"><b>La memoria no es una: son tres.</b> Journal intra-ciclo (mató el
+      80% de relecturas), memoria entre pozos (dio consistencia y compuso hallazgos), y memoria
+      de la CONSECUENCIA (ver su propio intento fallido, medido y localizado — la única que movió
+      el juicio). Un agente sin las tres repite, se contradice y no aprende.</span>
+      <span data-lang="en"><b>Memory isn't one thing: it's three.</b> A within-cycle journal
+      (killed 80% of re-reads), cross-well memory (gave consistency and compounded findings), and
+      memory of CONSEQUENCE (seeing its own failed attempt, measured and localized — the only one
+      that moved judgment). An agent missing any of the three repeats itself, contradicts itself,
+      and doesn't learn.</span></li>
+    <li><span data-lang="es"><b>El thinking transforma a los híbridos que corren apagados — y no
+      añade nada a los que ya piensan.</b> El A/B más limpio: qwen3-max sin thinking = 0 zonas
+      profundas en 12 pozos; su variante thinking fue directa al Mississippiano. Y gpt-5, que ya
+      razona por defecto, EMPEORÓ con reasoning explícito (precisión de zona 0.77→0.00). Antes de
+      pagar más tokens de razonamiento, mide si tu modelo ya los estaba gastando.</span>
+      <span data-lang="en"><b>Thinking transforms hybrids running with it off — and adds nothing
+      to models that already think.</b> The cleanest A/B: qwen3-max without thinking = 0 deep
+      zones across 12 wells; its thinking variant went straight to the Mississippian. And gpt-5,
+      which reasons by default, got WORSE with explicit reasoning (zone precision 0.77→0.00).
+      Before paying for more reasoning tokens, measure whether your model was already spending
+      them.</span></li>
   </ul>
+  <p class="sans" style="font-size:.9rem">
+    <a href="ingenieria.html">→ <span data-lang="es">la narrativa de ingeniería completa</span><span data-lang="en">the full engineering narrative</span></a> ·
+    <a href="proceso.html"><span data-lang="es">el proceso día a día</span><span data-lang="en">the day-by-day process</span></a>
+  </p>
 </section>
 
 <section id="honestidad" class="reveal">
@@ -661,14 +765,15 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
     <span data-lang="es">Python · lasio · numpy · LangGraph (máquina de estados, no-LLM) ·
     matplotlib · pytest (golden tests) · Ollama local para el runtime del informe (Qwen3-30B /
     Llama-3.1-8B) y OpenRouter solo como instrumento de medición de techo. Seeds pineadas, hash
-    de configuración y versiones en cada ledger; los experimentos v5→v10 son re-corribles batch
+    de configuración y versiones en cada ledger; los experimentos v5→v14 son re-corribles batch
     a batch. El código, los tests y la bitácora completa del desarrollo viven en el
-    repositorio.</span>
+    repositorio (y en la <a href="proceso.html">página del proceso</a>).</span>
     <span data-lang="en">Python · lasio · numpy · LangGraph (state machine, non-LLM) ·
     matplotlib · pytest (golden tests) · local Ollama for the report runtime (Qwen3-30B /
     Llama-3.1-8B) with OpenRouter only as a ceiling-measurement instrument. Pinned seeds, config
-    hash and versions inside every ledger; experiments v5→v10 are re-runnable batch by batch.
-    Code, tests and the full development journal live in the repository.</span>
+    hash and versions inside every ledger; experiments v5→v14 are re-runnable batch by batch.
+    Code, tests and the full development journal live in the repository (and on the
+    <a href="proceso.html">process page</a>).</span>
   </p>
   <p class="sans" style="font-size:.9rem">
     <a href="https://github.com/OilCoder/petro-agent">github.com/OilCoder/petro-agent</a> ·
