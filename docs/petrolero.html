@@ -78,6 +78,43 @@ header.site{position:sticky;top:0;z-index:50;
   transition:all var(--t-fast) var(--ease)}
 .ctrl button[aria-pressed="true"]{background:var(--oil);color:#fff}
 .ctrl.water button[aria-pressed="true"]{background:var(--water)}
+/* — log-track signature (the project IS a well log) — */
+.eyebrow{display:block;font:700 .68rem var(--font-sans);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-muted);margin:3.2rem 0 -2.9rem}
+.eyebrow::before{content:"";display:inline-block;width:.6rem;height:.6rem;
+  border-radius:2px;background:var(--page-accent,var(--oil));margin-right:.5rem;
+  vertical-align:-1px}
+.hero-log{display:flex;gap:2.5rem;align-items:stretch}
+.hero-log>div:first-child{flex:1;min-width:0}
+.logstrip{flex:none;width:7.5rem;align-self:stretch;font-family:var(--font-mono)}
+@media (max-width:52rem){.logstrip{display:none}}
+.logstrip .trace{stroke:var(--water);stroke-width:1.6;fill:none;
+  stroke-dasharray:2400;stroke-dashoffset:2400;animation:drawlog 2.4s var(--ease) .3s forwards}
+@keyframes drawlog{to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.logstrip .trace{animation:none;stroke-dashoffset:0}}
+.logstrip .zone{fill:var(--oil);opacity:.18}
+.logstrip .grid{stroke:var(--border);stroke-width:1}
+.logstrip text{fill:var(--ink-muted);font-size:9px;font-family:var(--font-mono)}
+.logstrip .zlabel{fill:var(--oil);font-weight:700}
+/* — persistent narrative tabs — */
+nav.tabs{max-width:var(--page-width);margin:0 auto;padding:0 1.25rem;
+  display:flex;gap:.25rem;overflow-x:auto;font-family:var(--font-sans)}
+nav.tabs a{border:none;color:var(--ink-secondary);font-weight:600;font-size:.82rem;
+  padding:.45rem .8rem .55rem;border-radius:8px 8px 0 0;white-space:nowrap}
+nav.tabs a:hover{background:var(--surface-2);color:var(--ink-primary)}
+nav.tabs a[aria-current="page"]{color:var(--ink-primary);background:var(--surface-1);
+  box-shadow:inset 0 -2px 0 var(--page-accent,var(--oil)),0 -1px 0 var(--border) inset}
+/* — didactic figures — */
+figure.did{margin:1.4rem 0;padding:0;background:var(--surface-1);
+  border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+figure.did img{display:block;width:100%;background:#fff}
+figure.did figcaption{padding:.7rem 1rem .9rem;font:400 .84rem/1.5 var(--font-sans);
+  color:var(--ink-secondary);border-top:1px solid var(--border)}
+figure.did figcaption b{color:var(--ink-primary)}
+.chartbox{background:var(--surface-1);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1rem;margin:1.4rem 0}
+.chartbox .cap{font:400 .84rem/1.5 var(--font-sans);color:var(--ink-secondary);
+  margin-top:.6rem}
 nav.toc{position:sticky;top:4.2rem;align-self:start;max-height:calc(100vh - 5rem);
   overflow-y:auto;font-family:var(--font-sans);font-size:.82rem;padding-top:2.5rem}
 nav.toc .toc-title{font-weight:700;font-size:.72rem;text-transform:uppercase;
@@ -185,6 +222,12 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
       <button id="th-dark" aria-pressed="false">☾</button>
     </span>
   </div>
+  <nav class="tabs" aria-label="Narrativas / Narratives">
+    <a href="index.html" data-tab="index"><span data-lang="es">Inicio</span><span data-lang="en">Home</span></a>
+    <a href="petrolero.html" data-tab="petrolero">🛢️ <span data-lang="es">Petróleo</span><span data-lang="en">Petroleum</span></a>
+    <a href="ingenieria.html" data-tab="ingenieria">🖥️ <span data-lang="es">Ing. de software</span><span data-lang="en">Software eng.</span></a>
+    <a href="proceso.html" data-tab="proceso">📓 <span data-lang="es">Bitácora</span><span data-lang="en">Journal</span></a>
+  </nav>
 </header>
 
 <div class="page">
@@ -214,6 +257,7 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
 </section>
 
 <section id="campo" class="reveal">
+  <span class="eyebrow"><span data-lang="es">contexto</span><span data-lang="en">context</span></span>
   <h2><span data-lang="es">El campo y el problema real</span><span data-lang="en">The field and the real problem</span></h2>
   <p>
     <span data-lang="es">Schaben (Ness County, Kansas): carbonato Mississippiano apretado con pay
@@ -236,9 +280,24 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
     on every front page ("PHIE &gt; 0.25: implausible for carbonate"). The problem wasn't the
     formulas: it was interval judgment.</span>
   </p>
+  <figure class="did">
+    <img src="reports/fig_summit_24881/15-135-24881-00-00_composite.png" alt="Composite log of well 15-135-24,881" loading="lazy">
+    <figcaption>
+      <span data-lang="es"><b>Cómo leer un registro compuesto</b> (pozo 24,881): cada pista es una
+      curva contra la profundidad — GR (arcillosidad), resistividad, densidad-neutrón (porosidad).
+      Fíjate en la densidad del tramo somero: la roca "floja" lee ~1.75 g/cc y produce porosidades
+      de esponja. La zona evaluable empieza donde la densidad se sostiene &gt;2.35 g/cc — eso es lo
+      que los agentes tenían que VER.</span>
+      <span data-lang="en"><b>How to read a composite log</b> (well 24,881): each track is a curve
+      against depth — GR (shaliness), resistivity, density-neutron (porosity). Watch the shallow
+      density: "loose" rock reads ~1.75 g/cc and yields sponge porosities. The evaluable zone
+      starts where density holds &gt;2.35 g/cc — that is what the agents had to SEE.</span>
+    </figcaption>
+  </figure>
 </section>
 
 <section id="zona" class="reveal">
+  <span class="eyebrow"><span data-lang="es">la decisión madre</span><span data-lang="en">the master decision</span></span>
   <h2><span data-lang="es">La decisión que separa niveles: el intervalo</span><span data-lang="en">The decision that separates levels: the interval</span></h2>
   <p>
     <span data-lang="es">Medimos cada ventana elegida por cada agente contra la ventana productora
@@ -275,9 +334,49 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
     <a href="reports/opus_24881.html">Its full report is published</a>, next to
     <a href="reports/summit_24881.html">mine on the same well</a>.</span>
   </div>
+  <div class="chartbox">
+<svg viewBox="0 0 640 318" role="img" aria-label="Chosen analysis windows per model vs the summit producing window">
+<g font-family="var(--font-mono)" font-size="11">
+<rect x="445" y="30" width="169" height="248" fill="var(--oil)" opacity=".10"/>
+<line x1="130" y1="30" x2="130" y2="278" stroke="var(--border)"/>
+<text x="130" y="294" text-anchor="middle" fill="var(--ink-muted)">0</text>
+<line x1="305" y1="30" x2="305" y2="278" stroke="var(--border)"/>
+<text x="305" y="294" text-anchor="middle" fill="var(--ink-muted)">500</text>
+<line x1="480" y1="30" x2="480" y2="278" stroke="var(--border)"/>
+<text x="480" y="294" text-anchor="middle" fill="var(--ink-muted)">1000</text>
+<line x1="620" y1="30" x2="620" y2="278" stroke="var(--border)"/>
+<text x="620" y="294" text-anchor="middle" fill="var(--ink-muted)">1400</text>
+<text x="620" y="310" text-anchor="end" fill="var(--ink-muted)">m</text>
+<text x="122" y="51" text-anchor="end" fill="var(--ink-secondary)" font-weight="700">summit (yo/me)</text>
+<rect x="445" y="40" width="169" height="15" rx="4" fill="var(--cat-5)"><title>summit (yo/me): 900-1382 m</title></rect>
+<text x="122" y="85" text-anchor="end" fill="var(--ink-secondary)" font-weight="700">opus-4.8+think</text>
+<rect x="532" y="74" width="70" height="15" rx="4" fill="var(--oil)"><title>opus-4.8+think: 1150-1350 m</title></rect>
+<text x="122" y="119" text-anchor="end" fill="var(--ink-secondary)">glm-5.2</text>
+<rect x="445" y="108" width="167" height="15" rx="4" fill="var(--water)"><title>glm-5.2: 900-1376 m</title></rect>
+<text x="122" y="153" text-anchor="end" fill="var(--ink-secondary)">ultra free+think</text>
+<rect x="375" y="142" width="218" height="15" rx="4" fill="var(--cat-2)"><title>ultra free+think: 700-1323 m</title></rect>
+<text x="122" y="187" text-anchor="end" fill="var(--ink-secondary)">qwen3-max-think</text>
+<rect x="542" y="176" width="61" height="15" rx="4" fill="var(--cat-3)"><title>qwen3-max-think: 1176-1350 m</title></rect>
+<text x="122" y="221" text-anchor="end" fill="var(--ink-secondary)">gpt-5</text>
+<rect x="228" y="210" width="70" height="15" rx="4" fill="var(--cat-4)"><title>gpt-5: 279-480 m</title></rect>
+<text x="122" y="255" text-anchor="end" fill="var(--ink-secondary)">nemotron-super</text>
+<rect x="194" y="244" width="402" height="15" rx="4" fill="var(--cat-other)"><title>nemotron-super: 184-1332 m</title></rect>
+</g></svg>
+    <div class="cap">
+      <span data-lang="es"><b>Las ventanas elegidas, dibujadas.</b> La banda ámbar es mi ventana
+      productora (900–1382 m). Cada barra es la ventana final de un modelo en el pozo/config
+      representativo: opus cae COMPLETA dentro de la banda (precisión 1.00); gpt-5 se queda en la
+      sección somera; super abarca casi toda la columna (recorta overburden, no selecciona).</span>
+      <span data-lang="en"><b>The chosen windows, drawn.</b> The amber band is my producing window
+      (900–1382 m). Each bar is a model's final window on the representative well/config: opus
+      falls ENTIRELY inside the band (precision 1.00); gpt-5 stays shallow; super spans almost the
+      whole column (it trims overburden, it doesn't select).</span>
+    </div>
+  </div>
 </section>
 
 <section id="roca" class="reveal">
+  <span class="eyebrow"><span data-lang="es">lo que dio la roca</span><span data-lang="en">what the rock gave</span></span>
   <h2><span data-lang="es">Resultados de roca</span><span data-lang="en">Rock results</span></h2>
   <ul style="line-height:1.9">
     <li><span data-lang="es"><b>Porosidad físicamente creíble</b>: los mejores agentes cerraron con
@@ -309,6 +408,7 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
 </section>
 
 <section id="evidencia" class="reveal">
+  <span class="eyebrow"><span data-lang="es">evidencia independiente</span><span data-lang="en">independent evidence</span></span>
   <h2><span data-lang="es">La evidencia que solo el summit integró</span><span data-lang="en">The evidence only the summit integrated</span></h2>
   <p>
     <span data-lang="es">La incertidumbre dominante de Archie aquí es Rw (default regional 0.04,
@@ -335,9 +435,23 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
     <code>mhi_scan</code> observations). They ran them to decide — but none adopted the band or
     argued it in prose. Integrating evidence into the argument remains human craft.</span>
   </aside>
+  <figure class="did">
+    <img src="reports/fig_opus_24881/15-135-24,881-00-00_crossplot_nd.png" alt="Density-neutron crossplot, well 24,881" loading="lazy">
+    <figcaption>
+      <span data-lang="es"><b>Cómo leer un crossplot densidad-neutrón</b>: cada punto es una
+      profundidad; su posición respecto a las líneas de matriz (arenisca/caliza/dolomita) dice qué
+      roca es y cuánta porosidad tiene. La nube de este pozo cae en el dominio carbonatado — la
+      evidencia con la que el summit sostuvo la litología dolomítica sin verla en núcleo.</span>
+      <span data-lang="en"><b>How to read a density-neutron crossplot</b>: each dot is one depth;
+      its position against the matrix lines (sandstone/limestone/dolomite) tells you the rock and
+      its porosity. This well's cloud falls in the carbonate domain — the evidence the summit used
+      to support dolomitic lithology without core.</span>
+    </figcaption>
+  </figure>
 </section>
 
 <section id="fallas" class="reveal">
+  <span class="eyebrow"><span data-lang="es">taxonomía de fallas</span><span data-lang="en">failure taxonomy</span></span>
   <h2><span data-lang="es">Dónde fallan como analistas</span><span data-lang="en">Where they fail as analysts</span></h2>
   <ul style="line-height:1.9">
     <li><span data-lang="es"><b>Zona somera</b> — leen "porosidad alta = interesante" en vez de
@@ -373,6 +487,7 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
 </section>
 
 <section id="calibracion" class="reveal">
+  <span class="eyebrow"><span data-lang="es">el veredicto</span><span data-lang="en">the verdict</span></span>
   <h2><span data-lang="es">Junior o senior: la calibración final</span><span data-lang="en">Junior or senior: the final calibration</span></h2>
   <table>
     <thead><tr><th><span data-lang="es">Competencia</span><span data-lang="en">Competency</span></th>
@@ -426,6 +541,10 @@ document.getElementById("lang-es").onclick=()=>setLang("es");
 document.getElementById("lang-en").onclick=()=>setLang("en");
 setTheme(store.getItem("pa-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));
 setLang(store.getItem("pa-lang")||(navigator.language&&navigator.language.startsWith("es")?"es":"en"));
+
+const here=(location.pathname.split("/").pop()||"index.html").replace(".html","")||"index";
+document.querySelectorAll("nav.tabs a").forEach(a=>{
+  if(a.dataset.tab===here)a.setAttribute("aria-current","page");});
 
 const tocLinks=[...document.querySelectorAll("nav.toc a")];
 const sections=tocLinks.map(a=>document.querySelector(a.hash));

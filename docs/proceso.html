@@ -78,6 +78,43 @@ header.site{position:sticky;top:0;z-index:50;
   transition:all var(--t-fast) var(--ease)}
 .ctrl button[aria-pressed="true"]{background:var(--oil);color:#fff}
 .ctrl.water button[aria-pressed="true"]{background:var(--water)}
+/* — log-track signature (the project IS a well log) — */
+.eyebrow{display:block;font:700 .68rem var(--font-sans);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-muted);margin:3.2rem 0 -2.9rem}
+.eyebrow::before{content:"";display:inline-block;width:.6rem;height:.6rem;
+  border-radius:2px;background:var(--page-accent,var(--oil));margin-right:.5rem;
+  vertical-align:-1px}
+.hero-log{display:flex;gap:2.5rem;align-items:stretch}
+.hero-log>div:first-child{flex:1;min-width:0}
+.logstrip{flex:none;width:7.5rem;align-self:stretch;font-family:var(--font-mono)}
+@media (max-width:52rem){.logstrip{display:none}}
+.logstrip .trace{stroke:var(--water);stroke-width:1.6;fill:none;
+  stroke-dasharray:2400;stroke-dashoffset:2400;animation:drawlog 2.4s var(--ease) .3s forwards}
+@keyframes drawlog{to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.logstrip .trace{animation:none;stroke-dashoffset:0}}
+.logstrip .zone{fill:var(--oil);opacity:.18}
+.logstrip .grid{stroke:var(--border);stroke-width:1}
+.logstrip text{fill:var(--ink-muted);font-size:9px;font-family:var(--font-mono)}
+.logstrip .zlabel{fill:var(--oil);font-weight:700}
+/* — persistent narrative tabs — */
+nav.tabs{max-width:var(--page-width);margin:0 auto;padding:0 1.25rem;
+  display:flex;gap:.25rem;overflow-x:auto;font-family:var(--font-sans)}
+nav.tabs a{border:none;color:var(--ink-secondary);font-weight:600;font-size:.82rem;
+  padding:.45rem .8rem .55rem;border-radius:8px 8px 0 0;white-space:nowrap}
+nav.tabs a:hover{background:var(--surface-2);color:var(--ink-primary)}
+nav.tabs a[aria-current="page"]{color:var(--ink-primary);background:var(--surface-1);
+  box-shadow:inset 0 -2px 0 var(--page-accent,var(--oil)),0 -1px 0 var(--border) inset}
+/* — didactic figures — */
+figure.did{margin:1.4rem 0;padding:0;background:var(--surface-1);
+  border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+figure.did img{display:block;width:100%;background:#fff}
+figure.did figcaption{padding:.7rem 1rem .9rem;font:400 .84rem/1.5 var(--font-sans);
+  color:var(--ink-secondary);border-top:1px solid var(--border)}
+figure.did figcaption b{color:var(--ink-primary)}
+.chartbox{background:var(--surface-1);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1rem;margin:1.4rem 0}
+.chartbox .cap{font:400 .84rem/1.5 var(--font-sans);color:var(--ink-secondary);
+  margin-top:.6rem}
 nav.toc{position:sticky;top:4.2rem;align-self:start;max-height:calc(100vh - 5rem);
   overflow-y:auto;font-family:var(--font-sans);font-size:.82rem;padding-top:2.5rem}
 nav.toc .toc-title{font-weight:700;font-size:.72rem;text-transform:uppercase;
@@ -185,6 +222,12 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
       <button id="th-dark" aria-pressed="false">☾</button>
     </span>
   </div>
+  <nav class="tabs" aria-label="Narrativas / Narratives">
+    <a href="index.html" data-tab="index"><span data-lang="es">Inicio</span><span data-lang="en">Home</span></a>
+    <a href="petrolero.html" data-tab="petrolero">🛢️ <span data-lang="es">Petróleo</span><span data-lang="en">Petroleum</span></a>
+    <a href="ingenieria.html" data-tab="ingenieria">🖥️ <span data-lang="es">Ing. de software</span><span data-lang="en">Software eng.</span></a>
+    <a href="proceso.html" data-tab="proceso">📓 <span data-lang="es">Bitácora</span><span data-lang="en">Journal</span></a>
+  </nav>
 </header>
 
 <div class="page">
@@ -196,12 +239,18 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
 
 <main>
 <style>
+main{--page-accent:var(--cat-5)}
+/* The journal drawn as a wellbore: depth is time, and the pay is at the bottom. */
 .tl{list-style:none;margin:2rem 0;padding:0;position:relative}
-.tl::before{content:"";position:absolute;left:.55rem;top:0;bottom:0;width:2px;background:var(--border)}
-.tl>li{position:relative;padding:0 0 2.2rem 2.2rem}
-.tl>li::before{content:"";position:absolute;left:0;top:.35rem;width:1.15rem;height:1.15rem;
-border-radius:50%;background:var(--oil);border:3px solid var(--surface-0)}
-.tl .date{font:700 .72rem var(--font-sans);letter-spacing:.08em;color:var(--ink-muted);text-transform:uppercase}
+.tl::before{content:"";position:absolute;left:.55rem;top:0;bottom:0;width:2px;
+background:linear-gradient(to bottom,var(--border) 0%,var(--border) 68%,var(--oil) 86%,var(--oil) 100%)}
+.tl>li{position:relative;padding:0 0 2.2rem 2.4rem}
+.tl>li::before{content:"";position:absolute;left:0;top:.55rem;width:1.15rem;height:2px;
+background:var(--ink-muted)}
+.tl>li.pay::before{background:var(--oil);height:3px}
+.tl>li.pay{background:linear-gradient(to right,color-mix(in srgb,var(--oil) 7%,transparent),transparent 55%);
+border-radius:8px}
+.tl .date{font:700 .72rem var(--font-mono,monospace);letter-spacing:.08em;color:var(--ink-muted)}
 .tl h3{margin:.15rem 0 .4rem}
 .tl details{margin-top:.7rem;border:1px solid var(--border);border-radius:10px;background:var(--surface-1)}
 .tl summary{cursor:pointer;padding:.6rem .9rem;font:600 .82rem var(--font-sans);color:var(--water)}
@@ -226,6 +275,7 @@ border-radius:50%;background:var(--oil);border:3px solid var(--surface-0)}
 </section>
 
 <section id="porque" class="reveal">
+  <span class="eyebrow"><span data-lang="es">el porqué</span><span data-lang="en">the why</span></span>
   <h2><span data-lang="es">Por qué publicar el diario</span><span data-lang="en">Why publish the journal</span></h2>
   <p>
     <span data-lang="es">Porque las decisiones de diseño solo se entienden con su contexto: el
@@ -251,7 +301,14 @@ border-radius:50%;background:var(--oil);border:3px solid var(--surface-0)}
 </section>
 
 <section id="timeline" class="reveal">
+  <span class="eyebrow"><span data-lang="es">día a día</span><span data-lang="en">day by day</span></span>
   <h2><span data-lang="es">El timeline</span><span data-lang="en">The timeline</span></h2>
+  <p class="sans" style="font-size:.85rem;color:var(--ink-muted)">
+    <span data-lang="es">Léelo como un pozo: la profundidad es el tiempo, cada marca es un día
+    perforado — y la zona ámbar del fondo es donde el proyecto encontró su pay.</span>
+    <span data-lang="en">Read it like a well: depth is time, each tick is a drilled day — and
+    the amber zone at the bottom is where the project found its pay.</span>
+  </p>
   <ul class="tl">
 
     <li>
@@ -2471,7 +2528,7 @@ border-radius:50%;background:var(--oil);border:3px solid var(--surface-0)}
 </ul>
 <p>  porque solo mostraba el agregado y NO enlazaba a los informes por-pozo (que no se materializaban).</p>
 <ul>
-<li><b><code>render_field_report</code> enlaza cada pozo</b> → <code>uwi</code> (helper <code>well_report_filename</code> sanitiza comas).</li>
+<li><b><code>render_field_report</code> enlaza cada pozo</b> → <code>[uwi](report_&lt;uwi&gt;.md)</code> (helper <code>well_report_filename</code> sanitiza comas).</li>
 </ul>
 <p>  Driver de campo escribe el informe completo por-pozo (post-loop, con narrativa) en la carpeta del modelo.</p>
 <ul>
@@ -4339,7 +4396,7 @@ border-radius:50%;background:var(--oil);border:3px solid var(--surface-0)}
       </details>
     </li>
 
-    <li>
+    <li class="pay">
       <div class="date">2026-07-06</div>
       <h3><span data-lang="es">El informe de metodología, la matriz de thinking — y opus cierra el círculo</span><span data-lang="en">The methodology report, the thinking matrix — and opus closes the circle</span></h3>
       <p><span data-lang="es">Veredicto: la metodología FUNCIONA. El aislamiento más limpio: ultra 550B free pasa de topes someros a 3/3 zonas profundas al encenderle el thinking (nunca se lo habíamos activado); el gemelo qwen confirma; a gpt-5 el reasoning explícito lo empeora. Y el final de novela: opus-4.8 — el modelo de CERO decisiones en v10 — produce el mejor resultado del proyecto: 4/4 zonas Mississippianas, 4/4 porosidad plausible, las 2 únicas convergencias legítimas con pay.</span><span data-lang="en">Verdict: the methodology WORKS. The cleanest isolation: free 550B ultra goes from shallow tops to 3/3 deep zones once thinking is switched on (we had never enabled it); the qwen twin confirms; explicit reasoning makes gpt-5 worse. And the novelistic ending: opus-4.8 — the ZERO-decision model of v10 — produces the project's best result: 4/4 Mississippian zones, 4/4 plausible porosity, the only 2 legitimate pay-bearing convergences.</span></p>
@@ -4509,7 +4566,7 @@ border-radius:50%;background:var(--oil);border:3px solid var(--surface-0)}
       </details>
     </li>
 
-    <li>
+    <li class="pay">
       <div class="date">2026-07-07</div>
       <h3><span data-lang="es">El informe final de evaluación — y esta página</span><span data-lang="en">The final evaluation report — and this page</span></h3>
       <p><span data-lang="es">Cada cifra del cierre se recalcula desde los ledgers reales (nada de memoria): leaderboard, precisión de zona contra las ventanas del summit, costos medidos (~$50 todo el proyecto), taxonomía de fallas. Con ese informe como fuente se reconstruye el sitio que estás leyendo.</span><span data-lang="en">Every closing figure is recomputed from the real ledgers (nothing from memory): leaderboard, zone precision vs the summit windows, measured costs (~$50 for the whole project), failure taxonomy. With that report as the source, the site you're reading is rebuilt.</span></p>
@@ -4583,6 +4640,10 @@ document.getElementById("lang-es").onclick=()=>setLang("es");
 document.getElementById("lang-en").onclick=()=>setLang("en");
 setTheme(store.getItem("pa-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));
 setLang(store.getItem("pa-lang")||(navigator.language&&navigator.language.startsWith("es")?"es":"en"));
+
+const here=(location.pathname.split("/").pop()||"index.html").replace(".html","")||"index";
+document.querySelectorAll("nav.tabs a").forEach(a=>{
+  if(a.dataset.tab===here)a.setAttribute("aria-current","page");});
 
 const tocLinks=[...document.querySelectorAll("nav.toc a")];
 const sections=tocLinks.map(a=>document.querySelector(a.hash));

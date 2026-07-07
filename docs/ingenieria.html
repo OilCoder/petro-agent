@@ -78,6 +78,43 @@ header.site{position:sticky;top:0;z-index:50;
   transition:all var(--t-fast) var(--ease)}
 .ctrl button[aria-pressed="true"]{background:var(--oil);color:#fff}
 .ctrl.water button[aria-pressed="true"]{background:var(--water)}
+/* — log-track signature (the project IS a well log) — */
+.eyebrow{display:block;font:700 .68rem var(--font-sans);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-muted);margin:3.2rem 0 -2.9rem}
+.eyebrow::before{content:"";display:inline-block;width:.6rem;height:.6rem;
+  border-radius:2px;background:var(--page-accent,var(--oil));margin-right:.5rem;
+  vertical-align:-1px}
+.hero-log{display:flex;gap:2.5rem;align-items:stretch}
+.hero-log>div:first-child{flex:1;min-width:0}
+.logstrip{flex:none;width:7.5rem;align-self:stretch;font-family:var(--font-mono)}
+@media (max-width:52rem){.logstrip{display:none}}
+.logstrip .trace{stroke:var(--water);stroke-width:1.6;fill:none;
+  stroke-dasharray:2400;stroke-dashoffset:2400;animation:drawlog 2.4s var(--ease) .3s forwards}
+@keyframes drawlog{to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.logstrip .trace{animation:none;stroke-dashoffset:0}}
+.logstrip .zone{fill:var(--oil);opacity:.18}
+.logstrip .grid{stroke:var(--border);stroke-width:1}
+.logstrip text{fill:var(--ink-muted);font-size:9px;font-family:var(--font-mono)}
+.logstrip .zlabel{fill:var(--oil);font-weight:700}
+/* — persistent narrative tabs — */
+nav.tabs{max-width:var(--page-width);margin:0 auto;padding:0 1.25rem;
+  display:flex;gap:.25rem;overflow-x:auto;font-family:var(--font-sans)}
+nav.tabs a{border:none;color:var(--ink-secondary);font-weight:600;font-size:.82rem;
+  padding:.45rem .8rem .55rem;border-radius:8px 8px 0 0;white-space:nowrap}
+nav.tabs a:hover{background:var(--surface-2);color:var(--ink-primary)}
+nav.tabs a[aria-current="page"]{color:var(--ink-primary);background:var(--surface-1);
+  box-shadow:inset 0 -2px 0 var(--page-accent,var(--oil)),0 -1px 0 var(--border) inset}
+/* — didactic figures — */
+figure.did{margin:1.4rem 0;padding:0;background:var(--surface-1);
+  border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+figure.did img{display:block;width:100%;background:#fff}
+figure.did figcaption{padding:.7rem 1rem .9rem;font:400 .84rem/1.5 var(--font-sans);
+  color:var(--ink-secondary);border-top:1px solid var(--border)}
+figure.did figcaption b{color:var(--ink-primary)}
+.chartbox{background:var(--surface-1);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1rem;margin:1.4rem 0}
+.chartbox .cap{font:400 .84rem/1.5 var(--font-sans);color:var(--ink-secondary);
+  margin-top:.6rem}
 nav.toc{position:sticky;top:4.2rem;align-self:start;max-height:calc(100vh - 5rem);
   overflow-y:auto;font-family:var(--font-sans);font-size:.82rem;padding-top:2.5rem}
 nav.toc .toc-title{font-weight:700;font-size:.72rem;text-transform:uppercase;
@@ -185,6 +222,12 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
       <button id="th-dark" aria-pressed="false">☾</button>
     </span>
   </div>
+  <nav class="tabs" aria-label="Narrativas / Narratives">
+    <a href="index.html" data-tab="index"><span data-lang="es">Inicio</span><span data-lang="en">Home</span></a>
+    <a href="petrolero.html" data-tab="petrolero">🛢️ <span data-lang="es">Petróleo</span><span data-lang="en">Petroleum</span></a>
+    <a href="ingenieria.html" data-tab="ingenieria">🖥️ <span data-lang="es">Ing. de software</span><span data-lang="en">Software eng.</span></a>
+    <a href="proceso.html" data-tab="proceso">📓 <span data-lang="es">Bitácora</span><span data-lang="en">Journal</span></a>
+  </nav>
 </header>
 
 <div class="page">
@@ -198,6 +241,7 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
 </nav>
 
 <main>
+<style>main{--page-accent:var(--water)}</style>
 <section class="hero">
   <div class="kicker"><span data-lang="es">la narrativa de ingeniería</span><span data-lang="en">the engineering narrative</span></div>
   <h1><span data-lang="es">Cómo se construye<br>un agente medible</span><span data-lang="en">How to build<br>a measurable agent</span></h1>
@@ -213,6 +257,7 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
 </section>
 
 <section id="arquitectura" class="reveal">
+  <span class="eyebrow"><span data-lang="es">el sistema</span><span data-lang="en">the system</span></span>
   <h2><span data-lang="es">La arquitectura: un muro con puertas instrumentadas</span><span data-lang="en">The architecture: a wall with instrumented doors</span></h2>
   <pre><code>            DECIDE (LLM)                      COMPUTA (determinista)
   ┌────────────────────────────┐      ┌───────────────────────────────────┐
@@ -238,6 +283,7 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
 </section>
 
 <section id="palancas" class="reveal">
+  <span class="eyebrow"><span data-lang="es">experimentos A/B</span><span data-lang="en">A/B experiments</span></span>
   <h2><span data-lang="es">Las 4 rondas de palancas — cada una con su número</span><span data-lang="en">The 4 lever rounds — each with its number</span></h2>
   <table>
     <thead><tr><th></th>
@@ -269,6 +315,7 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
 </section>
 
 <section id="hallazgos" class="reveal">
+  <span class="eyebrow"><span data-lang="es">lo transferible</span><span data-lang="en">the transferable</span></span>
   <h2><span data-lang="es">Hallazgos de sistema</span><span data-lang="en">System findings</span></h2>
   <ul style="line-height:1.9">
     <li><span data-lang="es"><b>La memoria son tres memorias.</b> Intra-ciclo (journal: mata el
@@ -302,6 +349,69 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
       the optimum on the 4th (1076–1176 m, PHIE 0.189 — beating models 15× its size); the
       compass-less one (gpt-oss-20b) drifts confidently toward the wrong rock. Iteration isn't an
       upgrade: it's an amplifier.</span></li>
+    <div class="chartbox">
+<svg viewBox="0 0 640 300" role="img" aria-label="iterate15: chosen zone top per iteration, per model">
+<g font-family="var(--font-mono)" font-size="11">
+<rect x="70" y="155" width="530" height="68" fill="var(--oil)" opacity=".10"/>
+<text x="596" y="169" text-anchor="end" fill="var(--oil)" font-weight="700">900–1350 m</text>
+<line x1="70" y1="20" x2="600" y2="20" stroke="var(--border)"/>
+<text x="62" y="24" text-anchor="end" fill="var(--ink-muted)">0</text>
+<line x1="70" y1="95" x2="600" y2="95" stroke="var(--border)"/>
+<text x="62" y="99" text-anchor="end" fill="var(--ink-muted)">500</text>
+<line x1="70" y1="170" x2="600" y2="170" stroke="var(--border)"/>
+<text x="62" y="174" text-anchor="end" fill="var(--ink-muted)">1000</text>
+<line x1="70" y1="230" x2="600" y2="230" stroke="var(--border)"/>
+<text x="62" y="234" text-anchor="end" fill="var(--ink-muted)">1400</text>
+<text x="70" y="248" text-anchor="middle" fill="var(--ink-muted)">1</text>
+<text x="136" y="248" text-anchor="middle" fill="var(--ink-muted)">2</text>
+<text x="202" y="248" text-anchor="middle" fill="var(--ink-muted)">3</text>
+<text x="269" y="248" text-anchor="middle" fill="var(--ink-muted)">4</text>
+<text x="335" y="248" text-anchor="middle" fill="var(--ink-muted)">5</text>
+<text x="401" y="248" text-anchor="middle" fill="var(--ink-muted)">6</text>
+<text x="468" y="248" text-anchor="middle" fill="var(--ink-muted)">7</text>
+<text x="534" y="248" text-anchor="middle" fill="var(--ink-muted)">8</text>
+<text x="600" y="248" text-anchor="middle" fill="var(--ink-muted)">9</text>
+<text x="335" y="268" text-anchor="middle" fill="var(--ink-muted)" font-size="10">iteración / iteration</text>
+<path d="M70,155 L136,140 L202,110 L269,181 L335,181 L401,181" fill="none" stroke="var(--oil)" stroke-width="2.2"/>
+<circle cx="70" cy="155" r="3.4" fill="var(--oil)"/>
+<circle cx="136" cy="140" r="3.4" fill="var(--oil)"/>
+<circle cx="202" cy="110" r="3.4" fill="var(--oil)"/>
+<circle cx="269" cy="181" r="3.4" fill="var(--oil)"/>
+<circle cx="335" cy="181" r="3.4" fill="var(--oil)"/>
+<circle cx="401" cy="181" r="3.4" fill="var(--oil)"/>
+<circle cx="70" cy="284" r="4" fill="var(--oil)"/>
+<text x="79" y="288" fill="var(--ink-secondary)">nano 30B thinking</text>
+<path d="M136,51 L202,51 L269,51 L335,51 L401,51" fill="none" stroke="var(--cat-3)" stroke-width="2.2"/>
+<circle cx="136" cy="51" r="3.4" fill="var(--cat-3)"/>
+<circle cx="202" cy="51" r="3.4" fill="var(--cat-3)"/>
+<circle cx="269" cy="51" r="3.4" fill="var(--cat-3)"/>
+<circle cx="335" cy="51" r="3.4" fill="var(--cat-3)"/>
+<circle cx="401" cy="51" r="3.4" fill="var(--cat-3)"/>
+<circle cx="260" cy="284" r="4" fill="var(--cat-3)"/>
+<text x="269" y="288" fill="var(--ink-secondary)">super 120B</text>
+<path d="M136,51 L202,51 L269,51 L335,103 L401,35 L468,51 L534,51 L600,51" fill="none" stroke="var(--cat-4)" stroke-width="2.2"/>
+<circle cx="136" cy="51" r="3.4" fill="var(--cat-4)"/>
+<circle cx="202" cy="51" r="3.4" fill="var(--cat-4)"/>
+<circle cx="269" cy="51" r="3.4" fill="var(--cat-4)"/>
+<circle cx="335" cy="103" r="3.4" fill="var(--cat-4)"/>
+<circle cx="401" cy="35" r="3.4" fill="var(--cat-4)"/>
+<circle cx="468" cy="51" r="3.4" fill="var(--cat-4)"/>
+<circle cx="534" cy="51" r="3.4" fill="var(--cat-4)"/>
+<circle cx="600" cy="51" r="3.4" fill="var(--cat-4)"/>
+<circle cx="450" cy="284" r="4" fill="var(--cat-4)"/>
+<text x="459" y="288" fill="var(--ink-secondary)">gpt-oss-20b</text>
+</g></svg>
+      <div class="cap">
+        <span data-lang="es"><b>Tres personalidades, una curva cada una</b> (tope de zona elegido
+        por iteración; banda ámbar = topes productores). nano explora, empeora dos veces y clava el
+        óptimo en la 4ª; super aprende un paso y se sella; gpt-oss rebota somero sin brújula. La
+        iteración no mejora a nadie: amplifica lo que cada modelo ya es.</span>
+        <span data-lang="en"><b>Three personalities, one curve each</b> (chosen zone top per
+        iteration; amber band = producing tops). nano explores, gets worse twice and nails the
+        optimum on the 4th; super learns one step and seals; gpt-oss bounces shallow with no
+        compass. Iteration upgrades nobody: it amplifies what each model already is.</span>
+      </div>
+    </div>
     <li><span data-lang="es"><b>Goodhart aparece solo.</b> Si el "éxito" es que el validador
       calle, un agente puede elegir una zona estéril: sin pay no hay nada implausible (gpt-5 lo
       hizo 4 veces). Puntúa interpretación defendible, no ausencia de objeciones — y publica
@@ -320,6 +430,7 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
 </section>
 
 <section id="costos" class="reveal">
+  <span class="eyebrow"><span data-lang="es">la cuenta</span><span data-lang="en">the bill</span></span>
   <h2><span data-lang="es">Costos medidos (no estimados)</span><span data-lang="en">Measured costs (not estimates)</span></h2>
   <table>
     <thead><tr><th>Config</th>
@@ -345,6 +456,7 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
 </section>
 
 <section id="produccion" class="reveal">
+  <span class="eyebrow"><span data-lang="es">a producción</span><span data-lang="en">to production</span></span>
   <h2><span data-lang="es">Si fueras a producción mañana</span><span data-lang="en">If you shipped tomorrow</span></h2>
   <ul style="line-height:1.9">
     <li><span data-lang="es">Pipeline free-primero: <b>ultra+thinking</b> para el barrido; escalar
@@ -395,6 +507,10 @@ document.getElementById("lang-es").onclick=()=>setLang("es");
 document.getElementById("lang-en").onclick=()=>setLang("en");
 setTheme(store.getItem("pa-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));
 setLang(store.getItem("pa-lang")||(navigator.language&&navigator.language.startsWith("es")?"es":"en"));
+
+const here=(location.pathname.split("/").pop()||"index.html").replace(".html","")||"index";
+document.querySelectorAll("nav.tabs a").forEach(a=>{
+  if(a.dataset.tab===here)a.setAttribute("aria-current","page");});
 
 const tocLinks=[...document.querySelectorAll("nav.toc a")];
 const sections=tocLinks.map(a=>document.querySelector(a.hash));
