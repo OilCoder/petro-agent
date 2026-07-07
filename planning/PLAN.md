@@ -132,7 +132,7 @@ Done when: se corrigen los glitches destapados por VOLVE/v5 (provenance del graf
 - [x] Loader: flip de profundidad invertida (deepest-first) + unidades pulgada/0.1-in — 198/198 Schaben cargan (era 197); + test (src/io/loader.py) (2026-07-01)
 - [x] VSH multi-mineral: `vsh_multimineral` (solve 2-mineral matriz+arcilla+porosidad desde RHOB+NPHI) formalizado — función vetada + golden tests + registry (seleccionable) + 2 dispatchers + banda + §14. Cobertura VSH 72%→**79%** (nominal 80%); las 3 propiedades calibradas (VSH 79 / PHIE 99 / SW 95) (2026-07-01)
 
-### Phase R12 — Subir la destreza [MODELO] del agente (sin fugar) (COMPLETED — medido: la destreza es model-bound; sin ganancia de opcionales ni en frontier)
+### Phase R12 — Subir la destreza [MODELO] del agente (sin fugar) (COMPLETED) — medido: la destreza es model-bound; sin ganancia de opcionales ni en frontier
 Done when: `interpretive_choices` sube como destreza REAL (respaldada por número, no relleno) sin reintroducir fuga; medido y re-auditado. Baseline: ~1 choice/pozo, 0 opcionales (v3/v4/v5).
 - [x] A1 — Reencuadrar `_LOOP_SYSTEM`: "baseline ya computado" → invitar a componer el análisis completo que el dato justifique (meta, no interpretación) (2026-07-01)
 - [x] A2 — Afordances neutras: catálogo de opcionales con qué computa + curvas requeridas (factual) en `observation_text` (`_OPTIONAL_DESC`) (2026-07-01)
@@ -148,7 +148,7 @@ Done when: al pedir `finish`, el MISMO modelo hace un pase escéptico que intent
 - [x] Guardarraíl anti-fuga: `_SKEPTIC_SYSTEM` cuestiona ("¿lo justifica el dato?"), no prescribe método/conclusión; re-auditado vs 7-focos — sin fuga (2026-07-01)
 - [x] Tests deterministas (4): dispara ≤1 vez, surface de objeciones alcanza al agente, reconsidera, no bloquea terminación; +unit de `_skeptic_pass`/`_finish_review` (2026-07-01)
 
-### Phase R14 — Flip "autor, no revisor" (modo free; guided intacto como control A/B) (COMPLETED — el techo ERA el entorno: 1→7 choices/pozo en free)
+### Phase R14 — Flip "autor, no revisor" (modo free; guided intacto como control A/B) (COMPLETED) — el techo ERA el entorno: 1→7 choices/pozo en free
 Done when: en modo autor el pass-0 es solo descriptivo, el agente autora la interpretación (zona → método por propiedad con evidencia numérica del motor → cierre de cadena), el gate/abstención se computa post-loop sobre la cadena FINAL (cierra el banner stale), y el A/B v7↔v8 mide si el techo de destreza era del entorno. Rama: `feature/r14-author-mode`. Invariante intacto: el motor computa todo número; los fallbacks deterministas siguen midiendo (`default_steps`/`fell_back`/`reclosed_steps`).
 - [x] R14-A `sw_method_comparison` (sw.py, golden tests) + `sw_summary.methods` en `_exec_sw` + tabla en `_sw` + observación read-only `compare_methods` (vsh/porosity/sw) con re-audit de fuga (2026-07-02)
 - [x] R14-B provenance/scoring: `method_source` en `_exec_vsh`; tupla de `completeness_breakdown` amplía a vsh; keys aditivas `authored_core`/`core_methods_defaulted`; `_vsh` deja de hardcodear "engine's selection" (2026-07-02)
@@ -157,7 +157,7 @@ Done when: en modo autor el pass-0 es solo descriptivo, el agente autora la inte
 - [x] R14-E loop autor: kwarg `author`, `_LOOP_SYSTEM_AUTHOR` (auditado 7 focos), salta `seed_baseline_sections`, `vsh` en stale_or_pending; tests/test_analyst_loop_author.py (scripted authored_core==3; modelo-basura → reclose + fell_back) (2026-07-02)
 - [x] R14-F driver `debug/gen_field_report_v8_author.py` + smoke local + batch free en `outputs/v8` + lectura A/B vs v7 en bitácora (leg de pago solo con OK del usuario) (2026-07-02)
 
-### Phase R15 — Ciclo final: condiciones naturales del ingeniero (GA+GB+GC+GD) (COMPLETED — veredicto: la metodología + thinking produce zonificadores profundos en 4 familias de modelos)
+### Phase R15 — Ciclo final: condiciones naturales del ingeniero (GA+GB+GC+GD) (COMPLETED) — veredicto: la metodología + thinking produce zonificadores profundos en 4 familias de modelos
 Done when: el agente trabaja con las condiciones de un ingeniero real (memoria intra-ciclo, memoria entre pozos, hipótesis, consecuencia, borradores, thinking), cada palanca con golden tests y medida en batch; veredicto final y calibración junior/senior en bitácora. Rama: `experiment/claude-analyst`.
 - [x] GA: field pack (src/eda/field_study.py) + evidence_efficiency/request_tool + validate_choice + field notes cross-well + brief regional con doble gate anti-fuga (2026-07-04)
 - [x] GB: journal de observaciones (repeticiones = no-ops medidos; mató ~80% de relecturas) + digest de análisis cross-well + brief solo-identidad + rw_evidence/mhi_scan + bins finos profundos (2026-07-05)
