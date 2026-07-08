@@ -36,6 +36,19 @@ ventana productora del summit en el mismo pozo. ² *Convergencia legítima*: sin
 Y con net pay real (>0.5 m) — distinta del "cero estéril" (converger porque la zona no
 tiene nada que objetar… ni pay).
 
+> **Verificación de la vara (2026-07-07, `verificacion-vara-summit.md`).** La vara (mis
+> ventanas) fue sometida a 3 pruebas deterministas: perturbación ±100 m, refutación física
+> de bordes desde el LAS crudo, y leaderboard bajo la vara más hostil. Resultado: **el
+> ranking del top es estable** y el veredicto de las 4 familias es invariante; las 6 bases
+> de mis ventanas coinciden con la física (Δ 0–6 m) y el tope (~900 m uniforme = marcador
+> regional Mississippiano) carga un juicio interpretativo que la densidad sola no certifica.
+> Correcciones honestas que esto impone a la tabla de arriba: (a) la **precisión se lee como
+> banda**, no como punto — opus ≈0.68–1.00 según la perturbación, sin solaparse nunca con el
+> pelotón medio (≈0.30–0.52); (b) bajo la vara física ensanchada, **opus y nemotron-ultra
+> +thinking son co-líderes**: opus mantiene 4/4 zonas y precisión 1.00 pero cede el
+> desempate por cobertura (ventana apretada vs zona ensanchada) — el 🥇/🥉 exacto depende de
+> si la vara premia precisión o cobertura, nunca de la elección de roca.
+
 **La frase del proyecto**: el modelo que en v10 hizo **cero decisiones en 16 pasos**
 (opus) terminó siendo, con las condiciones naturales del ingeniero, **el único agente
 cuyas ventanas caen al 100% en roca productora** y el único que convergió legítimamente
