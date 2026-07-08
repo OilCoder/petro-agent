@@ -167,11 +167,11 @@ Done when: el agente trabaja con las condiciones de un ingeniero real (memoria i
 - [x] Summit v3 (72/72 verifier PASS): sp_rw (banda 0.041–0.054 confirma el default 0.04) + mhi + gross/NTG sobre la ventana analizada (2026-07-04)
 - [x] Medición final: iterate15 (la iteración amplifica lo que el modelo es) + matriz v13↔v14 free/pago × thinking + calibración junior/senior — bitácoras 2026-07-04/05/06 (2026-07-06)
 
-### Phase R16 — Vara del summit, ciclo 1: sensibilidad numérica de las ventanas
+### Phase R16 — Vara del summit, ciclo 1: sensibilidad numérica de las ventanas (COMPLETED)
 Done when: `debug/dbg_vara_sensitivity.py` recalcula precisión/cobertura de zona y el leaderboard bajo perturbaciones de las ventanas del summit (shift ±50 m y ±100 m; bordes contraídos/expandidos 10%) para cada corrida de config final (v12–v14: opus, glm, gpt-5, ultra-think, super, qwen-thinking reconstruido), y `planning/specs/verificacion-vara-summit.md` §1 presenta las tablas por escenario con un veredicto explícito de estabilidad del ranking. Todo determinista (numpy/json sobre outputs/ existentes) — CERO LLM en el análisis.
-- [ ] `debug/dbg_vara_sensitivity.py`: cargar ventanas del summit (`outputs/claude_report/wells_metrics.json`, campo `zone`) y las corridas finales reutilizando la lógica de carga de `debug/dbg_final_evaluation.py` (incluida la reconstrucción de qwen-thinking desde run.log)
-- [ ] Implementar los escenarios de perturbación y recalcular por agente: zona-profunda (tope ≥700 m), precisión/cobertura de solape mediana, y posición en el ranking por escenario
-- [ ] Crear `planning/specs/verificacion-vara-summit.md` con §0 (propósito: la vara es baseline declarado, no verdad de terreno) y §1 (tablas + veredicto de estabilidad: qué cambia y qué no con la vara temblando)
+- [x] `debug/dbg_vara_sensitivity.py`: cargar ventanas del summit + corridas finales reutilizando la lógica de `dbg_final_evaluation.py` (incl. reconstrucción qwen-thinking) (2026-07-07)
+- [x] Escenarios de perturbación (7) + recálculo por agente: zona-profunda, precisión/cobertura mediana, rank y matriz de estabilidad (2026-07-07)
+- [x] `planning/specs/verificacion-vara-summit.md` §0 + §1: tablas por escenario + veredicto (top-9 estable; opus rank 1 en 6/7; gpt5+think 0.0 no es artefacto) (2026-07-07)
 
 ### Phase R17 — Vara del summit, ciclo 2: refutación determinista de los bordes
 Done when: para cada pozo usado en las comparaciones finales, los criterios físicos de borde se recomputan desde el LAS crudo (`data/`, vía lasio/numpy: primer tramo con RHOB sostenido >2.35 g/cc en ventana móvil de 50 m, y última profundidad con curvas válidas) y cada borde de ventana del summit queda clasificado `defendido` / `débil` con su ventana alternativa defendible cuando aplique; resultados en §2 del spec. Sin tocar `src/` y sin LLM: el "adversario" es el criterio físico recomputado, no una relectura.
