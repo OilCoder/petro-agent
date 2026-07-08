@@ -173,11 +173,11 @@ Done when: `debug/dbg_vara_sensitivity.py` recalcula precisión/cobertura de zon
 - [x] Escenarios de perturbación (7) + recálculo por agente: zona-profunda, precisión/cobertura mediana, rank y matriz de estabilidad (2026-07-07)
 - [x] `planning/specs/verificacion-vara-summit.md` §0 + §1: tablas por escenario + veredicto (top-9 estable; opus rank 1 en 6/7; gpt5+think 0.0 no es artefacto) (2026-07-07)
 
-### Phase R17 — Vara del summit, ciclo 2: refutación determinista de los bordes
+### Phase R17 — Vara del summit, ciclo 2: refutación determinista de los bordes (COMPLETED)
 Done when: para cada pozo usado en las comparaciones finales, los criterios físicos de borde se recomputan desde el LAS crudo (`data/`, vía lasio/numpy: primer tramo con RHOB sostenido >2.35 g/cc en ventana móvil de 50 m, y última profundidad con curvas válidas) y cada borde de ventana del summit queda clasificado `defendido` / `débil` con su ventana alternativa defendible cuando aplique; resultados en §2 del spec. Sin tocar `src/` y sin LLM: el "adversario" es el criterio físico recomputado, no una relectura.
-- [ ] `debug/dbg_vara_refute.py`: para los pozos comparados (los de las corridas v12–v14), recomputar desde el LAS el tope de roca consolidada (RHOB sostenido >2.35 g/cc) y la base con datos válidos, y contrastar contra `zone.top_m`/`zone.bottom_m` del summit
-- [ ] Clasificar cada borde (defendido si |delta| ≤ 50 m; débil si >50 m) y derivar la ventana alternativa anclada al criterio físico para los débiles
-- [ ] Escribir §2 del spec con la tabla pozo a pozo (borde summit vs borde físico vs delta) y el veredicto por pozo
+- [x] `debug/dbg_vara_refute.py`: recomputar desde el LAS el tope de roca competente (RHOB>2.35, criterios first/sustained) y la base; preferir la corrida LAS con RHOB (2026-07-07)
+- [x] Clasificar cada borde (defendido ≤50 m; débil >50 m) + ventana alternativa física para los débiles (2026-07-07)
+- [x] §2 del spec: tabla pozo a pozo + veredicto (6/6 bases defendidas; topes uniformes ~900 m = marcador regional, no pick por densidad; densidad necesaria no suficiente) (2026-07-07)
 
 ### Phase R18 — Vara del summit, ciclo 3: peor caso combinado y veredicto
 Done when: `debug/dbg_vara_worstcase.py` recalcula el leaderboard completo usando como vara las ventanas alternativas más hostiles que sobrevivieron R16+R17 (por pozo: la física de R17 si difiere, y el peor escenario de R16), y §3 del spec responde explícitamente: (1) ¿opus sigue 4/4 zonas y primero?, (2) ¿la conclusión "metodología+thinking → zonificadores profundos en 4 familias" aguanta?, (3) ¿qué cifras del informe de evaluación deben re-enunciarse con banda en vez de punto? Resumen ejecutivo al tope del spec.
