@@ -164,6 +164,10 @@ a.report-card{border-bottom:1px solid var(--border)}
 .report-card:hover{transform:translateY(-2px)}
 .report-card .doc{width:2.6rem;height:3.3rem;border-radius:4px;flex:none;
   background:linear-gradient(160deg,var(--g1,var(--oil)) 0%,var(--g2,var(--water)) 120%)}
+.report-card .logo{width:3rem;height:3rem;border-radius:10px;flex:none;background:#fff;
+  border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--shadow)}
+.report-card .logo img{width:62%;height:62%;object-fit:contain;display:block}
 .report-card h4{margin:0;font-size:.95rem}
 .report-card .meta{font:500 .76rem var(--font-sans);color:var(--ink-muted)}
 pre.ledger{background:var(--surface-2);border:1px solid var(--border);
@@ -259,17 +263,49 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
 <section id="arquitectura" class="reveal">
   <span class="eyebrow"><span data-lang="es">el sistema</span><span data-lang="en">the system</span></span>
   <h2><span data-lang="es">La arquitectura: un muro con puertas instrumentadas</span><span data-lang="en">The architecture: a wall with instrumented doors</span></h2>
-  <pre><code>            DECIDE (LLM)                      COMPUTA (determinista)
-  ┌────────────────────────────┐      ┌───────────────────────────────────┐
-  │ elige método · zona · pozo │      │ motor petrofísico golden-tested   │
-  │ pide observaciones         │─────▶│ loop LangGraph (no-LLM, dueño de  │
-  │ escribe y REVISA su prosa  │      │ terminación, gates, re-close)     │
-  └────────────┬───────────────┘      └───────────────┬───────────────────┘
-               │  0 números escritos por el LLM        │
-        ┌──────▼──────────────────────────────────────▼──────┐
-        │ ledger JSON por pozo · claim verifier · abstención │
-        │ provenance por decisión · fallbacks SEÑALIZADOS    │
-        └────────────────────────────────────────────────────┘</code></pre>
+    <div class="chartbox">
+<svg viewBox="0 0 640 400" role="img" aria-label="Agent loop" font-family="var(--font-mono)" font-size="11">
+<defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z" fill="var(--ink-muted)"/></marker></defs>
+<rect x="8" y="34" width="240" height="322" rx="14" fill="var(--oil)" opacity=".07"/>
+<rect x="256" y="34" width="376" height="322" rx="14" fill="var(--water)" opacity=".07"/>
+<text x="24" y="26" text-anchor="start" fill="var(--oil)" font-size="12" font-weight="700"><tspan data-lang="es">EL MODELO — decide y redacta</tspan><tspan data-lang="en">THE MODEL — decides and writes</tspan></text>
+<text x="626" y="26" text-anchor="end" fill="var(--water)" font-size="12" font-weight="700"><tspan data-lang="es">EL MOTOR — computa y gatea (determinista)</tspan><tspan data-lang="en">THE ENGINE — computes and gates (deterministic)</tspan></text>
+<rect x="280" y="52" width="330" height="56" rx="10" fill="var(--surface-1)" stroke="var(--water)" stroke-width="1.5"/>
+<text x="445" y="74" text-anchor="middle" fill="var(--ink-primary)" font-size="11" font-weight="700"><tspan data-lang="es">OBSERVA — EDA, bins de profundidad, figuras,</tspan><tspan data-lang="en">OBSERVE — EDA, depth bins, figures,</tspan></text>
+<text x="445" y="92" text-anchor="middle" fill="var(--ink-secondary)" font-size="10"><tspan data-lang="es">journal (releer = no-op), digest cross-well</tspan><tspan data-lang="en">journal (re-read = no-op), cross-well digest</tspan></text>
+<rect x="28" y="132" width="200" height="66" rx="10" fill="var(--surface-1)" stroke="var(--oil)" stroke-width="1.5"/>
+<text x="128" y="154" text-anchor="middle" fill="var(--ink-primary)" font-size="11" font-weight="700"><tspan data-lang="es">DECIDE — método, zona,</tspan><tspan data-lang="en">DECIDE — method, zone,</tspan></text>
+<text x="128" y="172" text-anchor="middle" fill="var(--ink-secondary)" font-size="10"><tspan data-lang="es">hipótesis, reintento</tspan><tspan data-lang="en">hypothesis, retry</tspan></text>
+<text x="128" y="188" text-anchor="middle" fill="var(--oil)" font-size="10"><tspan data-lang="es">(0 números escritos)</tspan><tspan data-lang="en">(writes 0 numbers)</tspan></text>
+<rect x="280" y="132" width="330" height="56" rx="10" fill="var(--surface-1)" stroke="var(--water)" stroke-width="1.5"/>
+<text x="445" y="154" text-anchor="middle" fill="var(--ink-primary)" font-size="11" font-weight="700"><tspan data-lang="es">COMPUTA — funciones validadas con golden tests</tspan><tspan data-lang="en">COMPUTE — vetted golden-tested functions</tspan></text>
+<text x="445" y="172" text-anchor="middle" fill="var(--ink-secondary)" font-size="10"><tspan data-lang="es">Vsh → PHIE → Sw → cutoffs → net pay → MC</tspan><tspan data-lang="en">Vsh → PHIE → Sw → cutoffs → net pay → MC</tspan></text>
+<rect x="280" y="212" width="330" height="56" rx="10" fill="var(--surface-1)" stroke="var(--water)" stroke-width="1.5"/>
+<text x="445" y="234" text-anchor="middle" fill="var(--ink-primary)" font-size="11" font-weight="700"><tspan data-lang="es">VALIDA Y GATEA — objeciones tipadas, tier,</tspan><tspan data-lang="en">VALIDATE & GATE — typed objections, tier,</tspan></text>
+<text x="445" y="252" text-anchor="middle" fill="var(--ink-secondary)" font-size="10"><tspan data-lang="es">abstención; un LLM jamás decide una compuerta</tspan><tspan data-lang="en">abstention; an LLM never decides a gate</tspan></text>
+<rect x="28" y="288" width="200" height="56" rx="10" fill="var(--surface-1)" stroke="var(--oil)" stroke-width="1.5"/>
+<text x="128" y="310" text-anchor="middle" fill="var(--ink-primary)" font-size="11" font-weight="700"><tspan data-lang="es">REDACTA Y REVISA</tspan><tspan data-lang="en">WRITE & REVISE</tspan></text>
+<text x="128" y="328" text-anchor="middle" fill="var(--ink-secondary)" font-size="10"><tspan data-lang="es">relee su borrador renderizado</tspan><tspan data-lang="en">rereads its rendered draft</tspan></text>
+<rect x="280" y="288" width="330" height="56" rx="10" fill="var(--surface-1)" stroke="var(--water)" stroke-width="1.5"/>
+<text x="445" y="310" text-anchor="middle" fill="var(--ink-primary)" font-size="11" font-weight="700"><tspan data-lang="es">VERIFICADOR — cada cifra de la prosa debe</tspan><tspan data-lang="en">VERIFIER — every figure in the prose must</tspan></text>
+<text x="445" y="328" text-anchor="middle" fill="var(--ink-secondary)" font-size="10"><tspan data-lang="es">existir en el ledger; si no, se RECHAZA</tspan><tspan data-lang="en">exist in the ledger; otherwise REJECTED</tspan></text>
+<line x1="280" y1="80" x2="232" y2="150" stroke="var(--ink-muted)" stroke-width="1.5" marker-end="url(#ah)"/>
+<line x1="228" y1="165" x2="276" y2="160" stroke="var(--ink-muted)" stroke-width="1.5" marker-end="url(#ah)"/>
+<line x1="445" y1="188" x2="445" y2="208" stroke="var(--ink-muted)" stroke-width="1.5" marker-end="url(#ah)"/>
+<path d="M614 240 C 636 200 636 120 614 84" fill="none" stroke="var(--ink-muted)" stroke-width="1.5" marker-end="url(#ah)"/>
+<line x1="280" y1="250" x2="180" y2="284" stroke="var(--ink-muted)" stroke-width="1.5" marker-end="url(#ah)"/>
+<line x1="232" y1="316" x2="276" y2="316" stroke="var(--ink-muted)" stroke-width="1.5" marker-end="url(#ah)"/>
+<text x="38" y="224" text-anchor="start" fill="var(--ink-muted)" font-size="10"><tspan data-lang="es">guard anti-stall: 3 acciones</tspan><tspan data-lang="en">anti-stall guard: 3 identical</tspan></text>
+<text x="38" y="238" text-anchor="start" fill="var(--ink-muted)" font-size="10"><tspan data-lang="es">idénticas → corta; el orquestador</tspan><tspan data-lang="en">actions → cut; the orchestrator</tspan></text>
+<text x="38" y="252" text-anchor="start" fill="var(--ink-muted)" font-size="10"><tspan data-lang="es">es dueño de la terminación</tspan><tspan data-lang="en">owns termination</tspan></text>
+<text x="445" y="385" text-anchor="middle" fill="var(--ink-muted)" font-size="10"><tspan data-lang="es">todo fallback queda SEÑALIZADO en el ledger — nunca se lee como análisis del agente</tspan><tspan data-lang="en">every fallback is SIGNALED in the ledger — never read as the agent's analysis</tspan></text>
+</svg>
+    <div class="cap">
+      <span data-lang="es"><b>El loop completo, con la frontera dibujada.</b> Ámbar = el modelo (decide y redacta); azul = el motor determinista (observa, computa, gatea, verifica). El modelo escribe CERO números: cada cifra de su prosa debe existir en el ledger o el verificador la rechaza — pasó en vivo (2 revisiones rechazadas en v14).</span>
+      <span data-lang="en"><b>The full loop, boundary drawn.</b> Amber = the model (decides and writes); blue = the deterministic engine (observes, computes, gates, verifies). The model writes ZERO numbers: every figure in its prose must exist in the ledger or the verifier rejects it — it happened live (2 revisions rejected in v14).</span>
+    </div>
+  </div>
+
   <p>
     <span data-lang="es">Todo lo demás del proyecto se apoya en esa separación: como el LLM jamás
     produce un número, cualquier diferencia entre corridas es diferencia de <i>criterio</i> — y el
@@ -337,6 +373,68 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
       to the Mississippian (1176–1350 m). And the counterexample: gpt-5, which reasons by
       default, got WORSE with explicit reasoning (precision 0.77→0.00). Thinking switches on
       dormant hybrids; it doesn't improve models already thinking.</span></li>
+    <div class="chartbox">
+<svg viewBox="0 0 640 218" role="img" aria-label="Thinking matrix" font-family="var(--font-mono)" font-size="11">
+<text x="205.0" y="34" text-anchor="middle" fill="var(--ink-muted)" font-size="10">ultra</text>
+<text x="271.0" y="34" text-anchor="middle" fill="var(--ink-muted)" font-size="10">super</text>
+<text x="337.0" y="34" text-anchor="middle" fill="var(--ink-muted)" font-size="10">qwen</text>
+<text x="403.0" y="34" text-anchor="middle" fill="var(--ink-muted)" font-size="10">gpt-5</text>
+<text x="469.0" y="34" text-anchor="middle" fill="var(--ink-muted)" font-size="10">nano</text>
+<text x="535.0" y="34" text-anchor="middle" fill="var(--ink-muted)" font-size="10">glm</text>
+<text x="601.0" y="34" text-anchor="middle" fill="var(--ink-muted)" font-size="10">opus</text>
+<text x="162" y="72.0" text-anchor="end" fill="var(--ink-secondary)" font-size="10.5"><tspan data-lang="es">v13 · sin thinking</tspan><tspan data-lang="en">v13 · no thinking</tspan></text>
+<rect x="175" y="49" width="60" height="38" rx="7" fill="var(--surface-2)" opacity="0.12"/>
+<text x="205.0" y="72.0" text-anchor="middle" fill="var(--ink-primary)" font-weight="700">0/4</text>
+<rect x="241" y="49" width="60" height="38" rx="7" fill="var(--surface-2)" opacity="0.12"/>
+<text x="271.0" y="72.0" text-anchor="middle" fill="var(--ink-primary)" font-weight="700">0/4</text>
+<rect x="307" y="49" width="60" height="38" rx="7" fill="var(--surface-2)" opacity="0.12"/>
+<text x="337.0" y="72.0" text-anchor="middle" fill="var(--ink-primary)" font-weight="700">0/4</text>
+<rect x="373" y="49" width="60" height="38" rx="7" fill="var(--oil)" opacity="0.56"/>
+<text x="403.0" y="72.0" text-anchor="middle" fill="var(--ink-primary)" font-weight="700">2/4</text>
+<rect x="439" y="49" width="60" height="38" rx="7" fill="var(--surface-2)" opacity=".5"/>
+<text x="469.0" y="72.0" text-anchor="middle" fill="var(--ink-muted)" font-size="10">—</text>
+<rect x="505" y="49" width="60" height="38" rx="7" fill="var(--surface-2)" opacity=".5"/>
+<text x="535.0" y="72.0" text-anchor="middle" fill="var(--ink-muted)" font-size="10">—</text>
+<rect x="571" y="49" width="60" height="38" rx="7" fill="var(--surface-2)" opacity=".5"/>
+<text x="601.0" y="72.0" text-anchor="middle" fill="var(--ink-muted)" font-size="10">—</text>
+<text x="162" y="116.0" text-anchor="end" fill="var(--ink-secondary)" font-size="10.5"><tspan data-lang="es">v14 · free + thinking</tspan><tspan data-lang="en">v14 · free + thinking</tspan></text>
+<rect x="175" y="93" width="60" height="38" rx="7" fill="var(--oil)" opacity="1.00"/>
+<text x="205.0" y="116.0" text-anchor="middle" fill="#fff" font-weight="700">3/3</text>
+<rect x="241" y="93" width="60" height="38" rx="7" fill="var(--surface-2)" opacity="0.12"/>
+<text x="271.0" y="116.0" text-anchor="middle" fill="var(--ink-primary)" font-weight="700">0/4</text>
+<rect x="307" y="93" width="60" height="38" rx="7" fill="var(--surface-2)" opacity=".5"/>
+<text x="337.0" y="116.0" text-anchor="middle" fill="var(--ink-muted)" font-size="10">—</text>
+<rect x="373" y="93" width="60" height="38" rx="7" fill="var(--surface-2)" opacity=".5"/>
+<text x="403.0" y="116.0" text-anchor="middle" fill="var(--ink-muted)" font-size="10">—</text>
+<rect x="439" y="93" width="60" height="38" rx="7" fill="var(--oil)" opacity="0.34"/>
+<text x="469.0" y="116.0" text-anchor="middle" fill="var(--ink-primary)" font-weight="700">1/4</text>
+<rect x="505" y="93" width="60" height="38" rx="7" fill="var(--surface-2)" opacity=".5"/>
+<text x="535.0" y="116.0" text-anchor="middle" fill="var(--ink-muted)" font-size="10">—</text>
+<rect x="571" y="93" width="60" height="38" rx="7" fill="var(--surface-2)" opacity=".5"/>
+<text x="601.0" y="116.0" text-anchor="middle" fill="var(--ink-muted)" font-size="10">—</text>
+<text x="162" y="160.0" text-anchor="end" fill="var(--ink-secondary)" font-size="10.5"><tspan data-lang="es">v14 · pago + thinking</tspan><tspan data-lang="en">v14 · paid + thinking</tspan></text>
+<rect x="175" y="137" width="60" height="38" rx="7" fill="var(--surface-2)" opacity=".5"/>
+<text x="205.0" y="160.0" text-anchor="middle" fill="var(--ink-muted)" font-size="10">—</text>
+<rect x="241" y="137" width="60" height="38" rx="7" fill="var(--surface-2)" opacity=".5"/>
+<text x="271.0" y="160.0" text-anchor="middle" fill="var(--ink-muted)" font-size="10">—</text>
+<rect x="307" y="137" width="60" height="38" rx="7" fill="var(--oil)" opacity="0.71"/>
+<text x="337.0" y="160.0" text-anchor="middle" fill="var(--ink-primary)" font-weight="700">2/3</text>
+<rect x="373" y="137" width="60" height="38" rx="7" fill="var(--oil)" opacity="0.34"/>
+<text x="403.0" y="160.0" text-anchor="middle" fill="var(--ink-primary)" font-weight="700">1/4</text>
+<rect x="439" y="137" width="60" height="38" rx="7" fill="var(--surface-2)" opacity=".5"/>
+<text x="469.0" y="160.0" text-anchor="middle" fill="var(--ink-muted)" font-size="10">—</text>
+<rect x="505" y="137" width="60" height="38" rx="7" fill="var(--oil)" opacity="0.78"/>
+<text x="535.0" y="160.0" text-anchor="middle" fill="#fff" font-weight="700">3/4</text>
+<rect x="571" y="137" width="60" height="38" rx="7" fill="var(--oil)" opacity="1.00"/>
+<text x="601.0" y="160.0" text-anchor="middle" fill="#fff" font-weight="700">4/4</text>
+<text x="172" y="202" text-anchor="start" fill="var(--ink-muted)" font-size="10"><tspan data-lang="es">celda = zonas con tope ≥700 m (bloque consolidado) / pozos del batch</tspan><tspan data-lang="en">cell = zones with top ≥700 m (consolidated block) / batch wells</tspan></text>
+</svg>
+      <div class="cap">
+        <span data-lang="es"><b>La matriz que aisló la palanca.</b> Cada celda: cuántas zonas con tope ≥700 m (el bloque consolidado real) eligió esa config. El thinking ENCIENDE la zonificación profunda en los híbridos que corrían apagados (ultra 0/4→3/3; el gemelo qwen 0/4→2/3) y no arregla a los rígidos (super) ni a los que ya razonan (gpt-5 empeora). Cuatro familias de vendors, mismo patrón.</span>
+        <span data-lang="en"><b>The matrix that isolated the lever.</b> Each cell: how many zones with top ≥700 m (the real consolidated block) that config chose. Thinking SWITCHES ON deep zoning in hybrids that ran dormant (ultra 0/4→3/3; the qwen twin 0/4→2/3), and fixes neither the rigid (super) nor those already reasoning (gpt-5 gets worse). Four vendor families, same pattern.</span>
+      </div>
+    </div>
+
     <li><span data-lang="es"><b>La iteración amplifica lo que el modelo ya es.</b> 15 ciclos de
       "mira tu informe y reintenta" sobre un pozo fijo: el rígido (super 120B) aprende UNA vez y
       plancha idéntico 5 iteraciones; el explorador (nano 30B thinking) rebota y clava el óptimo

@@ -164,6 +164,10 @@ a.report-card{border-bottom:1px solid var(--border)}
 .report-card:hover{transform:translateY(-2px)}
 .report-card .doc{width:2.6rem;height:3.3rem;border-radius:4px;flex:none;
   background:linear-gradient(160deg,var(--g1,var(--oil)) 0%,var(--g2,var(--water)) 120%)}
+.report-card .logo{width:3rem;height:3rem;border-radius:10px;flex:none;background:#fff;
+  border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--shadow)}
+.report-card .logo img{width:62%;height:62%;object-fit:contain;display:block}
 .report-card h4{margin:0;font-size:.95rem}
 .report-card .meta{font:500 .76rem var(--font-sans);color:var(--ink-muted)}
 pre.ledger{background:var(--surface-2);border:1px solid var(--border);
@@ -4606,10 +4610,161 @@ border-radius:8px}
 <li>Artefacto documentado: los report .md de qwen-thinking en disco pueden ser de</li>
 </ul>
 <p>  intentos previos; la fuente de verdad es el ledger (así lo usa el informe).</p>
+<h2>Sesión 2 — El sitio final: hub + tres narrativas</h2>
+<h3>Cambios técnicos</h3>
+<ul>
+<li><code>docs/</code> reconstruido como hub + 3 páginas (decisión del usuario): <code>index.html</code></li>
+</ul>
+<p>  actualizado (hero, sección "La evolución v7→v14", veredicto FINAL reemplaza al</p>
+<p>  pre-GA, tarjetas de navegación, informes SOLO finales), <code>petrolero.html</code> (narrativa</p>
+<p>  petrofísica), <code>ingenieria.html</code> (narrativa dev con arquitectura/palancas/costos),</p>
+<p>  <code>proceso.html</code> (timeline curado bilingüe con las 11 entradas de bitácora íntegras en</p>
+<p>  español — traducir un diario sería falsificarlo).</p>
+<ul>
+<li><code>docs/reports/</code>: 5 páginas finales nuevas (summit field + summit/opus en 24,881 +</li>
+</ul>
+<p>  glm/ultra-think en 25990) con 34 figuras copiadas de outputs/; las 7 páginas viejas</p>
+<p>  (v7–v10) eliminadas por decisión "solo finales".</p>
+<ul>
+<li>Generadores reproducibles: <code>debug/dbg_build_site_pages.py</code> (md→HTML propio, sin</li>
+</ul>
+<p>  dependencias) + scripts de ensamblado en scratch.</p>
+<h3>Verificación</h3>
+<ul>
+<li>Check automatizado: 0 links rotos, 0 referencias navegables a outputs/ (gitignored),</li>
+</ul>
+<p>  34 figuras presentes; 2 artefactos del conversor corregidos (pseudo-links del diario,</p>
+<p>  <code>![title](file)</code> dentro de code).</p>
+<ul>
+<li>Browser (Chrome MCP): las 4 páginas renderizan en dark, toggle ES/EN funciona,</li>
+</ul>
+<p>  timeline expande las entradas con formato, 0 errores de consola.</p>
+<ul>
+<li>Cifras del sitio == informe de evaluación (1/24→13/15; opus 4/4 precisión 1.00;</li>
+</ul>
+<p>  relecturas 80%→0).</p>
 <h3>Pendientes</h3>
 <ul>
-<li>[ ] Usar el informe como fuente para la página (pendiente ya abierto).</li>
+<li>[x] Usar el informe como fuente para la página (2026-07-07 — sitio reconstruido).</li>
 </ul>
+<h2>Sesión 3 — Pase de diseño: tabs persistentes + material didáctico</h2>
+<h3>Cambios técnicos</h3>
+<ul>
+<li>Navegación de 3 tabs persistente (petición del usuario): <code>&lt;nav class="tabs"&gt;</code> en el</li>
+</ul>
+<p>  header de las 4 páginas (Inicio / Petróleo / Ing. de software / Bitácora), con estado</p>
+<p>  activo por página vía <code>aria-current</code> (JS compara el pathname). El builder de páginas</p>
+<p>  extrae el shell de index.html, así que la nav se propagó sola al regenerar.</p>
+<ul>
+<li>Firma visual del sitio: el proyecto ES un registro de pozo — hero de index con una</li>
+</ul>
+<p>  tira de log SVG (traza tipo GR animada con <code>stroke-dashoffset</code>, banda ámbar en la</p>
+<p>  zona 900–1350 m, respeta <code>prefers-reduced-motion</code>).</p>
+<ul>
+<li>Material didáctico nuevo: figura "cómo leer un registro compuesto" (composite del</li>
+</ul>
+<p>  summit en 24,881) y "cómo leer un crossplot D-N" (crossplot de opus) con captions</p>
+<p>  divulgativas bilingües; gráfica SVG de las ventanas elegidas por modelo vs la banda</p>
+<p>  productora del summit; gráfica de las 3 trayectorias de iterate15. Los SVG usan</p>
+<p>  variables CSS del token system → se adaptan solos a light/dark.</p>
+<ul>
+<li>proceso.html: el timeline se rediseñó como pozo que se perfora — la profundidad es el</li>
+</ul>
+<p>  tiempo, cada marca un día, el riel se vuelve ámbar al fondo y los días 07-06/07-07</p>
+<p>  (donde el proyecto encontró su pay) van resaltados.</p>
+<ul>
+<li>Eyebrows de sección con acento por página (--page-accent: oil/water/cat-5).</li>
+</ul>
+<h3>Verificación</h3>
+<ul>
+<li>check_links: 0 rotos en 10 páginas, 34 figuras, 0 referencias navegables a outputs/</li>
+</ul>
+<p>  (el check se afinó a href/src — el diario menciona rutas outputs/ como texto, y eso</p>
+<p>  es correcto).</p>
+<ul>
+<li>Browser (Chrome): tabs activos correctos en las 4 páginas, figuras y charts renderizan</li>
+</ul>
+<p>  en dark y light, toggle ES/EN relabela los tabs, 0 errores de consola.</p>
+<h3>Errores</h3>
+<ul>
+<li>Los artefactos del conversor md→HTML (pseudo-link <code>[uwi](report_&lt;uwi&gt;.md)</code> y un</li>
+</ul>
+<p>  <code>![title](file)</code> dentro de code) se habían corregido sobre el HTML construido, no</p>
+<p>  sobre los fragmentos — al reconstruir reaparecieron. Se notó porque el check de links</p>
+<p>  volvió a fallar. Corrección definitiva: arreglar los fragmentos fuente en scratch,</p>
+<p>  que es de donde se reconstruye.</p>
+<h2>Sesión 4 — Verificar la vara: ¿es correcto el baseline del summit?</h2>
+<p>El usuario preguntó si mi informe summit sirve de vara — si es correcto como ejemplo de</p>
+<p>lo que un modelo debe entender y como techo. En vez de re-iterar (iterar amplifica, no</p>
+<p>corrige), montamos un chequeo de 3 ciclos deterministas en la rama <code>verify/vara-summit</code>.</p>
+<h3>Cambios técnicos</h3>
+<ul>
+<li><code>planning/specs/verificacion-vara-summit.md</code>: el veredicto en 3 secciones.</li>
+<li><code>debug/dbg_vara_sensitivity.py</code> (R16), <code>dbg_vara_refute.py</code> (R17),</li>
+</ul>
+<p>  <code>dbg_vara_worstcase.py</code> (R18) — todos gitignored, deterministas, CERO LLM, leen</p>
+<p>  outputs/ + data/ existentes reutilizando la lógica de <code>dbg_final_evaluation.py</code>.</p>
+<h3>Hallazgos</h3>
+<ul>
+<li><b>Ciclo 1 (sensibilidad ±100 m):</b> el top-9 no se reordena; opus rank 1 en 6/7</li>
+</ul>
+<p>  escenarios; gpt-5+thinking precisión 0.0 en los 7 (su falla estéril no es artefacto</p>
+<p>  de la vara).</p>
+<ul>
+<li><b>Ciclo 2 (refutación física, RHOB&gt;2.35):</b> las 6 bases coinciden con la física</li>
+</ul>
+<p>  (Δ 0–6 m). Los topes salen "DÉBIL" contra roca-competente-continua, PERO son uniformes</p>
+<p>  ~900 m en 6 pozos distintos → marcador estratigráfico regional (tope Mississippian</p>
+<p>  productor, KGS), no pick por densidad. La densidad es necesaria pero no suficiente para</p>
+<p>  un tope de zona productora; certificarlo exigiría Rw, que no existe (la contaminación</p>
+<p>  declarada). Conclusión: base objetiva, tope con juicio irreducible → reportar con banda.</p>
+<ul>
+<li><b>Ciclo 3 (peor caso, vara física ensanchada):</b> opus conserva 4/4 zonas y precisión</li>
+</ul>
+<p>  1.00 incluso con la zona estirada hacia arriba; cae a rank 2 (tras nemotron-ultra-think)</p>
+<p>  solo por el desempate de cobertura (ventana apretada = menos cobertura de zona ancha).</p>
+<p>  El veredicto "metodología+thinking → zonificadores profundos en 4 familias" es invariante.</p>
+<h3>Veredicto</h3>
+<p>La vara es honesta y útil: mide bien lo que afirma (intervalo + base), y su único punto</p>
+<p>blando (el tope de zona productora) queda acotado y reportado como banda, no escondido.</p>
+<p>Corrección al informe de evaluación: presentar opus y nemotron-ultra-thinking como</p>
+<p>co-líderes (no 1º/2º limpio) y la precisión mediana como banda. Nada más cambia.</p>
+<h3>Errores</h3>
+<ul>
+<li>El promptloop (<code>claude -p</code> anidado) se lanzó desde dentro de la sesión interactiva y</li>
+</ul>
+<p>  salió non-zero a mitad del ciclo 1 — es el anti-patrón que el propio script advierte.</p>
+<p>  Alcanzó a escribir el script de R16 (rescatado y verificado). Los otros 2 ciclos se</p>
+<p>  corrieron secuencialmente en la sesión. Cómo se notó: <code>git log</code> sin commits nuevos y</p>
+<p>  spec inexistente pese al "finished". Lección: el loop se corre desde la shell del</p>
+<p>  usuario, no anidado.</p>
+<ul>
+<li>Primer matching UWI→LAS tomaba la primera corrida del pozo; para 24,881 (pozo estrella</li>
+</ul>
+<p>  de opus) esa corrida solo traía DT (sónico), sin RHOB. Se notó porque <code>physical_edges</code></p>
+<p>  devolvía None solo en ese pozo. Fix: preferir, por UWI, la corrida LAS que porta RHOB.</p>
+<ul>
+<li>Criterio físico inicial ("primer tramo 50 m con mediana RHOB&gt;2.35") captaba stringers</li>
+</ul>
+<p>  someros aislados y daba topes irrealmente someros. Se añadió el criterio "sostenido</p>
+<p>  hasta la base ≥80% competente" para medir roca competente CONTINUA — el correcto para</p>
+<p>  juzgar un tope de zona.</p>
+<h2>Sesión 5 — Correcciones de copy del sitio + nombres reales de pozo</h2>
+<p>Revisión de estilo del usuario sobre index.html: frases más limpias ("sin intervención</p>
+<p>humana en el proceso" en vez de "sin humano en el loop"; quitar "probado"/"pineadas";</p>
+<p>"el modelo" en vez de "el modelo de lenguaje"; "validada" en vez de "vetada" — que en</p>
+<p>español connota "prohibida"; "etapas" en vez de "cajas" en el pipeline). Y un hallazgo</p>
+<p>lindo: los pozos TIENEN nombre de lease en el header LAS. Añadidos al sitio: 24,881 =</p>
+<p>May Schneider No. 4 (Berexco); 24,938 = Schwien No. 2-13 (American Warrior); 25990 =</p>
+<p>KT Schaben No. 2-31; 25945 = Ken &amp; Travis Schaben No. 1-31 (Schaben Oil). Ahora las</p>
+<p>fichas y menciones usan el nombre, con el API en segundo plano.</p>
+<h3>Isotipos de modelo en las fichas (resuelto)</h3>
+<p>El usuario pidió "búscalos por internet". Descargados los SVG oficiales (Simple Icons</p>
+<p>para Claude/NVIDIA con color de marca; LobeHub para Z.ai, recoloreado a su azul) a</p>
+<p><code>docs/assets/</code>, referenciados localmente (sin requests externos). Las 5 fichas de modelo</p>
+<p>cambian el recuadro degradado por el isotipo en un chip blanco: sunburst de Claude</p>
+<p>(summit + opus), Z de Z.ai (glm), ojo de NVIDIA (nemotron). Verificado en light y dark.</p>
+<p>Las 3 tarjetas de narrativa conservan su degradado + emoji (no son modelos).</p>
         </div>
       </details>
     </li>

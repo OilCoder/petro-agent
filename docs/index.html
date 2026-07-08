@@ -562,6 +562,54 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
     uncertainty, P10–P90 bands went from overconfident (2–35% coverage) to calibrated (88–98%
     vs the 80% nominal).</span>
   </p>
+  <div class="chartbox">
+<svg viewBox="0 0 640 330" role="img" aria-label="VOLVE calibration" font-family="var(--font-mono)" font-size="11">
+<text x="20" y="24" text-anchor="start" fill="var(--ink-primary)" font-size="12" font-weight="700"><tspan data-lang="es">Motor congelado vs CPI de Equinor (r)</tspan><tspan data-lang="en">Frozen engine vs Equinor CPI (r)</tspan></text>
+<text x="62" y="65" text-anchor="end" fill="var(--ink-secondary)">VSH</text>
+<rect x="70" y="52" width="200" height="18" rx="4" fill="var(--surface-2)"/>
+<rect x="70" y="52" width="192" height="18" rx="4" fill="var(--water)"/>
+<text x="262" y="65" dx="6" fill="var(--ink-primary)" font-weight="700">0.962</text>
+<text x="62" y="105" text-anchor="end" fill="var(--ink-secondary)">PHIE</text>
+<rect x="70" y="92" width="200" height="18" rx="4" fill="var(--surface-2)"/>
+<rect x="70" y="92" width="182" height="18" rx="4" fill="var(--water)"/>
+<text x="252" y="105" dx="6" fill="var(--ink-primary)" font-weight="700">0.910</text>
+<text x="62" y="145" text-anchor="end" fill="var(--ink-secondary)">SW</text>
+<rect x="70" y="132" width="200" height="18" rx="4" fill="var(--surface-2)"/>
+<rect x="70" y="132" width="174" height="18" rx="4" fill="var(--water)"/>
+<text x="244" y="145" dx="6" fill="var(--ink-primary)" font-weight="700">0.869</text>
+<line x1="70" y1="180" x2="270" y2="180" stroke="var(--border)"/>
+<text x="70" y="196" fill="var(--ink-muted)">0</text><text x="270" y="196" text-anchor="end" fill="var(--ink-muted)">1</text>
+<text x="20" y="226" text-anchor="start" fill="var(--ink-muted)" font-size="10"><tspan data-lang="es">Pozo 15/9-F-11A, Hugin 3575–3762 m,</tspan><tspan data-lang="en">Well 15/9-F-11A, Hugin 3575–3762 m,</tspan></text>
+<text x="20" y="240" text-anchor="start" fill="var(--ink-muted)" font-size="10"><tspan data-lang="es">sin tunear (Mar del Norte, held-out).</tspan><tspan data-lang="en">untuned (North Sea, held-out).</tspan></text>
+<text x="370" y="24" text-anchor="start" fill="var(--ink-primary)" font-size="12" font-weight="700"><tspan data-lang="es">Cobertura P10–P90 (nominal 80%)</tspan><tspan data-lang="en">P10–P90 coverage (nominal 80%)</tspan></text>
+<text x="370" y="64" fill="var(--ink-secondary)">VSH</text>
+<rect x="420" y="52" width="63" height="14" rx="3" fill="var(--cat-4)" opacity=".85"/>
+<text x="487" y="63" fill="var(--ink-muted)" font-size="10">35%</text>
+<rect x="420" y="71" width="171" height="14" rx="3" fill="var(--water)"/>
+<text x="595" y="82" fill="var(--ink-primary)" font-size="10" font-weight="700">95%</text>
+<text x="370" y="126" fill="var(--ink-secondary)">PHIE</text>
+<rect x="420" y="114" width="3" height="14" rx="3" fill="var(--cat-4)" opacity=".85"/>
+<text x="427" y="125" fill="var(--ink-muted)" font-size="10">1.8%</text>
+<rect x="420" y="133" width="176" height="14" rx="3" fill="var(--water)"/>
+<text x="600" y="144" fill="var(--ink-primary)" font-size="10" font-weight="700">98%</text>
+<text x="370" y="188" fill="var(--ink-secondary)">SW</text>
+<rect x="420" y="176" width="56" height="14" rx="3" fill="var(--cat-4)" opacity=".85"/>
+<text x="480" y="187" fill="var(--ink-muted)" font-size="10">31%</text>
+<rect x="420" y="195" width="158" height="14" rx="3" fill="var(--water)"/>
+<text x="582" y="206" fill="var(--ink-primary)" font-size="10" font-weight="700">88%</text>
+<line x1="564" y1="44" x2="564" y2="232" stroke="var(--oil)" stroke-dasharray="4 3"/>
+<text x="564" y="248" text-anchor="middle" fill="var(--oil)" font-size="10">80%</text>
+<rect x="370" y="270" width="10" height="10" rx="2" fill="var(--cat-4)" opacity=".85"/>
+<text x="386" y="279" text-anchor="start" fill="var(--ink-muted)" font-size="10"><tspan data-lang="es">solo sensibilidad a parámetros</tspan><tspan data-lang="en">parameter sensitivity only</tspan></text>
+<rect x="370" y="288" width="10" height="10" rx="2" fill="var(--water)"/>
+<text x="386" y="297" text-anchor="start" fill="var(--ink-muted)" font-size="10"><tspan data-lang="es">+ incertidumbre de método</tspan><tspan data-lang="en">+ method uncertainty</tspan></text>
+</svg>
+    <div class="cap">
+      <span data-lang="es"><b>La prueba de «demostrable».</b> Izquierda: el motor congelado reproduce la interpretación profesional de un campo que nunca vio (VOLVE, Mar del Norte) con r=0.87–0.96, sin tunear. Derecha, el hallazgo honesto: la banda de incertidumbre P10–P90 salía SOBRECONFIADA (PHIE cubría el 1.8% de la verdad, no el 80% nominal); solo al incorporar la incertidumbre de MÉTODO la banda quedó calibrada (88–98%). Preferimos ese hallazgo negativo a maquillarlo.</span>
+      <span data-lang="en"><b>The proof of “provably so”.</b> Left: the frozen engine reproduces a professional interpretation of a field it never saw (VOLVE, North Sea) at r=0.87–0.96, untuned. Right, the honest finding: the P10–P90 uncertainty band came out OVERCONFIDENT (PHIE covered 1.8% of the truth, not the nominal 80%); only after folding in METHOD uncertainty did the band calibrate (88–98%). We'd rather publish that negative finding than dress it up.</span>
+    </div>
+  </div>
+
   <aside class="note">
     <span data-lang="es">Los resultados 1–3 son la fotografía a mitad del proyecto. Lo que pasó
     después — cómo la zona pasó de imposible a sistemática — es la sección siguiente.</span>
@@ -669,17 +717,17 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
   <a class="report-card" href="reports/opus_24881.html">
     <div class="logo"><img src="assets/claude.svg" alt="Claude" loading="lazy"></div><div>
     <h4>May Schneider No. 4 · <span class="mono">claude-opus-4.8</span> + thinking 🏆</h4>
-    <div class="meta"><span class="mono">15-135-24,881</span> · <span data-lang="es">EL MEJOR POZO DE AGENTE: zona 1150–1350 m · pay real 13.0 m · PHIE 0.146 plausible · convergencia legítima</span><span data-lang="en">THE BEST AGENT WELL: zone 1150–1350 m · real 13.0 m pay · plausible PHIE 0.146 · legitimate convergence</span></div></div>
+    <div class="meta"><span class="mono">15-135-24,881</span> · <span data-lang="es">EL MEJOR POZO DE AGENTE: zona 1150–1350 m · pay real 13.0 m · PHIE 0.146 plausible · convergencia legítima</span><span data-lang="en">THE BEST AGENT WELL: zone 1150–1350 m · real 13.0 m pay · plausible PHIE 0.146 · legitimate convergence</span> · <a href="reports/opus_field.html"><span data-lang="es">su informe de campo →</span><span data-lang="en">its field report →</span></a></div></div>
   </a>
   <a class="report-card" href="reports/glm_25990.html">
     <div class="logo"><img src="assets/zai.svg" alt="Z.ai" loading="lazy"></div><div>
     <h4>KT Schaben No. 2-31 · <span class="mono">glm-5.2</span> + thinking</h4>
-    <div class="meta"><span class="mono">15-135-25990</span> · <span data-lang="es">zona 900–1376 m en su debut · ~$2 el batch — la frontera calidad/costo</span><span data-lang="en">zone 900–1376 m on debut · ~$2 per batch — the quality/cost frontier</span></div></div>
+    <div class="meta"><span class="mono">15-135-25990</span> · <span data-lang="es">zona 900–1376 m en su debut · ~$2 el batch — la frontera calidad/costo</span><span data-lang="en">zone 900–1376 m on debut · ~$2 per batch — the quality/cost frontier</span> · <a href="reports/glm_field.html"><span data-lang="es">su informe de campo →</span><span data-lang="en">its field report →</span></a></div></div>
   </a>
   <a class="report-card" href="reports/ultra_think_25990.html">
     <div class="logo"><img src="assets/nvidia.svg" alt="NVIDIA" loading="lazy"></div><div>
     <h4>KT Schaben No. 2-31 · <span class="mono">nemotron-ultra</span> free + thinking</h4>
-    <div class="meta"><span class="mono">15-135-25990</span> · <span data-lang="es">zona 700–1323 m · $0 · el mejor gratuito (0→3/3 profundas al encender el thinking)</span><span data-lang="en">zone 700–1323 m · $0 · best free model (0→3/3 deep zones once thinking is on)</span></div></div>
+    <div class="meta"><span class="mono">15-135-25990</span> · <span data-lang="es">zona 700–1323 m · $0 · el mejor gratuito (0→3/3 profundas al encender el thinking)</span><span data-lang="en">zone 700–1323 m · $0 · best free model (0→3/3 deep zones once thinking is on)</span> · <a href="reports/ultra_field.html"><span data-lang="es">su informe de campo →</span><span data-lang="en">its field report →</span></a></div></div>
   </a>
 </section>
 

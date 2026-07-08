@@ -164,6 +164,10 @@ a.report-card{border-bottom:1px solid var(--border)}
 .report-card:hover{transform:translateY(-2px)}
 .report-card .doc{width:2.6rem;height:3.3rem;border-radius:4px;flex:none;
   background:linear-gradient(160deg,var(--g1,var(--oil)) 0%,var(--g2,var(--water)) 120%)}
+.report-card .logo{width:3rem;height:3rem;border-radius:10px;flex:none;background:#fff;
+  border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--shadow)}
+.report-card .logo img{width:62%;height:62%;object-fit:contain;display:block}
 .report-card h4{margin:0;font-size:.95rem}
 .report-card .meta{font:500 .76rem var(--font-sans);color:var(--ink-muted)}
 pre.ledger{background:var(--surface-2);border:1px solid var(--border);
@@ -294,6 +298,40 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
       starts where density holds &gt;2.35 g/cc — that is what the agents had to SEE.</span>
     </figcaption>
   </figure>
+  <div class="chartbox">
+<svg viewBox="0 0 640 320" role="img" aria-label="Overburden explainer" font-family="var(--font-mono)" font-size="11">
+<rect x="120" y="40" width="90" height="83" fill="var(--surface-2)" opacity="1" stroke="var(--border)"/>
+<text x="226" y="86" fill="var(--ink-primary)" font-weight="700">RHOB p50 1.77</text>
+<rect x="120" y="123" width="90" height="83" fill="var(--surface-2)" opacity="1" stroke="var(--border)"/>
+<text x="226" y="169" fill="var(--ink-primary)" font-weight="700">RHOB p50 1.74</text>
+<rect x="120" y="207" width="90" height="83" fill="var(--oil)" opacity=".8" stroke="var(--border)"/>
+<text x="226" y="252" fill="var(--ink-primary)" font-weight="700">RHOB p50 2.49</text>
+<text x="226" y="103.66666666666666" text-anchor="start" fill="var(--ink-muted)" font-size="10"><tspan data-lang="es">roca no consolidada y lavada —</tspan><tspan data-lang="en">unconsolidated, washed-out rock —</tspan></text>
+<text x="226" y="117.66666666666666" text-anchor="start" fill="var(--ink-muted)" font-size="10"><tspan data-lang="es">la “porosidad” aquí es esponja</tspan><tspan data-lang="en">“porosity” here is sponge</tspan></text>
+<text x="226" y="274.33333333333337" text-anchor="start" fill="var(--oil)" font-size="10"><tspan data-lang="es">reservorio real (Mississippiano)</tspan><tspan data-lang="en">the real reservoir (Mississippian)</tspan></text>
+<text x="112" y="44" text-anchor="end" fill="var(--ink-muted)" font-size="10">59 m</text>
+<text x="112" y="127" text-anchor="end" fill="var(--ink-muted)" font-size="10">487 m</text>
+<text x="112" y="211" text-anchor="end" fill="var(--ink-muted)" font-size="10">915 m</text>
+<text x="112" y="294" text-anchor="end" fill="var(--ink-muted)" font-size="10">1343 m</text>
+<text x="120" y="28" text-anchor="start" fill="var(--ink-primary)" font-size="12" font-weight="700"><tspan data-lang="es">pozo 25954 — densidad por tramo</tspan><tspan data-lang="en">well 25954 — density by interval</tspan></text>
+<text x="420" y="28" text-anchor="start" fill="var(--ink-primary)" font-size="12" font-weight="700"><tspan data-lang="es">efecto de recortar la esponja</tspan><tspan data-lang="en">effect of cutting the sponge</tspan></text>
+<text x="420" y="70" text-anchor="start" fill="var(--ink-muted)" font-size="10"><tspan data-lang="es">PHIE medio</tspan><tspan data-lang="en">mean PHIE</tspan></text>
+<text x="420" y="96" fill="var(--cat-4)" font-size="20" font-weight="700">0.229</text>
+<text x="498" y="96" fill="var(--ink-muted)" font-size="16">→</text>
+<text x="524" y="96" fill="var(--oil)" font-size="20" font-weight="700">0.069</text>
+<text x="420" y="136" text-anchor="start" fill="var(--ink-muted)" font-size="10"><tspan data-lang="es">net pay</tspan><tspan data-lang="en">net pay</tspan></text>
+<text x="420" y="162" fill="var(--cat-4)" font-size="20" font-weight="700">296 m</text>
+<text x="498" y="162" fill="var(--ink-muted)" font-size="16">→</text>
+<text x="524" y="162" fill="var(--oil)" font-size="20" font-weight="700">31 m</text>
+<text x="420" y="200" text-anchor="start" fill="var(--ink-secondary)" font-size="10.5"><tspan data-lang="es">misma aritmética, mismo motor:</tspan><tspan data-lang="en">same arithmetic, same engine:</tspan></text>
+<text x="420" y="216" text-anchor="start" fill="var(--ink-secondary)" font-size="10.5"><tspan data-lang="es">lo único que cambió fue el INTERVALO</tspan><tspan data-lang="en">the only change was the INTERVAL</tspan></text>
+<text x="420" y="232" text-anchor="start" fill="var(--ink-secondary)" font-size="10.5"><tspan data-lang="es">que el agente decidió analizar.</tspan><tspan data-lang="en">the agent chose to analyze.</tspan></text>
+</svg>
+    <div class="cap">
+      <span data-lang="es"><b>Por qué PHIE 0.31 «imposible» no era un bug.</b> Los dos tercios someros del pozo leen densidad de esponja (p50 1.74–1.77 g/cc): promediarlos infla la porosidad a ficción. Cuando el agente decide analizar solo la roca real, el MISMO motor con la MISMA aritmética da 0.069 y 31 m de pay. La respuesta honesta fue darle la observación y la acción — recortar es criterio medido, jamás una regla escrita por nosotros.</span>
+      <span data-lang="en"><b>Why the “impossible” PHIE 0.31 wasn't a bug.</b> The shallow two thirds of the well read sponge density (p50 1.74–1.77 g/cc): averaging them inflates porosity into fiction. When the agent decides to analyze only the real rock, the SAME engine with the SAME arithmetic yields 0.069 and 31 m of pay. The honest answer was to give it the observation and the action — cutting is measured judgment, never a rule we wrote.</span>
+    </div>
+  </div>
 </section>
 
 <section id="zona" class="reveal">
@@ -371,6 +409,48 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
       (900–1382 m). Each bar is a model's final window on the representative well/config: opus
       falls ENTIRELY inside the band (precision 1.00); gpt-5 stays shallow; super spans almost the
       whole column (it trims overburden, it doesn't select).</span>
+    </div>
+  </div>
+  <div class="chartbox">
+<svg viewBox="0 0 640 318" role="img" aria-label="Zone precision per model" font-family="var(--font-mono)" font-size="11">
+<line x1="190" y1="30" x2="190" y2="268" stroke="var(--border)"/>
+<text x="190" y="284" text-anchor="middle" fill="var(--ink-muted)" font-size="10">0</text>
+<line x1="290" y1="30" x2="290" y2="268" stroke="var(--border)"/>
+<text x="290" y="284" text-anchor="middle" fill="var(--ink-muted)" font-size="10">0.25</text>
+<line x1="390" y1="30" x2="390" y2="268" stroke="var(--border)"/>
+<text x="390" y="284" text-anchor="middle" fill="var(--ink-muted)" font-size="10">0.5</text>
+<line x1="490" y1="30" x2="490" y2="268" stroke="var(--border)"/>
+<text x="490" y="284" text-anchor="middle" fill="var(--ink-muted)" font-size="10">0.75</text>
+<line x1="590" y1="30" x2="590" y2="268" stroke="var(--border)"/>
+<text x="590" y="284" text-anchor="middle" fill="var(--ink-muted)" font-size="10">1</text>
+<text x="182" y="50" text-anchor="end" fill="var(--ink-secondary)" font-weight="700">opus-4.8 +think</text>
+<rect x="190" y="38" width="400" height="16" rx="4" fill="var(--oil)" opacity="1"/>
+<line x1="462" y1="46" x2="590" y2="46" stroke="var(--ink-primary)" stroke-width="2"/>
+<line x1="462" y1="41" x2="462" y2="51" stroke="var(--ink-primary)" stroke-width="2"/>
+<text x="590" y="50" dx="6" fill="var(--ink-primary)" font-weight="700">1.00</text>
+<text x="182" y="84" text-anchor="end" fill="var(--ink-secondary)">gpt-5 (v13)</text>
+<rect x="190" y="72" width="308" height="16" rx="4" fill="var(--water)" opacity="0.85"/>
+<text x="498" y="84" dx="6" fill="var(--ink-primary)" font-weight="700">0.77</text>
+<text x="182" y="118" text-anchor="end" fill="var(--ink-secondary)">glm-5.2 +think</text>
+<rect x="190" y="106" width="276" height="16" rx="4" fill="var(--water)" opacity="0.85"/>
+<text x="466" y="118" dx="6" fill="var(--ink-primary)" font-weight="700">0.69</text>
+<text x="182" y="152" text-anchor="end" fill="var(--ink-secondary)">ultra free +think</text>
+<rect x="190" y="140" width="268" height="16" rx="4" fill="var(--water)" opacity="0.85"/>
+<text x="458" y="152" dx="6" fill="var(--ink-primary)" font-weight="700">0.67</text>
+<text x="182" y="186" text-anchor="end" fill="var(--ink-secondary)">qwen3-max-think</text>
+<rect x="190" y="174" width="248" height="16" rx="4" fill="var(--water)" opacity="0.85"/>
+<text x="438" y="186" dx="6" fill="var(--ink-primary)" font-weight="700">0.62</text>
+<text x="182" y="220" text-anchor="end" fill="var(--ink-secondary)">nemotron-super</text>
+<rect x="190" y="208" width="152" height="16" rx="4" fill="var(--water)" opacity="0.85"/>
+<text x="342" y="220" dx="6" fill="var(--ink-primary)" font-weight="700">0.38</text>
+<text x="182" y="254" text-anchor="end" fill="var(--ink-secondary)">gpt-5 +think</text>
+<rect x="190" y="242" width="2" height="16" rx="4" fill="var(--cat-4)" opacity="0.85"/>
+<text x="192" y="254" dx="6" fill="var(--ink-primary)" font-weight="700">0.00</text>
+<text x="190" y="20" text-anchor="start" fill="var(--ink-muted)" font-size="10.5"><tspan data-lang="es">precisión mediana de zona (vs mi ventana productora)</tspan><tspan data-lang="en">median zone precision (vs my producing window)</tspan></text>
+</svg>
+    <div class="cap">
+      <span data-lang="es"><b>El leaderboard en una barra.</b> Precisión mediana de zona: qué fracción de la ventana elegida por cada agente cae dentro de mi roca productora. opus 1.00 con su banda de verificación (0.68–1.00 al perturbar la vara ±100 m) — nunca se solapa con el pelotón. Y el par gpt-5: 0.77 con su reasoning por defecto, 0.00 al forzarle thinking explícito.</span>
+      <span data-lang="en"><b>The leaderboard in one bar.</b> Median zone precision: what fraction of each agent's chosen window falls inside my producing rock. opus 1.00 with its verification band (0.68–1.00 under ±100 m yardstick perturbation) — never overlapping the pack. And the gpt-5 pair: 0.77 with default reasoning, 0.00 when explicit thinking is forced.</span>
     </div>
   </div>
   <aside class="note">

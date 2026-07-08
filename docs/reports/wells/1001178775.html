@@ -1,0 +1,338 @@
+<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Petrophysical Interpretation Report — 1001178775</title><style>
+:root{--s0:#FAF7F2;--s1:#fff;--s2:#F1EBE1;--bd:#E2D9CB;--ink:#211D16;--ink2:#5A5245;
+--mut:#8A8071;--oil:#B45309;--water:#0B7285;}
+@media (prefers-color-scheme: dark){:root{--s0:#10151F;--s1:#171E2B;--s2:#1E2735;
+--bd:#2A3446;--ink:#ECE7DD;--ink2:#A9B2C3;--mut:#75809A;--oil:#E8930C;--water:#2BB3C7;}}
+*{box-sizing:border-box}body{margin:0;background:var(--s0);color:var(--ink);
+font:1rem/1.6 Charter,Georgia,serif;}
+.wrap{max-width:46rem;margin:0 auto;padding:2rem 1.25rem 5rem;}
+h1,h2,h3{font-family:system-ui,sans-serif;letter-spacing:-.01em}
+h1{font-size:1.7rem}h2{font-size:1.25rem;margin-top:2.2rem;border-bottom:1px solid var(--bd);
+padding-bottom:.3rem}h3{font-size:1.05rem}
+a{color:var(--oil)}code{font:.85em ui-monospace,monospace;background:var(--s2);
+padding:.1em .3em;border-radius:4px}
+pre{background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:1rem;
+overflow-x:auto;font:.8rem/1.5 ui-monospace,monospace}pre code{background:none;padding:0}
+table{border-collapse:collapse;width:100%;font:.83rem system-ui,sans-serif;display:block;
+overflow-x:auto}
+th{text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;
+color:var(--mut);border-bottom:2px solid var(--bd);padding:.4rem .5rem}
+td{padding:.4rem .5rem;border-bottom:1px solid var(--bd);font-variant-numeric:tabular-nums}
+img{max-width:100%;border:1px solid var(--bd);border-radius:8px;background:#fff}
+blockquote{border-left:3px solid var(--water);margin:1rem 0;padding:.2rem 1rem;
+color:var(--ink2)}
+hr{border:0;border-top:1px solid var(--bd);margin:2rem 0}
+.top{font:600 .8rem system-ui,sans-serif;margin-bottom:1.5rem}
+.top a{text-decoration:none}.badge{display:inline-block;font:600 .68rem system-ui,sans-serif;
+color:var(--water);border:1px solid var(--water);border-radius:999px;padding:.1rem .6rem;
+margin-left:.6rem;vertical-align:middle}
+</style></head><body><div class='wrap'><div class='top'><a href='../../index.html'>&larr; petro-agent</a> &middot; <a href='../summit_field.html'>field report</a> &middot; <a href='../pozos.html'>cat&aacute;logo</a><span class='badge'>summit v3 · class B</span></div>
+<h1>Petrophysical Interpretation Report — 1001178775</h1>
+<table><thead><tr><th></th><th></th></tr></thead><tbody>
+<tr><td><b>Well (UWI)</b></td><td>1001178775</td></tr>
+<tr><td><b>Log date</b></td><td>07/20/64</td></tr>
+<tr><td><b>Acquisition date (header)</b></td><td>07/20/64</td></tr>
+<tr><td><b>BHT (measured)</b></td><td>114 DEGF</td></tr>
+<tr><td><b>Mud resistivity (RM)</b></td><td>0.18 OHMM</td></tr>
+<tr><td><b>Mud filtrate (RMF)</b></td><td>0.08 OHMM</td></tr>
+<tr><td><b>PLSS location</b></td><td>Sec 6 T20S R21W (map precision ±1.6 km)</td></tr>
+<tr><td><b>Larionov variant</b></td><td>old_rocks (degraded)</td></tr>
+<tr><td><b>Convergence status</b></td><td>DID_NOT_CONVERGE</td></tr>
+<tr><td><b>Confidence tier</b></td><td>○ BRACKETED</td></tr>
+<tr><td><b>Engine versions</b></td><td>calc_vsh 0.1.0 · calc_phie 0.1.0 · calc_sw 0.1.0 · formula_registry 0.1.0</td></tr>
+<tr><td><b>Config hash (SHA-256)</b></td><td><code>2a9cb78728e386ab…</code></td></tr>
+<tr><td><b>Git SHA</b></td><td><code>bd23bea18153</code></td></tr>
+<tr><td><b>Generated</b></td><td>autonomously, no human in the per-report loop</td></tr>
+</tbody></table>
+<hr>
+<blockquote><p>
+<b>Confidence legend.</b> Each result is tagged by parameter provenance: <b>● FIRM</b> (core-calibrated) · <b>◐ QUALIFIED</b> (offset-derived) · <b>○ BRACKETED</b> (regional/global default — read as a range, dominant uncertainty stated). The system does not claim *always correct*; it states how well-supported each number is.<br>
+</p></blockquote>
+<hr>
+<h2>1. Executive summary</h2>
+<blockquote><p>
+⚠️ <b>ABSTENTION — this is NOT a confident estimate.</b> The run did not converge to a defensible result; the numbers below are an uncalibrated engineering estimate, reported for transparency only:<br>
+- 1 unresolved MECHANICAL objection(s)<br>
+</p></blockquote>
+<p>The vintage log covers only the deep consolidated section, so the full logged interval is evaluated — there is no overburden on record to exclude. Within that interval the net pay is 19.7 m with average effective porosity 0.147 and average water saturation 0.246. Monte-Carlo places the P50 net pay at 13.4 m within a P10-P90 range of 6.7 to 19.7 m. CLASS-B VINTAGE WELL: porosity comes from a count-rate neutron transform (engine-anchored, validated against sonic on offset wells; structural approximation) — every number is bracketed and must be read as a range. The run ABSTAINS from a confident estimate: the validators keep an unresolved objection, so the result must be read as a bracketed range, not a point value.</p>
+<blockquote><p>
+<b>Net pay P10 / P50 / P90 = 6.7 / 13.4 / 19.7 m.</b><br>
+Net pay is dominated by 'Rw', which is a regional DEFAULT (uncalibrated). This is the single largest uncertainty — the result is bracketed, not a confident point estimate.<br>
+</p></blockquote>
+<hr>
+<h2>2. Data inventory (from LAS)</h2>
+<ul>
+<li>Curves present (canonical ← raw): GR←GR, NEUT←NEUT, RT←RES</li>
+<li>Logged interval: 1127.15–1341.73 m</li>
+<li>Log date: 07/20/64</li>
+<li>Service company: — · Company: PICKRELL DRILLING COMPANY</li>
+<li>Field: SCHABEN</li>
+<li>Not provided by LAS (out of scope): core, mud logs, pressure tests, production, completion, formation tops.</li>
+</ul>
+<hr>
+<h2>3. LAS quality control</h2>
+<table><thead><tr><th>Edit type</th><th>Curve</th><th>Detail</th></tr></thead><tbody>
+<tr><td>hard_range_mask</td><td>RT</td><td>count 2</td></tr>
+<tr><td>range_warn</td><td>GR</td><td>count 9</td></tr>
+<tr><td>degradation</td><td>—</td><td>—</td></tr>
+</tbody></table>
+<hr>
+<h2>4. Standardization</h2>
+<p>Raw mnemonics mapped to canonical curve names:</p>
+<table><thead><tr><th>Canonical</th><th>Raw mnemonic</th></tr></thead><tbody>
+<tr><td>GR</td><td>GR</td></tr>
+<tr><td>NEUT</td><td>NEUT</td></tr>
+<tr><td>RT</td><td>RES</td></tr>
+</tbody></table>
+<hr>
+<h2>5. Per-curve log QC</h2>
+<ul>
+<li>GR baseline: gr_p5=11.6, gr_p95=174.8</li>
+<li>Bad-hole: GOOD=0.989, DEGRADED=0.005, EXCLUDED=0.006</li>
+<li>Low-resistivity: rt_threshold=4.5, n_flagged=143, intervals=[[1127.8, 1130.5], [1131.1, 1131.3], [1133.4, 1133.9], [1134.2, 1134.9], [1135.7, 1137.8], [1138.1, 1138.3], [1138.6, 1141.0], [1141.3, 1141.3], [1142.5, 1143.5], [1145.0, 1148.5]]</li>
+</ul>
+<hr>
+<h2>6. Data preparation</h2>
+<p>Edits applied before compute (by type): degradation: 1, hard_range_mask: 1, range_warn: 1.</p>
+<hr>
+<h2>7. Interval definition</h2>
+<ul>
+<li>Logged interval: 1127.15–1341.73 m</li>
+<li>Gross evaluated interval: 214.6 m</li>
+<li>Computed net-pay runs (pre-merge): 31</li>
+<li>Zonation is computed by depth (no formation tops in LAS).</li>
+</ul>
+<hr>
+<h2>8. Methodology</h2>
+<p>All numbers are produced by the deterministic, golden-tested engine. The LLM only selects methods/parameters and writes prose — it never computes a number. Figures are deterministic renderings of these computed numbers for the human reader; the agent reasons over the numeric EDA digest, not images (the models have no vision).</p>
+<table><thead><tr><th>Step</th><th>Method (frozen)</th><th>Version</th></tr></thead><tbody>
+<tr><td>Vsh</td><td>Larionov 1969 (old rocks)</td><td><code>vsh_larionov_old 0.1.0</code></td></tr>
+<tr><td>PHIE</td><td>Vintage count-rate neutron, two-point semilog (class-B, engine-anchored)</td><td><code>phi_neutron_countrate 0.1.0</code></td></tr>
+<tr><td>Sw</td><td>Archie 1942</td><td><code>sw_archie 0.1.0</code></td></tr>
+<tr><td>Net pay</td><td>Vsh/PHIE/Sw cutoffs → net sand → net reservoir → net pay</td><td><code>netpay 0.1.0</code></td></tr>
+<tr><td>Uncertainty</td><td>Monte Carlo P10/P50/P90 + parameter sensitivity</td><td><code>mc 0.1.0</code></td></tr>
+</tbody></table>
+<hr>
+<h2>9. Gamma-ray analysis</h2>
+<ul>
+<li>Clean baseline gr_min = 20.0 API · shale gr_max = 120.0 API</li>
+<li>Shale index IGR = (GR − gr_min)/(gr_max − gr_min), the basis for Vsh.</li>
+<li>GR baseline check: gr_p5=11.6, gr_p95=174.8</li>
+</ul>
+<hr>
+<h2>10. Resistivity analysis</h2>
+<p>Low-resistivity scan: rt_threshold=4.5, n_flagged=143, intervals=[[1127.8, 1130.5], [1131.1, 1131.3], [1133.4, 1133.9], [1134.2, 1134.9], [1135.7, 1137.8], [1138.1, 1138.3], [1138.6, 1141.0], [1141.3, 1141.3], [1142.5, 1143.5], [1145.0, 1148.5]].</p>
+<hr>
+<h2>11. Water resistivity (Rw)</h2>
+<ul>
+<li>Rw = 0.0400 ohm-m · provenance: default</li>
+<li>Sourced by the engine (Pickett / SP / default); never authored by the LLM.</li>
+<li>Net-pay sensitivity to Rw: 7.5 m swing.</li>
+<li>Formation-temperature correction (Arps, gradient from the MEASURED header BHT): Rw ≈ 0.0113 ohm-m at 44.0 °C (evidence only — Sw uses the calibrated Rw).</li>
+</ul>
+<hr>
+<h2>12. Figures</h2>
+<p><b>Composite log</b></p>
+<p><img src='fig/1001178775/1001178775_composite.png' alt='Composite log' loading='lazy'></p>
+<p><b>Pickett plot</b></p>
+<p><img src='fig/1001178775/1001178775_pickett.png' alt='Pickett plot' loading='lazy'></p>
+<p><b>Buckles plot</b></p>
+<p><img src='fig/1001178775/1001178775_buckles.png' alt='Buckles plot' loading='lazy'></p>
+<p><b>Hingle plot</b></p>
+<p><img src='fig/1001178775/1001178775_hingle.png' alt='Hingle plot' loading='lazy'></p>
+<p><b>Distributions</b></p>
+<p><img src='fig/1001178775/1001178775_distributions.png' alt='Distributions' loading='lazy'></p>
+<p><b>Sensitivity tornado</b></p>
+<p><img src='fig/1001178775/1001178775_tornado.png' alt='Sensitivity tornado' loading='lazy'></p>
+<p><b>Net-pay Monte-Carlo distribution</b></p>
+<p><img src='fig/1001178775/1001178775_mc_dist.png' alt='Net-pay Monte-Carlo distribution' loading='lazy'></p>
+<hr>
+<h2>13. Shale volume (Vsh)</h2>
+<p>Mean Vsh by method (selection is the agent's; the LLM authors no number):</p>
+<table><thead><tr><th>Method</th><th>Mean Vsh</th><th>Selected</th></tr></thead><tbody>
+<tr><td>vsh_larionov_old</td><td>0.315</td><td>✓</td></tr>
+<tr><td>vsh_larionov_tertiary</td><td>0.268</td><td></td></tr>
+<tr><td>vsh_linear</td><td>0.392</td><td></td></tr>
+<tr><td>vsh_clavier</td><td>0.306</td><td></td></tr>
+<tr><td>vsh_steiber</td><td>0.282</td><td></td></tr>
+</tbody></table>
+<hr>
+<h2>14. Porosity</h2>
+<p>_Not computed — no RHOB/NPHI curve for the comparison._</p>
+<hr>
+<h2>15. Water saturation</h2>
+<p>Mean Sw (Archie 1942) = 0.462 (a=1.00, m=2.00, n=2.00, Rw=0.0154 ohm-m). Electrical parameters are engine-sourced; alternative Sw models are optional sections.</p>
+<p>Mean Sw by method (engine-computed comparison; the LLM authors no number):</p>
+<table><thead><tr><th>Method</th><th>Mean Sw</th><th>Selected</th></tr></thead><tbody>
+<tr><td>sw_archie</td><td>0.462</td><td>✓</td></tr>
+<tr><td>sw_simandoux</td><td>0.334</td><td></td></tr>
+<tr><td>sw_indonesia</td><td>0.371</td><td></td></tr>
+</tbody></table>
+<hr>
+<h2>16. Zonation (net-pay intervals)</h2>
+<p>Raw net-pay runs merged into 25 intervals (gap tolerance 1.5 m); showing the 15 thickest, depth-ordered. Full set traces in the ledger.</p>
+<table><thead><tr><th>Interval</th><th>Top (m)</th><th>Base (m)</th><th>Net pay (m)</th><th>Avg PHIE</th><th>Avg Sw</th><th>Avg Vsh</th></tr></thead><tbody>
+<tr><td>Z1</td><td>1148.3</td><td>1150.2</td><td>0.9</td><td>0.148</td><td>0.435</td><td>0.132</td></tr>
+<tr><td>Z2</td><td>1162.4</td><td>1166.3</td><td>4.1</td><td>0.172</td><td>0.227</td><td>0.011</td></tr>
+<tr><td>Z3</td><td>1168.6</td><td>1168.9</td><td>0.5</td><td>0.159</td><td>0.204</td><td>0.217</td></tr>
+<tr><td>Z4</td><td>1170.6</td><td>1171.3</td><td>0.9</td><td>0.119</td><td>0.187</td><td>0.162</td></tr>
+<tr><td>Z5</td><td>1190.2</td><td>1190.7</td><td>0.3</td><td>0.108</td><td>0.368</td><td>0.156</td></tr>
+<tr><td>Z6</td><td>1206.7</td><td>1206.9</td><td>0.3</td><td>0.142</td><td>0.330</td><td>0.231</td></tr>
+<tr><td>Z7</td><td>1208.7</td><td>1209.1</td><td>0.6</td><td>0.125</td><td>0.307</td><td>0.163</td></tr>
+<tr><td>Z8</td><td>1214.9</td><td>1217.5</td><td>1.2</td><td>0.135</td><td>0.270</td><td>0.192</td></tr>
+<tr><td>Z9</td><td>1219.0</td><td>1220.4</td><td>1.5</td><td>0.143</td><td>0.239</td><td>0.092</td></tr>
+<tr><td>Z10</td><td>1223.6</td><td>1223.8</td><td>0.3</td><td>0.119</td><td>0.232</td><td>0.160</td></tr>
+<tr><td>Z11</td><td>1226.2</td><td>1229.1</td><td>3.0</td><td>0.166</td><td>0.176</td><td>0.060</td></tr>
+<tr><td>Z12</td><td>1271.9</td><td>1273.3</td><td>1.5</td><td>0.146</td><td>0.238</td><td>0.206</td></tr>
+<tr><td>Z13</td><td>1306.4</td><td>1306.8</td><td>0.6</td><td>0.111</td><td>0.184</td><td>0.289</td></tr>
+<tr><td>Z14</td><td>1333.0</td><td>1333.3</td><td>0.5</td><td>0.174</td><td>0.131</td><td>0.317</td></tr>
+<tr><td>Z15</td><td>1336.2</td><td>1337.5</td><td>1.2</td><td>0.111</td><td>0.254</td><td>0.081</td></tr>
+</tbody></table>
+<hr>
+<h2>17. Results</h2>
+<table><thead><tr><th>Quantity</th><th>Value</th></tr></thead><tbody>
+<tr><td>Gross interval</td><td>214.6 m</td></tr>
+<tr><td>Net pay (P10/P50/P90)</td><td>6.7 / 13.4 / 19.7 m</td></tr>
+<tr><td>Net-to-gross</td><td>0.092</td></tr>
+<tr><td>Avg PHIE (net pay)</td><td>0.147</td></tr>
+<tr><td>Avg Sw (net pay)</td><td>0.246</td></tr>
+<tr><td>Avg Vsh (net pay)</td><td>0.124</td></tr>
+</tbody></table>
+<hr>
+<h2>18. Uncertainty and sensitivity</h2>
+<p>Monte Carlo, 500 realizations (seed 42). Net pay swing per parameter (one-at-a-time):</p>
+<table><thead><tr><th>Parameter</th><th>Net-pay swing (m)</th></tr></thead><tbody>
+<tr><td>Rw</td><td>7.5</td></tr>
+<tr><td>m</td><td>6.2</td></tr>
+<tr><td>a</td><td>1.4</td></tr>
+<tr><td>n</td><td>0.9</td></tr>
+</tbody></table>
+<p><b>Dominant uncertainty: <code>Rw</code></b> (swing 7.5 m).</p>
+<p>Multi-seed robustness: P50 stable (spread 1.4 m across 4 seeds).</p>
+<blockquote><p>
+Net pay is dominated by 'Rw', which is a regional DEFAULT (uncalibrated). This is the single largest uncertainty — the result is bracketed, not a confident point estimate.<br>
+</p></blockquote>
+<hr>
+<h2>19. Derived parameters</h2>
+<ul>
+<li>Bulk-volume water (BVW = PHIE*Sw): mean 0.0344 v/v</li>
+<li>Porosity-thickness (Phi·H over net pay): 2.882 m</li>
+<li>Hydrocarbon pore thickness (HCPV = Σ PHIE·(1−Sw)·step): 2.198 m</li>
+<li>Buckles constant (BVW at P10 of net pay): 0.0230 → Swirr (mean) ≈ 0.157 over 129 pay samples</li>
+</ul>
+<hr>
+<h2>20. Parameters and provenance</h2>
+<table><thead><tr><th>Parameter</th><th>Value</th><th>Unit</th><th>Provenance</th><th>Source</th></tr></thead><tbody>
+<tr><td>gr_min</td><td>20.000</td><td>API</td><td>default</td><td>—</td></tr>
+<tr><td>gr_max</td><td>120.000</td><td>API</td><td>default</td><td>—</td></tr>
+<tr><td>rho_ma</td><td>2.710</td><td>g/cc</td><td>default</td><td>Schlumberger 1989</td></tr>
+<tr><td>rho_fl</td><td>1.000</td><td>g/cc</td><td>default</td><td>—</td></tr>
+<tr><td>phie_max</td><td>0.450</td><td>v/v</td><td>default</td><td>—</td></tr>
+<tr><td>phi_sh_d</td><td>0.100</td><td>v/v</td><td>default</td><td>—</td></tr>
+<tr><td>phi_sh_n</td><td>0.350</td><td>v/v</td><td>default</td><td>—</td></tr>
+<tr><td>a</td><td>1.000</td><td>-</td><td>default</td><td>Winsauer et al. 1952</td></tr>
+<tr><td>m</td><td>2.000</td><td>-</td><td>default</td><td>Archie, G.E. 1942</td></tr>
+<tr><td>n</td><td>2.000</td><td>-</td><td>default</td><td>Archie, G.E. 1942</td></tr>
+<tr><td>Rw</td><td>0.040</td><td>ohm-m</td><td>default</td><td>Kansas Geological Survey 2000</td></tr>
+<tr><td>rt_hydrocarbon_floor</td><td>5.000</td><td>ohm-m</td><td>default</td><td>—</td></tr>
+<tr><td>vsh_cutoff</td><td>0.350</td><td>v/v</td><td>default</td><td>—</td></tr>
+<tr><td>phie_cutoff</td><td>0.100</td><td>v/v</td><td>default</td><td>—</td></tr>
+<tr><td>sw_cutoff</td><td>0.500</td><td>v/v</td><td>default</td><td>—</td></tr>
+<tr><td>bit_size_config</td><td>7.875</td><td>in</td><td>default</td><td>—</td></tr>
+<tr><td>qc_abort_threshold</td><td>0.800</td><td>-</td><td>default</td><td>—</td></tr>
+<tr><td>circuit_breaker_n</td><td>3.000</td><td>-</td><td>default</td><td>—</td></tr>
+</tbody></table>
+<blockquote><p>
+The citations table (not RAG) gives each cited parameter exactly one frozen source. Parameters tagged <code>default</code> are regional/global — they drive the bracketed tier.<br>
+</p></blockquote>
+<hr>
+<h2>21. Petrophysical cutoffs</h2>
+<p>Boundary-inclusive criteria applied by the engine (<code>netpay</code>) to flag reservoir:</p>
+<table><thead><tr><th>Stage</th><th>Criterion</th><th>Cutoff</th><th>Provenance</th></tr></thead><tbody>
+<tr><td>Net sand</td><td>Vsh ≤ cutoff</td><td>0.350</td><td>default</td></tr>
+<tr><td>Net reservoir</td><td>+ PHIE ≥ cutoff</td><td>0.100</td><td>default</td></tr>
+<tr><td>Net pay</td><td>+ Sw ≤ cutoff</td><td>0.500</td><td>default</td></tr>
+</tbody></table>
+<blockquote><p>
+Cutoff values are engine parameters (never LLM-authored); the dominant net-pay uncertainty is <b>Rw</b> — see Uncertainty for the swing.<br>
+</p></blockquote>
+<hr>
+<h2>22. Data quality and validator objections</h2>
+<p>Curve provenance (canonical ← raw mnemonic): GR←GR, NEUT←NEUT, RT←RES.</p>
+<p>QC edits applied before compute — degradation: 1, hard_range_mask: 1, range_warn: 1.</p>
+<table><thead><tr><th>Validator</th><th>Type</th><th>Detail</th></tr></thead><tbody>
+<tr><td>vsh_phie_anticorrelation</td><td>support</td><td>Vsh-PHIE Pearson 0.95 &gt; 0.3 (dirty rock + high porosity)</td></tr>
+<tr><td>rt_sw_consistency</td><td>mechanical</td><td>75 depths with Sw&lt;0.4 but RT&lt;5.0 ohm-m</td></tr>
+</tbody></table>
+<hr>
+<h2>23. Methodology (decision graph)</h2>
+<pre><code>flowchart TD
+    dec_1[&quot;decision: step: compare_methods&quot;]
+    act_1[&quot;tool_call: compare_methods&quot;]
+    dec_2[&quot;decision: step: compute_vsh&quot;]
+    act_2[&quot;tool_call: compute_vsh&quot;]
+    dec_3[&quot;decision: step: compute_phie&quot;]
+    act_3[&quot;tool_call: compute_phie&quot;]
+    dec_4[&quot;decision: step: compare_methods&quot;]
+    act_4[&quot;tool_call: compare_methods&quot;]
+    dec_5[&quot;decision: step: compute_sw&quot;]
+    act_5[&quot;tool_call: compute_sw&quot;]
+    dec_6[&quot;decision: step: apply_cutoffs&quot;]
+    act_6[&quot;tool_call: apply_cutoffs&quot;]
+    dec_7[&quot;decision: step: run_uncertainty&quot;]
+    act_7[&quot;tool_call: run_uncertainty&quot;]
+    dec_8[&quot;decision: step: derived_parameters&quot;]
+    act_8[&quot;tool_call: derived_parameters&quot;]</code></pre>
+<hr>
+<h2>24. Data gaps for calibration</h2>
+<p>This is a LAS-only study. Data that would calibrate the interpretation is absent:</p>
+<ul>
+<li>Core (routine + SCAL): would anchor PHIE and Archie m, n, a.</li>
+<li>Pressure tests (RFT/MDT): would give true fluid contacts and gradients (log-based).</li>
+<li>Production/flow data: would test the net-pay flag against deliverability.</li>
+<li>Dominant net-pay uncertainty driver (from the sensitivity): <b>Rw</b> (calibrated by produced-water salinity or a Pickett/SP Rw calibration).</li>
+<li>Standard curves absent: RHOB, NPHI, SP, DT, PEF, CALI, DCAL.</li>
+</ul>
+<hr>
+<h2>25. Limitations</h2>
+<ul>
+<li>LAS-only study: no core calibration, no pressure tests (no true fluid contacts), no production, no mud logs, no formation tops (zonation computed by depth).</li>
+<li>Standard curves absent in this well: RHOB, NPHI, SP, DT, PEF, CALI, DCAL.</li>
+<li>Results are uncalibrated; accuracy depends on data not provided.</li>
+</ul>
+<hr>
+<h2>26. Conclusions</h2>
+<p>Vintage class-B well: logged interval covers only the deep consolidated section (no overburden recorded), GR-only clay indicator, count-rate porosity with engine anchors, Archie saturation. Structural-uncertainty caveat applies to every number. Method choices were made against the engine's numeric comparisons, not by preference; the comparison tables show the rejected alternatives beside the selected method. All numbers in this report come from the deterministic engine; the analyst chose the interval, the methods and the analyses, and wrote this prose — nothing more. Remaining uncertainty is dominated by the uncalibrated regional parameters.</p>
+<hr>
+<h2>Appendix A — Ledger excerpt (traceability)</h2>
+<pre><code>{
+  &quot;net_pay_total_m&quot;: 19.65959999999268,
+  &quot;net_pay_p10_p50_p90&quot;: [
+    6.69035999999751,
+    13.411199999995006,
+    19.65959999999268
+  ],
+  &quot;driving_params&quot;: {
+    &quot;a&quot;: 1.0,
+    &quot;m&quot;: 2.0,
+    &quot;n&quot;: 2.0,
+    &quot;Rw&quot;: 0.04
+  },
+  &quot;claim_verifier&quot;: {
+    &quot;result&quot;: &quot;PASS&quot;,
+    &quot;flags&quot;: [],
+    &quot;tone_flags&quot;: []
+  }
+}</code></pre>
+<hr>
+<h2>Appendix B — Completeness gate</h2>
+<table><thead><tr><th>Item</th><th>Present</th></tr></thead><tbody>
+<tr><td>QC edits recorded before compute</td><td>✓</td></tr>
+<tr><td>Every number ledger-traced</td><td>✓</td></tr>
+<tr><td>Confidence tier on the run</td><td>✓</td></tr>
+<tr><td>Parameter citations frozen</td><td>✓</td></tr>
+<tr><td>Validator objections listed, not hidden</td><td>✓</td></tr>
+<tr><td>Uncertainty propagated (Monte Carlo)</td><td>✓</td></tr>
+<tr><td>Claim verifier run on prose</td><td>✓</td></tr>
+</tbody></table>
+</div></body></html>
