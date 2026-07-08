@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>petro-agent — El proceso (bitácora) / The process (journal)</title>
-<meta name="description" content="The full development journal as a timeline: every design decision with the mistake that motivated it, day by day.">
+<meta name="description" content="The project's evolution: every problem faced, the design decision that solved it, its motivation and its measured result — with the unabridged journal as evidence.">
 <style>
 /* petro-agent site — Oil & Water design system (see styleguide.html) */
 :root {
@@ -168,6 +168,7 @@ a.report-card{border-bottom:1px solid var(--border)}
   border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
   box-shadow:var(--shadow)}
 .report-card .logo img{width:62%;height:62%;object-fit:contain;display:block}
+.report-card .logo svg{width:60%;height:60%;display:block}
 .report-card h4{margin:0;font-size:.95rem}
 .report-card .meta{font:500 .76rem var(--font-sans);color:var(--ink-muted)}
 pre.ledger{background:var(--surface-2);border:1px solid var(--border);
@@ -196,6 +197,14 @@ pre.ledger .k{color:var(--water)} pre.ledger .v{color:var(--oil)}
 .legend span{display:inline-flex;align-items:center;gap:.4rem}
 .legend i{width:.7rem;height:.7rem;border-radius:3px;display:inline-block}
 details{font-family:var(--font-sans);font-size:.85rem;margin:.6rem 0}
+.reports-more{margin:.7rem 0}
+.reports-more>summary{font:650 .95rem var(--font-sans);color:var(--ink-primary);
+  background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);
+  padding:.85rem 1.1rem;box-shadow:var(--shadow);list-style-position:inside;
+  transition:transform var(--t-fast) var(--ease)}
+.reports-more>summary:hover{transform:translateY(-2px)}
+.reports-more>summary img{width:1.15em;height:1.15em;vertical-align:-3px}
+.reports-more[open]>summary{border-radius:var(--radius) var(--radius) 0 0}
 summary{cursor:pointer;color:var(--ink-muted)}
 footer.site{border-top:1px solid var(--border);margin-top:3rem;padding:2rem 0;
   font:500 .82rem var(--font-sans);color:var(--ink-muted)}
@@ -238,25 +247,42 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
 <nav class="toc" aria-label="Contents">
   <div class="toc-title"><span data-lang="es">Contenido</span><span data-lang="en">Contents</span></div>
   <a href="#porque"><span data-lang="es">Por qué esta página</span><span data-lang="en">Why this page</span></a>
-  <a href="#timeline"><span data-lang="es">El timeline</span><span data-lang="en">The timeline</span></a>
+  <a href="#c1"><span data-lang="es">01 · Génesis</span><span data-lang="en">01 · Genesis</span></a>
+  <a href="#c2"><span data-lang="es">02 · El reframe</span><span data-lang="en">02 · The reframe</span></a>
+  <a href="#c3"><span data-lang="es">03 · ¿Es el flujo o es el modelo?</span><span data-lang="en">03 · Is it the flow or the model?</span></a>
+  <a href="#c4"><span data-lang="es">04 · La porosidad imposible que no era un bug</span><span data-lang="en">04 · The impossible porosity that wasn't a bug</span></a>
+  <a href="#c5"><span data-lang="es">05 · Calibración contra el mundo real</span><span data-lang="en">05 · Calibration against the real world</span></a>
+  <a href="#c6"><span data-lang="es">06 · Autor, no revisor</span><span data-lang="en">06 · Author, not reviewer</span></a>
+  <a href="#c7"><span data-lang="es">07 · La primera zona</span><span data-lang="en">07 · The first zone</span></a>
+  <a href="#c8"><span data-lang="es">08 · Las palancas honestas</span><span data-lang="en">08 · The honest levers</span></a>
+  <a href="#c9"><span data-lang="es">09 · Consecuencia, borradores</span><span data-lang="en">09 · Consequence, drafts</span></a>
+  <a href="#c10"><span data-lang="es">10 · Thinking</span><span data-lang="en">10 · Thinking</span></a>
+  <a href="#c11"><span data-lang="es">11 · El cierre</span><span data-lang="en">11 · The close</span></a>
 </nav>
 
 <main>
 <style>
 main{--page-accent:var(--cat-5)}
-/* The journal drawn as a wellbore: depth is time, and the pay is at the bottom. */
+/* The journal drawn as a wellbore: chapters are drilled sections; the pay sits at the end. */
 .tl{list-style:none;margin:2rem 0;padding:0;position:relative}
 .tl::before{content:"";position:absolute;left:.55rem;top:0;bottom:0;width:2px;
-background:linear-gradient(to bottom,var(--border) 0%,var(--border) 68%,var(--oil) 86%,var(--oil) 100%)}
-.tl>li{position:relative;padding:0 0 2.2rem 2.4rem}
+background:linear-gradient(to bottom,var(--border) 0%,var(--border) 62%,var(--oil) 82%,var(--oil) 100%)}
+.tl>li{position:relative;padding:0 0 2.6rem 2.6rem}
 .tl>li::before{content:"";position:absolute;left:0;top:.55rem;width:1.15rem;height:2px;
 background:var(--ink-muted)}
 .tl>li.pay::before{background:var(--oil);height:3px}
 .tl>li.pay{background:linear-gradient(to right,color-mix(in srgb,var(--oil) 7%,transparent),transparent 55%);
 border-radius:8px}
-.tl .date{font:700 .72rem var(--font-mono,monospace);letter-spacing:.08em;color:var(--ink-muted)}
-.tl h3{margin:.15rem 0 .4rem}
-.tl details{margin-top:.7rem;border:1px solid var(--border);border-radius:10px;background:var(--surface-1)}
+.tl .chno{font:700 .72rem var(--font-mono);letter-spacing:.08em;color:var(--ink-muted)}
+.tl h3{margin:.15rem 0 .6rem;font-size:1.15rem}
+.blk{margin:.7rem 0;padding-left:.85rem;border-left:2px solid var(--border)}
+.blk .lbl{display:block;font:700 .66rem var(--font-sans);letter-spacing:.12em;
+text-transform:uppercase;color:var(--ink-muted);margin-bottom:.15rem}
+.blk.p{border-left-color:var(--cat-4)}
+.blk.d{border-left-color:var(--water)}
+.blk.r{border-left-color:var(--oil)}
+.blk p{margin:.15rem 0;font-size:.97rem}
+.tl details{margin-top:.8rem;border:1px solid var(--border);border-radius:10px;background:var(--surface-1)}
 .tl summary{cursor:pointer;padding:.6rem .9rem;font:600 .82rem var(--font-sans);color:var(--water)}
 .tl .entry{padding:.2rem 1.1rem 1.1rem;font-size:.92rem;overflow-x:auto}
 .tl .entry h1{font-size:1.15rem}.tl .entry h2{font-size:1rem;margin-top:1.4rem}
@@ -266,14 +292,16 @@ border-radius:8px}
 
 <section class="hero">
   <div class="kicker"><span data-lang="es">el proceso</span><span data-lang="en">the process</span></div>
-  <h1><span data-lang="es">13 días,<br>contados por el diario</span><span data-lang="en">13 days,<br>as the journal tells it</span></h1>
+  <h1><span data-lang="es">La evolución,<br>contada por su diario</span><span data-lang="en">The evolution,<br>as its journal tells it</span></h1>
   <p class="lede">
     <span data-lang="es">Todo sistema esconde sus decisiones de diseño detrás del resultado. Esta
-    página hace lo contrario: la bitácora completa del desarrollo, día a día — cada decisión con
-    el error que la motivó, cada palanca con el experimento que la justificó.</span>
+    página hace lo contrario: la evolución completa del proyecto — cada problema enfrentado, la
+    decisión que lo resolvió, qué la motivó y qué produjo — con el diario de desarrollo íntegro
+    como evidencia.</span>
     <span data-lang="en">Every system hides its design decisions behind the result. This page does
-    the opposite: the full development journal, day by day — every decision with the mistake that
-    motivated it, every lever with the experiment that justified it.</span>
+    the opposite: the project's full evolution — every problem faced, the decision that solved
+    it, what motivated it and what it produced — with the unabridged development journal as
+    evidence.</span>
   </p>
   <p class="sans" style="font-size:.85rem"><a href="index.html">← <span data-lang="es">volver al hub</span><span data-lang="en">back to the hub</span></a></p>
 </section>
@@ -297,31 +325,39 @@ border-radius:8px}
     died mid-batch — because an honest process is part of the result.</span>
   </p>
   <aside class="note">
-    <span data-lang="es">Los hitos de abajo son bilingües; el texto completo de cada entrada se
-    conserva en su español original — traducir un diario sería falsificarlo.</span>
-    <span data-lang="en">The milestones below are bilingual; each entry's full text is kept in
-    its original Spanish — translating a journal would falsify it.</span>
+    <span data-lang="es">Cada capítulo cierra con el registro original del diario, sin editar —
+    conserva sus fechas y su español original, porque editarlo sería falsificarlo.</span>
+    <span data-lang="en">Each chapter closes with the original journal record, unedited — it
+    keeps its dates and original Spanish, because editing it would falsify it.</span>
   </aside>
 </section>
 
-<section id="timeline" class="reveal">
-  <span class="eyebrow"><span data-lang="es">día a día</span><span data-lang="en">day by day</span></span>
-  <h2><span data-lang="es">El timeline</span><span data-lang="en">The timeline</span></h2>
+<section id="evolucion" class="reveal">
+  <span class="eyebrow"><span data-lang="es">capítulo a capítulo</span><span data-lang="en">chapter by chapter</span></span>
+  <h2><span data-lang="es">La evolución</span><span data-lang="en">The evolution</span></h2>
   <p class="sans" style="font-size:.85rem;color:var(--ink-muted)">
-    <span data-lang="es">Léelo como un pozo: la profundidad es el tiempo, cada marca es un día
-    perforado — y la zona ámbar del fondo es donde el proyecto encontró su pay.</span>
-    <span data-lang="en">Read it like a well: depth is time, each tick is a drilled day — and
-    the amber zone at the bottom is where the project found its pay.</span>
+    <span data-lang="es">Léela como un pozo: cada capítulo es un tramo perforado — y la zona
+    ámbar del fondo es donde el proyecto encontró su pay.</span>
+    <span data-lang="en">Read it like a well: each chapter is a drilled section — and the amber
+    zone at the bottom is where the project found its pay.</span>
   </p>
   <ul class="tl">
 
-    <li>
-      <div class="date">2026-06-25</div>
-      <h3><span data-lang="es">Génesis: v1 completo en una noche — y el reframe que definió todo</span><span data-lang="en">Genesis: v1 built in one night — and the reframe that defined everything</span></h3>
-      <p><span data-lang="es">Las 9 fases del sistema (motor, QC, validadores, LangGraph, agentes, incertidumbre) corren autónomas en una noche. La decisión fundacional llega al final del día: renderer determinista — el LLM deja de tocar números para siempre — y el proyecto se reencuadra como sandbox de analista (v2).</span><span data-lang="en">All 9 system phases (engine, QC, validators, LangGraph, agents, uncertainty) run autonomously in one night. The founding decision lands at day's end: a deterministic renderer — the LLM stops touching numbers forever — and the project reframes as an analyst sandbox (v2).</span></p>
+    <li id="c1">
+      <div class="chno">01</div>
+      <h3><span data-lang="es">Génesis — y el muro determinista</span><span data-lang="en">Genesis — and the deterministic wall</span></h3>
+  <div class="blk p"><span class="lbl"><span data-lang="es">El problema</span><span data-lang="en">The problem</span></span>
+    <p><span data-lang="es">En la primera corrida autónoma, las nueve fases del sistema quedaron construidas y funcionando — y el redactor LLM alucinó números en la prosa: escribió «net pay 5 feet» donde el motor había calculado 437 m. El informe se veía impecable; los números eran inventados.</span><span data-lang="en">In the first autonomous run the system's nine phases were built and running — and the LLM writer hallucinated numbers in the prose: it wrote “net pay 5 feet” where the engine had computed 437 m. The report looked impeccable; the figures were made up.</span></p>
+  </div>
+  <div class="blk d"><span class="lbl"><span data-lang="es">La decisión — y su motivación</span><span data-lang="en">The decision — and its motivation</span></span>
+    <p><span data-lang="es">Separar la prosa de los números con un renderer determinista: el LLM no vuelve a colocar una cifra jamás — toda cifra la imprime el código desde el ledger, y un verificador rechaza cualquier número sin respaldo. La motivación: la honestidad no se le pide a un modelo, se cablea. Aquí nace el invariante del proyecto.</span><span data-lang="en">Split prose from numbers with a deterministic renderer: the LLM never places a figure again — every figure is printed by code from the ledger, and a verifier rejects any unbacked number. The motivation: you don't ask a model for honesty, you wire it in. The project's invariant is born here.</span></p>
+  </div>
+  <div class="blk r"><span class="lbl"><span data-lang="es">El resultado</span><span data-lang="en">The result</span></span>
+    <p><span data-lang="es">El verificador de afirmaciones pasó de marcar alucinaciones a PASS (objeciones del revisor: 3 → 0), el motor quedó cubierto por 100 golden tests — y al final de esa misma jornada llegó la decisión mayor: reencuadrar todo como un sandbox de analista.</span><span data-lang="en">The claim verifier went from flagging hallucinations to PASS (reviewer objections: 3 → 0), the engine ended covered by 100 golden tests — and by the end of that same stretch came the bigger call: reframe everything as an analyst sandbox.</span></p>
+  </div>
       <details>
-        <summary><span data-lang="es">Leer la entrada completa del diario</span><span data-lang="en">Read the full journal entry</span></summary>
-        <div class="lang-note"><span data-lang="es">— texto original en español —</span><span data-lang="en">— original text, in Spanish —</span></div>
+        <summary><span data-lang="es">registro original del diario, sin editar</span><span data-lang="en">original journal record, unedited</span></summary>
+        <div class="lang-note"><span data-lang="es">— texto original en español, con sus fechas —</span><span data-lang="en">— original text in Spanish, dates preserved —</span></div>
         <div class="entry">
 <h1>Bitácora — 2026-06-25</h1>
 <h2>00:53 — Ancla de planning completa + validación de campo con datos reales</h2>
@@ -1337,13 +1373,21 @@ border-radius:8px}
       </details>
     </li>
 
-    <li>
-      <div class="date">2026-06-28</div>
-      <h3><span data-lang="es">De v2 mínimo a informe completo: el roadmap R1–R7 en una noche</span><span data-lang="en">From minimal v2 to a full report: the R1–R7 roadmap in one night</span></h3>
-      <p><span data-lang="es">El informe crece de 9 secciones a un piso [FIJO] de 22 + opcionales [MODELO] respaldados por tool_result real (sin teatro). Nace el reparto que separa lo que el código garantiza de lo que el agente aporta.</span><span data-lang="en">The report grows from 9 sections to a 22-section [FIXED] floor + [MODEL] optionals backed by real tool_results (no theater). The split between what code guarantees and what the agent contributes is born.</span></p>
+    <li id="c2">
+      <div class="chno">02</div>
+      <h3><span data-lang="es">El reframe: de pipeline a sandbox de analista</span><span data-lang="en">The reframe: from pipeline to analyst sandbox</span></h3>
+  <div class="blk p"><span class="lbl"><span data-lang="es">El problema</span><span data-lang="en">The problem</span></span>
+    <p><span data-lang="es">Con el orquestador dictando cada paso, todos los modelos producían el MISMO informe — el LLM solo decoraba. Peor: una auditoría reveló agencia inerte — el despacho de herramientas solo ejecutaba una familia de métodos (Sw); elegir el método de Vsh o de porosidad no tenía ningún efecto real.</span><span data-lang="en">With the orchestrator dictating every step, every model produced the SAME report — the LLM was decoration. Worse: an audit revealed inert agency — tool dispatch only executed one method family (Sw); choosing the Vsh or porosity method had no real effect.</span></p>
+  </div>
+  <div class="blk d"><span class="lbl"><span data-lang="es">La decisión — y su motivación</span><span data-lang="en">The decision — and its motivation</span></span>
+    <p><span data-lang="es">Reencuadrar el proyecto como sandbox: una librería de fórmulas validadas con golden tests donde el agente ELIGE y parametriza; un informe con piso [FIJO] garantizado por código y secciones [MODELO] que solo existen si su tool_result existe (sin teatro). La motivación: si el LLM no decide nada, no hay nada que medir.</span><span data-lang="en">Reframe the project as a sandbox: a library of golden-tested formulas where the agent CHOOSES and parameterizes; a report with a code-guaranteed [FIXED] floor and [MODEL] sections that only exist if their tool_result exists (no theater). The motivation: if the LLM decides nothing, there is nothing to measure.</span></p>
+  </div>
+  <div class="blk r"><span class="lbl"><span data-lang="es">El resultado</span><span data-lang="en">The result</span></span>
+    <p><span data-lang="es">El piso del informe pasó de 9 a 22 secciones garantizadas; el despacho quedó cableado para TODAS las familias de métodos — y por primera vez la elección del agente tuvo consecuencia aritmética real (linear 49 m · larionov 71 m · clavier 78 m de net pay).</span><span data-lang="en">The report floor grew from 9 to 22 guaranteed sections; dispatch got wired for ALL method families — and for the first time the agent's choice had real arithmetic consequence (linear 49 m · larionov 71 m · clavier 78 m of net pay).</span></p>
+  </div>
       <details>
-        <summary><span data-lang="es">Leer la entrada completa del diario</span><span data-lang="en">Read the full journal entry</span></summary>
-        <div class="lang-note"><span data-lang="es">— texto original en español —</span><span data-lang="en">— original text, in Spanish —</span></div>
+        <summary><span data-lang="es">registro original del diario, sin editar</span><span data-lang="en">original journal record, unedited</span></summary>
+        <div class="lang-note"><span data-lang="es">— texto original en español, con sus fechas —</span><span data-lang="en">— original text in Spanish, dates preserved —</span></div>
         <div class="entry">
 <h1>Bitácora — 2026-06-28</h1>
 <h2>Revisión de los informes del run autónomo + higiene de outputs</h2>
@@ -1505,13 +1549,21 @@ border-radius:8px}
       </details>
     </li>
 
-    <li>
-      <div class="date">2026-06-29</div>
-      <h3><span data-lang="es">¿Es el flujo o el modelo? La nube como instrumento de medición</span><span data-lang="en">Is it the flow or the model? The cloud as a measuring instrument</span></h3>
-      <p><span data-lang="es">El bucle agente (observa→decide→computa) queda validado con un control de techo: dos frontier free lo conducen limpio donde los locales se traban — era el MODELO, no el flujo. Decisión: OpenRouter entra SOLO como instrumento; el runtime sigue local. Y la selección de pozos se libera (adiós al ancla que igualaba todos los informes).</span><span data-lang="en">The agent loop (observe→decide→compute) is validated with a ceiling control: two free frontier models drive it cleanly where local models stall — it was the MODEL, not the flow. Decision: OpenRouter enters ONLY as an instrument; the runtime stays local. And well selection is freed (goodbye to the anchor that made every report identical).</span></p>
+    <li id="c3">
+      <div class="chno">03</div>
+      <h3><span data-lang="es">¿Es el flujo o es el modelo?</span><span data-lang="en">Is it the flow or the model?</span></h3>
+  <div class="blk p"><span class="lbl"><span data-lang="es">El problema</span><span data-lang="en">The problem</span></span>
+    <p><span data-lang="es">Los modelos locales se estancaban en el loop: repetían acciones, desperdiciaban pasos, no terminaban. Pregunta incómoda: ¿el bucle observa→decide→computa estaba roto, o los modelos no daban?</span><span data-lang="en">Local models stalled in the loop: repeated actions, wasted steps, no closure. Uncomfortable question: was the observe→decide→compute loop broken, or were the models just not up to it?</span></p>
+  </div>
+  <div class="blk d"><span class="lbl"><span data-lang="es">La decisión — y su motivación</span><span data-lang="en">The decision — and its motivation</span></span>
+    <p><span data-lang="es">Un control de techo: los MISMOS pozos y el MISMO loop, conducidos por modelos frontier gratuitos. La nube (OpenRouter) entra SOLO como instrumento de medición — el runtime del informe sigue local. Y se libera la selección de pozos, que estaba igualando todos los informes.</span><span data-lang="en">A ceiling control: the SAME wells and the SAME loop, driven by free frontier models. The cloud (OpenRouter) enters ONLY as a measuring instrument — the report runtime stays local. Well selection is freed too; it had been making every report identical.</span></p>
+  </div>
+  <div class="blk r"><span class="lbl"><span data-lang="es">El resultado</span><span data-lang="en">The result</span></span>
+    <p><span data-lang="es">nemotron-ultra 550B condujo el loop limpio (4 pasos, 0 desperdicio, 0 estancamiento): el flujo estaba sano — era el MODELO. Y con selección libre, el output empezó a diferenciar familias: net pay P50 de 267.9 m en las capaces contra 138.1 m de la diminuta.</span><span data-lang="en">nemotron-ultra 550B drove the loop cleanly (4 steps, 0 waste, 0 stalls): the flow was healthy — it was the MODEL. And with free selection the output began separating families: P50 net pay 267.9 m for the capable ones vs 138.1 m for the tiny one.</span></p>
+  </div>
       <details>
-        <summary><span data-lang="es">Leer la entrada completa del diario</span><span data-lang="en">Read the full journal entry</span></summary>
-        <div class="lang-note"><span data-lang="es">— texto original en español —</span><span data-lang="en">— original text, in Spanish —</span></div>
+        <summary><span data-lang="es">registro original del diario, sin editar</span><span data-lang="en">original journal record, unedited</span></summary>
+        <div class="lang-note"><span data-lang="es">— texto original en español, con sus fechas —</span><span data-lang="en">— original text in Spanish, dates preserved —</span></div>
         <div class="entry">
 <h1>Bitácora — 2026-06-29</h1>
 <p>Sesión muy larga, continuación del 28. El hilo de fondo: el usuario fue empujando el diseño</p>
@@ -1875,13 +1927,21 @@ border-radius:8px}
       </details>
     </li>
 
-    <li>
-      <div class="date">2026-06-30</div>
-      <h3><span data-lang="es">La porosidad imposible era overburden — nace la zona-de-interés</span><span data-lang="en">The impossible porosity was overburden — the zone-of-interest is born</span></h3>
-      <p><span data-lang="es">PHIE ~0.31 no era un bug: el motor promediaba una columna cuyos 2/3 someros son roca no consolidada. La respuesta honesta: darle al agente la observación de perfil por profundidad y la ACCIÓN de restringir el intervalo — recortar es criterio medido, jamás una regla. Además: la auditoría de dieta descubre que el agente estaba casi ciego (EDA vacío, objeciones invisibles) y el objetivo 75% pasa de imposible a demostrado.</span><span data-lang="en">PHIE ~0.31 wasn't a bug: the engine averaged a column whose shallow 2/3 is unconsolidated rock. The honest answer: give the agent a depth-profile observation and the ACTION of restricting the interval — cutting is measured judgment, never a rule. Also: the info-diet audit finds the agent was nearly blind (empty EDA, invisible objections), and the 75% goal goes from impossible to demonstrated.</span></p>
+    <li id="c4">
+      <div class="chno">04</div>
+      <h3><span data-lang="es">La porosidad imposible que no era un bug</span><span data-lang="en">The impossible porosity that wasn't a bug</span></h3>
+  <div class="blk p"><span class="lbl"><span data-lang="es">El problema</span><span data-lang="en">The problem</span></span>
+    <p><span data-lang="es">PHIE ~0.31 — imposible para un carbonato. Olía a bug de unidades… y no lo era: dos tercios de la columna son roca somera no consolidada (densidad p50 1.74–1.77 g/cc) y promediarla fabrica porosidad de esponja. De paso, la escuela de este tramo: cuando VARIOS modelos fallan idéntico, el defecto es del flujo, no del modelo — así cayeron seis bugs del loop.</span><span data-lang="en">PHIE ~0.31 — impossible for a carbonate. It smelled like a units bug… and wasn't: two thirds of the column is shallow unconsolidated rock (density p50 1.74–1.77 g/cc) and averaging it manufactures sponge porosity. This stretch's other lesson: when SEVERAL models fail identically, the defect is in the flow, not the model — six loop bugs fell that way.</span></p>
+  </div>
+  <div class="blk d"><span class="lbl"><span data-lang="es">La decisión — y su motivación</span><span data-lang="en">The decision — and its motivation</span></span>
+    <p><span data-lang="es">No escribir una regla que recorte. Darle al agente la observación (el perfil de densidad por profundidad) y la ACCIÓN de restringir el intervalo — recortar es criterio medido, jamás preprocesamiento. La motivación: guionizar esa decisión habría matado la pregunta del proyecto.</span><span data-lang="en">Do not write a rule that cuts. Give the agent the observation (the density-by-depth profile) and the ACTION of restricting the interval — cutting is measured judgment, never preprocessing. The motivation: scripting that decision would have killed the project's question.</span></p>
+  </div>
+  <div class="blk r"><span class="lbl"><span data-lang="es">El resultado</span><span data-lang="en">The result</span></span>
+    <p><span data-lang="es">PHIE 0.229 → 0.069 al zonar (y el net pay de 296 a 31 m) con la MISMA aritmética. Nace la decisión más difícil del dominio. Y la prueba del límite del dato: 0/35 pozos convergen por una inconsistencia real del registro — sin núcleo ni Rw medido, abstener es lo correcto.</span><span data-lang="en">PHIE 0.229 → 0.069 once zoned (net pay 296 to 31 m) with the SAME arithmetic. The domain's hardest decision is born. Plus the data-limit proof: 0/35 wells converge due to a real log inconsistency — with no core and no measured Rw, abstaining is correct.</span></p>
+  </div>
       <details>
-        <summary><span data-lang="es">Leer la entrada completa del diario</span><span data-lang="en">Read the full journal entry</span></summary>
-        <div class="lang-note"><span data-lang="es">— texto original en español —</span><span data-lang="en">— original text, in Spanish —</span></div>
+        <summary><span data-lang="es">registro original del diario, sin editar</span><span data-lang="en">original journal record, unedited</span></summary>
+        <div class="lang-note"><span data-lang="es">— texto original en español, con sus fechas —</span><span data-lang="en">— original text in Spanish, dates preserved —</span></div>
         <div class="entry">
 <h1>Bitácora — 2026-06-30</h1>
 <p>Continuación del 29. Revisé los 7 informes de la corrida nocturna, encontré por qué "no dicen nada",</p>
@@ -2419,13 +2479,21 @@ border-radius:8px}
       </details>
     </li>
 
-    <li>
-      <div class="date">2026-07-01</div>
-      <h3><span data-lang="es">Calibración contra el mundo real (VOLVE) + el informe navegable</span><span data-lang="en">Calibration against the real world (VOLVE) + the navigable report</span></h3>
-      <p><span data-lang="es">El motor congelado se mide contra la interpretación pública de VOLVE (r=0.87–0.96) y las bandas P10–P90 pasan de sobreconfiadas a calibradas (88–98%) al incorporar incertidumbre de método. El mismo día: fuga de interpretación código→agente auditada y remediada, vsh_neutron_density formalizado, y el crítico auto-adversarial same-model (R13).</span><span data-lang="en">The frozen engine is measured against VOLVE's public interpretation (r=0.87–0.96) and the P10–P90 bands go from overconfident to calibrated (88–98%) once method uncertainty is folded in. Same day: code→agent interpretation leakage audited and fixed, vsh_neutron_density formalized, and the same-model self-adversarial critic (R13).</span></p>
+    <li id="c5">
+      <div class="chno">05</div>
+      <h3><span data-lang="es">Calibración contra el mundo real</span><span data-lang="en">Calibration against the real world</span></h3>
+  <div class="blk p"><span class="lbl"><span data-lang="es">El problema</span><span data-lang="en">The problem</span></span>
+    <p><span data-lang="es">«Honesto y demostrable» era una promesa sin prueba: ¿el motor congelado funciona fuera de Kansas? ¿Y las bandas de incertidumbre P10–P90 dicen la verdad sobre sí mismas? Además, sospecha de contaminación: el propio texto del sistema podía estar enseñándole las respuestas al agente.</span><span data-lang="en">“Honest and provably so” was an unproven promise: does the frozen engine work outside Kansas? Do the P10–P90 uncertainty bands tell the truth about themselves? Plus a contamination suspicion: the system's own text might be teaching the agent the answers.</span></p>
+  </div>
+  <div class="blk d"><span class="lbl"><span data-lang="es">La decisión — y su motivación</span><span data-lang="en">The decision — and its motivation</span></span>
+    <p><span data-lang="es">Medir contra la interpretación profesional pública de VOLVE (Mar del Norte — un campo que el motor jamás vio, sin tunear) y auditar la cobertura REAL de las bandas. En paralelo, auditoría de 7 focos de fuga de interpretación código→agente, con la prueba dura: quitar la guía y ver si el MISMO modelo repite la decisión.</span><span data-lang="en">Measure against VOLVE's public professional interpretation (North Sea — a field the engine never saw, untuned) and audit the bands' REAL coverage. In parallel, a 7-focus audit of code→agent interpretation leakage, with the hard test: remove the guidance and see whether the SAME model repeats the decision.</span></p>
+  </div>
+  <div class="blk r"><span class="lbl"><span data-lang="es">El resultado</span><span data-lang="en">The result</span></span>
+    <p><span data-lang="es">Correlaciones r=0.87–0.96 (VSH/PHIE/SW). Y el hallazgo honesto del proyecto: las bandas cubrían 1.8–35% de la verdad, no el 80% nominal — sobreconfiadas hasta incorporar la incertidumbre de MÉTODO (→ 88–98%). Las fugas se remediaron y el brief quedó protegido por un test permanente de CI.</span><span data-lang="en">Correlations r=0.87–0.96 (VSH/PHIE/SW). And the project's honest finding: the bands covered 1.8–35% of the truth, not the nominal 80% — overconfident until METHOD uncertainty was folded in (→ 88–98%). The leaks were fixed and the brief is now protected by a permanent CI test.</span></p>
+  </div>
       <details>
-        <summary><span data-lang="es">Leer la entrada completa del diario</span><span data-lang="en">Read the full journal entry</span></summary>
-        <div class="lang-note"><span data-lang="es">— texto original en español —</span><span data-lang="en">— original text, in Spanish —</span></div>
+        <summary><span data-lang="es">registro original del diario, sin editar</span><span data-lang="en">original journal record, unedited</span></summary>
+        <div class="lang-note"><span data-lang="es">— texto original en español, con sus fechas —</span><span data-lang="en">— original text in Spanish, dates preserved —</span></div>
         <div class="entry">
 <h1>Bitácora — 2026-07-01</h1>
 <h2>Prueba: el 75.7% es independiente del modelo (free = pago)</h2>
@@ -3280,13 +3348,21 @@ border-radius:8px}
       </details>
     </li>
 
-    <li>
-      <div class="date">2026-07-02</div>
-      <h3><span data-lang="es">R14: autor, no revisor — EL TECHO ERA EL ENTORNO</span><span data-lang="en">R14: author, not reviewer — THE CEILING WAS THE ENVIRONMENT</span></h3>
-      <p><span data-lang="es">El A/B decisivo: con la interpretación precomputada, 4 familias frontier convergían al mismo perfil de 1 elección; quitando el precomputado, los MISMOS modelos saltan a 7 elecciones/pozo y autoran los 3 métodos core. La seed no determina el informe (v7_random_seed); el entorno sí determinaba el techo.</span><span data-lang="en">The decisive A/B: with the interpretation precomputed, 4 frontier families converged to the same 1-choice profile; removing the precompute, the SAME models jump to 7 choices/well and author all 3 core methods. The seed doesn't determine the report (v7_random_seed); the environment did determine the ceiling.</span></p>
+    <li id="c6">
+      <div class="chno">06</div>
+      <h3><span data-lang="es">Autor, no revisor: el techo era el entorno</span><span data-lang="en">Author, not reviewer: the ceiling was the environment</span></h3>
+  <div class="blk p"><span class="lbl"><span data-lang="es">El problema</span><span data-lang="en">The problem</span></span>
+    <p><span data-lang="es">Cuatro familias frontier distintas convergían al mismo perfil pobre: 1 elección por pozo, 0 análisis opcionales. Todo apuntaba a que ese era el techo de los modelos.</span><span data-lang="en">Four different frontier families converged to the same poor profile: 1 choice per well, 0 optional analyses. Everything suggested that was the models' ceiling.</span></p>
+  </div>
+  <div class="blk d"><span class="lbl"><span data-lang="es">La decisión — y su motivación</span><span data-lang="en">The decision — and its motivation</span></span>
+    <p><span data-lang="es">El A/B decisivo: quitar la interpretación precomputada. El agente deja de REVISAR un informe ya hecho y pasa a AUTORARLO desde cero — mismos modelos, mismo motor, misma data. La motivación: antes de concluir «el modelo no da», audita qué le estás dando tú.</span><span data-lang="en">The decisive A/B: remove the precomputed interpretation. The agent stops REVIEWING a finished report and starts AUTHORING it from scratch — same models, same engine, same data. The motivation: before concluding “the model can't”, audit what you are feeding it.</span></p>
+  </div>
+  <div class="blk r"><span class="lbl"><span data-lang="es">El resultado</span><span data-lang="en">The result</span></span>
+    <p><span data-lang="es">De 1 a 7 elecciones por pozo; los 3 métodos core autorados con evidencia comparativa. El techo no era de los modelos: era del ENTORNO. (La zona seguía en cero — todavía faltaba otra cosa.)</span><span data-lang="en">From 1 to 7 choices per well; all 3 core methods authored with comparison evidence. The ceiling wasn't the models': it was the ENVIRONMENT's. (The zone was still at zero — something else was missing.)</span></p>
+  </div>
       <details>
-        <summary><span data-lang="es">Leer la entrada completa del diario</span><span data-lang="en">Read the full journal entry</span></summary>
-        <div class="lang-note"><span data-lang="es">— texto original en español —</span><span data-lang="en">— original text, in Spanish —</span></div>
+        <summary><span data-lang="es">registro original del diario, sin editar</span><span data-lang="en">original journal record, unedited</span></summary>
+        <div class="lang-note"><span data-lang="es">— texto original en español, con sus fechas —</span><span data-lang="en">— original text in Spanish, dates preserved —</span></div>
         <div class="entry">
 <h1>Bitácora — 2026-07-02</h1>
 <h2>09:30 — Reanudación del leg PAID de v7 (el proceso murió anoche tras el 4º pozo de opus)</h2>
@@ -3645,13 +3721,21 @@ border-radius:8px}
       </details>
     </li>
 
-    <li>
-      <div class="date">2026-07-03</div>
-      <h3><span data-lang="es">La primera zona · el veredicto de dos audiencias · nace LA CUMBRE</span><span data-lang="en">The first zone · the two-audience verdict · THE SUMMIT is born</span></h3>
-      <p><span data-lang="es">qwen3-max elige la primera zona de interés del proyecto (1 en ~43 pozos-corrida) — y es roca equivocada: la decisión más difícil aparece, sin el juicio todavía. La página publica el veredicto de dos audiencias. Y arranca el experimento cumbre: Claude como analista declaradamente contaminado, para medir el techo de lo que el dato permite (terminará en 72 pozos con verifier 72/72).</span><span data-lang="en">qwen3-max picks the project's first zone of interest (1 in ~43 well-runs) — and it's the wrong rock: the hardest decision appears, without the judgment yet. The page publishes the two-audience verdict. And the summit experiment starts: Claude as a declared-contaminated analyst, to measure the ceiling the data allows (it will end at 72 wells, verifier 72/72).</span></p>
+    <li id="c7">
+      <div class="chno">07</div>
+      <h3><span data-lang="es">La primera zona — y el nacimiento de la vara</span><span data-lang="en">The first zone — and the birth of the yardstick</span></h3>
+  <div class="blk p"><span class="lbl"><span data-lang="es">El problema</span><span data-lang="en">The problem</span></span>
+    <p><span data-lang="es">La decisión más difícil del dominio (re-delimitar el intervalo de análisis) seguía sin aparecer: cero zonas en decenas de corridas gratuitas. Y aunque apareciera — no había contra qué medir si estaba bien.</span><span data-lang="en">The domain's hardest decision (re-delimiting the analysis interval) still wasn't appearing: zero zones across dozens of free runs. And even if it appeared — there was nothing to measure it against.</span></p>
+  </div>
+  <div class="blk d"><span class="lbl"><span data-lang="es">La decisión — y su motivación</span><span data-lang="en">The decision — and its motivation</span></span>
+    <p><span data-lang="es">Dos movimientos: llevar el experimento a frontier de pago; y construir LA VARA — el summit: el informe que el sistema puede producir conducido por un analista fuerte (Claude, con contaminación DECLARADA: conocía el proyecto), para medir el techo de lo que el dato permite.</span><span data-lang="en">Two moves: take the experiment to paid frontier models; and build THE YARDSTICK — the summit: the report the system can produce when driven by a strong analyst (Claude, with DECLARED contamination: it knew the project), to measure the ceiling the data allows.</span></p>
+  </div>
+  <div class="blk r"><span class="lbl"><span data-lang="es">El resultado</span><span data-lang="en">The result</span></span>
+    <p><span data-lang="es">qwen3-max eligió la primera zona del proyecto (Schwien No. 2-13, API 15-135-24938)… en la roca equivocada: apareció la decisión, aún sin el juicio. La vara acabaría en 72 pozos con verificador 72/72 — y el pulso de este diario cambió: de construir el sistema a medir a los analistas.</span><span data-lang="en">qwen3-max chose the project's first zone (Schwien No. 2-13, API 15-135-24938)… in the wrong rock: the decision appeared, still without the judgment. The yardstick would end at 72 wells with the verifier 72/72 — and this journal's pulse changed: from building the system to measuring the analysts.</span></p>
+  </div>
       <details>
-        <summary><span data-lang="es">Leer la entrada completa del diario</span><span data-lang="en">Read the full journal entry</span></summary>
-        <div class="lang-note"><span data-lang="es">— texto original en español —</span><span data-lang="en">— original text, in Spanish —</span></div>
+        <summary><span data-lang="es">registro original del diario, sin editar</span><span data-lang="en">original journal record, unedited</span></summary>
+        <div class="lang-note"><span data-lang="es">— texto original en español, con sus fechas —</span><span data-lang="en">— original text in Spanish, dates preserved —</span></div>
         <div class="entry">
 <h1>Bitácora — 2026-07-03</h1>
 <h2>09:00 — Opus autor (crédito recargado) + página actualizada con el hito</h2>
@@ -3967,13 +4051,21 @@ border-radius:8px}
       </details>
     </li>
 
-    <li>
-      <div class="date">2026-07-04</div>
-      <h3><span data-lang="es">Ronda GA + el hallazgo de la amnesia (ronda GB)</span><span data-lang="en">GA round + the amnesia finding (GB round)</span></h3>
-      <p><span data-lang="es">Las palancas honestas del gap-analysis entran con doble auditoría anti-fuga: pack de campo, evidencia comparativa, notas entre pozos, brief regional. El A/B v11: la zona pasa de 1/24 a 13/15. Y la investigación de por qué los agentes gastan tanto revela EL número del proyecto: ~80% de sus observaciones eran RELECTURAS — el loop solo les mostraba la última. La respuesta (journal de observaciones) las lleva a 0.</span><span data-lang="en">The gap-analysis' honest levers land with a double leak audit: field pack, comparison evidence, cross-well notes, regional brief. The v11 A/B: the zone goes from 1/24 to 13/15. And investigating why agents waste so much reveals THE project number: ~80% of their observations were RE-READS — the loop only showed them the last one. The answer (an observation journal) takes them to 0.</span></p>
+    <li id="c8">
+      <div class="chno">08</div>
+      <h3><span data-lang="es">Las palancas honestas: estudio de campo y memoria</span><span data-lang="en">The honest levers: field study and memory</span></h3>
+  <div class="blk p"><span class="lbl"><span data-lang="es">El problema</span><span data-lang="en">The problem</span></span>
+    <p><span data-lang="es">El gap entre agentes y vara tenía seis causas identificables — y una investigación reveló EL número del proyecto: ~80% de las observaciones de los agentes eran RELECTURAS de lo que ya sabían. No era indecisión: era amnesia — el loop solo les mostraba la última observación.</span><span data-lang="en">The gap between agents and yardstick had six identifiable causes — and one investigation revealed THE project number: ~80% of the agents' observations were RE-READS of what they already knew. Not indecision: amnesia — the loop only showed them the last observation.</span></p>
+  </div>
+  <div class="blk d"><span class="lbl"><span data-lang="es">La decisión — y su motivación</span><span data-lang="en">The decision — and its motivation</span></span>
+    <p><span data-lang="es">Palancas de entorno con una regla dura: SIEMPRE hechos, jamás dirección (cada una con doble auditoría anti-fuga). Pack de estudio de campo, evidencia comparativa de métodos, notas propias entre pozos, brief regional solo-identidad — y un journal de observaciones donde releer es un no-op medido.</span><span data-lang="en">Environment levers under a hard rule: ALWAYS facts, never direction (each behind a double anti-leak audit). Field-study pack, method comparison evidence, cross-well notes, an identity-only regional brief — and an observation journal where re-reading is a measured no-op.</span></p>
+  </div>
+  <div class="blk r"><span class="lbl"><span data-lang="es">El resultado</span><span data-lang="en">The result</span></span>
+    <p><span data-lang="es">La zona pasó de 1/24 a 13/15 pozos. Las relecturas: de ~80% a CERO. Y la lección transferible: la memoria son TRES memorias — dentro del pozo, entre pozos, y la de consecuencia (que llegaría en el capítulo siguiente).</span><span data-lang="en">The zone went from 1/24 to 13/15 wells. Re-reads: from ~80% to ZERO. And the transferable lesson: memory is THREE memories — within-well, cross-well, and consequence (arriving in the next chapter).</span></p>
+  </div>
       <details>
-        <summary><span data-lang="es">Leer la entrada completa del diario</span><span data-lang="en">Read the full journal entry</span></summary>
-        <div class="lang-note"><span data-lang="es">— texto original en español —</span><span data-lang="en">— original text, in Spanish —</span></div>
+        <summary><span data-lang="es">registro original del diario, sin editar</span><span data-lang="en">original journal record, unedited</span></summary>
+        <div class="lang-note"><span data-lang="es">— texto original en español, con sus fechas —</span><span data-lang="en">— original text in Spanish, dates preserved —</span></div>
         <div class="entry">
 <h1>Bitácora — 2026-07-04</h1>
 <h2>Sesión — Ronda GA: agentes más capaces (G1–G7 del gap-analysis)</h2>
@@ -4324,13 +4416,21 @@ border-radius:8px}
       </details>
     </li>
 
-    <li>
-      <div class="date">2026-07-05</div>
-      <h3><span data-lang="es">¿Mejora el agente al mirarse? La iteración amplifica lo que el modelo es</span><span data-lang="en">Does self-reading improve the agent? Iteration amplifies what the model is</span></h3>
-      <p><span data-lang="es">Experimento iterate15 (hasta 15 ciclos sobre un pozo fijo, con todo su historial visible): el rígido se sella tras un paso; el explorador con criterio (un 30B free con thinking) converge al óptimo en 4; el sin-brújula deriva. Mismo día: autogestión del historial (review_attempts) y el ciclo de borradores GD — el escritor relee su propio informe y el claim verifier rechaza en vivo las revisiones con números inventados.</span><span data-lang="en">The iterate15 experiment (up to 15 cycles on a fixed well, full self-history visible): the rigid one seals after one step; the explorer with judgment (a free 30B with thinking) converges to the optimum in 4; the compass-less one drifts. Same day: self-managed history (review_attempts) and the GD draft cycle — the writer rereads its own report and the claim verifier live-rejects revisions with invented numbers.</span></p>
+    <li class="pay" id="c9">
+      <div class="chno">09</div>
+      <h3><span data-lang="es">Consecuencia, borradores — y mirarse al espejo</span><span data-lang="en">Consequence, drafts — and the mirror</span></h3>
+  <div class="blk p"><span class="lbl"><span data-lang="es">El problema</span><span data-lang="en">The problem</span></span>
+    <p><span data-lang="es">Los agentes ya decidían mejor, pero no APRENDÍAN de fallar: el intento fallido moría sin dejar rastro. Tampoco podían revisar su propia prosa, ni probar conjeturas baratas. ¿Y qué pasa si un agente itera 15 veces mirando su propio trabajo?</span><span data-lang="en">Agents were deciding better but not LEARNING from failure: the failed attempt died without a trace. They couldn't revise their own prose either, nor test cheap conjectures. And what happens if an agent iterates 15 times looking at its own work?</span></p>
+  </div>
+  <div class="blk d"><span class="lbl"><span data-lang="es">La decisión — y su motivación</span><span data-lang="en">The decision — and its motivation</span></span>
+    <p><span data-lang="es">Las condiciones naturales de un ingeniero real: reintento con el propio fracaso como evidencia (publicando SIEMPRE el intento 2 — sin selección Goodhart), hipótesis de intervalo baratas, y el ciclo de borradores: el escritor relee su informe renderizado y el verificador rechaza mecánicamente toda revisión con números sin respaldo. Más el experimento iterate15.</span><span data-lang="en">A real engineer's natural conditions: retry with one's own failure as evidence (ALWAYS publishing attempt 2 — no Goodhart selection), cheap interval hypotheses, and the draft cycle: the writer rereads its rendered report while the verifier mechanically rejects any revision with unbacked numbers. Plus the iterate15 experiment.</span></p>
+  </div>
+  <div class="blk r"><span class="lbl"><span data-lang="es">El resultado</span><span data-lang="en">The result</span></span>
+    <p><span data-lang="es">Las zonas se MUEVEN con la consecuencia: gpt-5 cruzó de 292–512 a 900–1326 m y refinó en el pozo siguiente vía sus notas. 49 revisiones de prosa aceptadas y 2 rechazadas EN VIVO. Y el veredicto de iterate15: la iteración no mejora a nadie — AMPLIFICA lo que el modelo ya es (el 30B explorador clava el óptimo en 4 vueltas; el 120B rígido se sella; el sin-brújula deriva).</span><span data-lang="en">Zones MOVE with consequence: gpt-5 crossed from 292–512 to 900–1326 m and refined on the next well via its notes. 49 prose revisions accepted, 2 rejected LIVE. And iterate15's verdict: iteration upgrades nobody — it AMPLIFIES what the model already is (the 30B explorer nails the optimum in 4 laps; the rigid 120B seals; the compass-less one drifts).</span></p>
+  </div>
       <details>
-        <summary><span data-lang="es">Leer la entrada completa del diario</span><span data-lang="en">Read the full journal entry</span></summary>
-        <div class="lang-note"><span data-lang="es">— texto original en español —</span><span data-lang="en">— original text, in Spanish —</span></div>
+        <summary><span data-lang="es">registro original del diario, sin editar</span><span data-lang="en">original journal record, unedited</span></summary>
+        <div class="lang-note"><span data-lang="es">— texto original en español, con sus fechas —</span><span data-lang="en">— original text in Spanish, dates preserved —</span></div>
         <div class="entry">
 <h1>Bitácora — 2026-07-05</h1>
 <h2>Sesión — ¿La iteración sobre el propio trabajo mejora al agente? (iterate15 + GC-5 + GD)</h2>
@@ -4400,13 +4500,21 @@ border-radius:8px}
       </details>
     </li>
 
-    <li class="pay">
-      <div class="date">2026-07-06</div>
-      <h3><span data-lang="es">El informe de metodología, la matriz de thinking — y opus cierra el círculo</span><span data-lang="en">The methodology report, the thinking matrix — and opus closes the circle</span></h3>
-      <p><span data-lang="es">Veredicto: la metodología FUNCIONA. El aislamiento más limpio: ultra 550B free pasa de topes someros a 3/3 zonas profundas al encenderle el thinking (nunca se lo habíamos activado); el gemelo qwen confirma; a gpt-5 el reasoning explícito lo empeora. Y el final de novela: opus-4.8 — el modelo de CERO decisiones en v10 — produce el mejor resultado del proyecto: 4/4 zonas Mississippianas, 4/4 porosidad plausible, las 2 únicas convergencias legítimas con pay.</span><span data-lang="en">Verdict: the methodology WORKS. The cleanest isolation: free 550B ultra goes from shallow tops to 3/3 deep zones once thinking is switched on (we had never enabled it); the qwen twin confirms; explicit reasoning makes gpt-5 worse. And the novelistic ending: opus-4.8 — the ZERO-decision model of v10 — produces the project's best result: 4/4 Mississippian zones, 4/4 plausible porosity, the only 2 legitimate pay-bearing convergences.</span></p>
+    <li class="pay" id="c10">
+      <div class="chno">10</div>
+      <h3><span data-lang="es">Thinking: el interruptor — y el círculo se cierra</span><span data-lang="en">Thinking: the switch — and the circle closes</span></h3>
+  <div class="blk p"><span class="lbl"><span data-lang="es">El problema</span><span data-lang="en">The problem</span></span>
+    <p><span data-lang="es">¿Por qué unos modelos zonificaban profundo y otros jamás, con el mismo entorno? La sospecha: varios híbridos llevaban todo el proyecto corriendo con el razonamiento APAGADO — nunca se les había activado.</span><span data-lang="en">Why did some models zone deep and others never, in the same environment? The suspicion: several hybrids had run the whole project with reasoning switched OFF — it had never been enabled.</span></p>
+  </div>
+  <div class="blk d"><span class="lbl"><span data-lang="es">La decisión — y su motivación</span><span data-lang="en">The decision — and its motivation</span></span>
+    <p><span data-lang="es">Aislar la palanca: encender thinking con el mismo modelo, mismos pozos, mismo stack — y correr la matriz completa (4 familias × con/sin). El aislamiento más limpio del proyecto: el gemelo qwen, mismo linaje con y sin razonamiento.</span><span data-lang="en">Isolate the lever: switch thinking on with the same model, same wells, same stack — and run the full matrix (4 families × with/without). The project's cleanest isolation: the qwen twin, same lineage with and without reasoning.</span></p>
+  </div>
+  <div class="blk r"><span class="lbl"><span data-lang="es">El resultado</span><span data-lang="en">The result</span></span>
+    <p><span data-lang="es">ultra free pasó de 0/4 a 3/3 zonas profundas; el gemelo qwen confirmó (0/4 → 2/3); a gpt-5 el razonamiento explícito lo EMPEORÓ (precisión 0.77 → 0.00). Y el final de novela: opus-4.8 — el modelo de CERO decisiones al inicio — se volvió el mejor agente del proyecto: 4/4 zonas en el Mississippiano, precisión 1.00, las únicas convergencias legítimas con pay.</span><span data-lang="en">free ultra went from 0/4 to 3/3 deep zones; the qwen twin confirmed (0/4 → 2/3); explicit reasoning made gpt-5 WORSE (precision 0.77 → 0.00). And the novelistic ending: opus-4.8 — the ZERO-decision model at the start — became the project's best agent: 4/4 Mississippian zones, precision 1.00, the only legitimate pay-bearing convergences.</span></p>
+  </div>
       <details>
-        <summary><span data-lang="es">Leer la entrada completa del diario</span><span data-lang="en">Read the full journal entry</span></summary>
-        <div class="lang-note"><span data-lang="es">— texto original en español —</span><span data-lang="en">— original text, in Spanish —</span></div>
+        <summary><span data-lang="es">registro original del diario, sin editar</span><span data-lang="en">original journal record, unedited</span></summary>
+        <div class="lang-note"><span data-lang="es">— texto original en español, con sus fechas —</span><span data-lang="en">— original text in Spanish, dates preserved —</span></div>
         <div class="entry">
 <h1>Bitácora — 2026-07-06</h1>
 <h2>INFORME FINAL — ¿Funciona la metodología? (v14: el stack completo)</h2>
@@ -4570,13 +4678,21 @@ border-radius:8px}
       </details>
     </li>
 
-    <li class="pay">
-      <div class="date">2026-07-07</div>
-      <h3><span data-lang="es">El informe final de evaluación — y esta página</span><span data-lang="en">The final evaluation report — and this page</span></h3>
-      <p><span data-lang="es">Cada cifra del cierre se recalcula desde los ledgers reales (nada de memoria): leaderboard, precisión de zona contra las ventanas del summit, costos medidos (~$50 todo el proyecto), taxonomía de fallas. Con ese informe como fuente se reconstruye el sitio que estás leyendo.</span><span data-lang="en">Every closing figure is recomputed from the real ledgers (nothing from memory): leaderboard, zone precision vs the summit windows, measured costs (~$50 for the whole project), failure taxonomy. With that report as the source, the site you're reading is rebuilt.</span></p>
+    <li class="pay" id="c11">
+      <div class="chno">11</div>
+      <h3><span data-lang="es">El cierre: medir, verificar la vara, publicar</span><span data-lang="en">The close: measure, verify the yardstick, publish</span></h3>
+  <div class="blk p"><span class="lbl"><span data-lang="es">El problema</span><span data-lang="en">The problem</span></span>
+    <p><span data-lang="es">Quedaban dos deudas. Una: destilar todo en un informe de evaluación reproducible. La otra, más incómoda: ¿y si la vara — el summit, escrito por quien construyó el sistema — está mal?</span><span data-lang="en">Two debts remained. One: distill everything into a reproducible evaluation report. The other, more uncomfortable: what if the yardstick — the summit, written by the system's own builder — is wrong?</span></p>
+  </div>
+  <div class="blk d"><span class="lbl"><span data-lang="es">La decisión — y su motivación</span><span data-lang="en">The decision — and its motivation</span></span>
+    <p><span data-lang="es">El informe final se recalcula ENTERO desde los ledgers (nada de memoria). Y la vara se somete a tres ciclos deterministas — sensibilidad ±100 m, refutación física de bordes desde el LAS crudo, y el leaderboard bajo la vara más hostil — con CERO LLM en el meta-chequeo: igual que el proyecto no deja al modelo calcular, el chequeo no lo deja juzgarse.</span><span data-lang="en">The final report is recomputed ENTIRELY from the ledgers (nothing from memory). And the yardstick is put through three deterministic cycles — ±100 m sensitivity, physical border refutation from raw LAS, and the leaderboard under the most hostile yardstick — with ZERO LLM in the meta-check: just as the project never lets the model compute, the check never lets it judge itself.</span></p>
+  </div>
+  <div class="blk r"><span class="lbl"><span data-lang="es">El resultado</span><span data-lang="en">The result</span></span>
+    <p><span data-lang="es">El veredicto es INVARIANTE con la vara temblando; opus y ultra-free-thinking quedan co-líderes bajo la vara hostil y la precisión se reporta con banda — la corrección se publicó, no se escondió. Costo total del proyecto: ~$50. El resultado final es el sitio que estás leyendo — con este diario íntegro como evidencia.</span><span data-lang="en">The verdict is INVARIANT as the yardstick trembles; opus and free-ultra-thinking end up co-leaders under the hostile stick and precision is reported as a band — the correction was published, not hidden. Total project cost: ~$50. The end result is the site you are reading — with this journal, unabridged, as evidence.</span></p>
+  </div>
       <details>
-        <summary><span data-lang="es">Leer la entrada completa del diario</span><span data-lang="en">Read the full journal entry</span></summary>
-        <div class="lang-note"><span data-lang="es">— texto original en español —</span><span data-lang="en">— original text, in Spanish —</span></div>
+        <summary><span data-lang="es">registro original del diario, sin editar</span><span data-lang="en">original journal record, unedited</span></summary>
+        <div class="lang-note"><span data-lang="es">— texto original en español, con sus fechas —</span><span data-lang="en">— original text in Spanish, dates preserved —</span></div>
         <div class="entry">
 <h1>Bitácora — 2026-07-07</h1>
 <h2>Sesión — Informe final de evaluación de modelos</h2>
@@ -4765,15 +4881,55 @@ border-radius:8px}
 <p>cambian el recuadro degradado por el isotipo en un chip blanco: sunburst de Claude</p>
 <p>(summit + opus), Z de Z.ai (glm), ojo de NVIDIA (nemotron). Verificado en light y dark.</p>
 <p>Las 3 tarjetas de narrativa conservan su degradado + emoji (no son modelos).</p>
+<h1>Bitácora — 2026-07-08</h1>
+<h2>Sesión — Informes por pozo + 5 visuales nuevos en el sitio</h2>
+<h3>Cambios técnicos</h3>
+<ul>
+<li><b>Informes particulares de pozo publicados</b> (petición del usuario: "veo los generales</li>
+</ul>
+<p>  pero no los particulares"): 71 pozos del summit (25 clase A + 46 clase B vintage, 522</p>
+<p>  figuras, ~32 MB) en <code>docs/reports/wells/</code> + los pozos restantes de opus/glm/ultra (8).</p>
+<p>  El builder ya no BORRA los links por-pozo del informe de campo: los reescribe a las</p>
+<p>  páginas publicadas. Corrección de UX del usuario a mitad: los pozos se navegan DESDE el</p>
+<p>  informe general (no recuadros sueltos) → se publicaron también los informes de campo de</p>
+<p>  cada agente (opus_field/glm_field/ultra_field, con sus pozos enlazados dentro) y cada</p>
+<p>  ficha enlaza "su informe de campo →". Catálogo <code>reports/pozos.html</code> accesible desde los</p>
+<p>  informes generales. qwen-thinking sin per-pozo (artefacto de intentos previos; nota de</p>
+<p>  honestidad en el catálogo).</p>
+<ul>
+<li><b>5 visuales nuevos</b> (SVG inline con tokens, bilingües, light/dark): calibración VOLVE</li>
+</ul>
+<p>  (index §4: r=0.96/0.91/0.87 + cobertura P10–P90 antes/después 35/1.8/31→95/98/88%);</p>
+<p>  flujograma del loop con la frontera modelo/motor (reemplaza el ASCII de ingeniería);</p>
+<p>  matriz de thinking config×modelo (zonas ≥700 m); barras de precisión de zona (opus 1.00</p>
+<p>  con banda 0.68–1.00; par gpt-5 0.77→0.00); explicador del overburden (RHOB por tercios</p>
+<p>  1.77/1.74/2.49 + PHIE 0.229→0.069, pay 296→31 m).</p>
+<h3>Verificación</h3>
+<ul>
+<li>check_links: 0 rotos en 93 páginas; figuras 34+522; browser: catálogo, pozo clase A</li>
+</ul>
+<p>  (O'Brate No. 3 completo con QC), field→pozo, los 5 charts en dark, ES/EN.</p>
+<h3>Errores</h3>
+<ul>
+<li>Los artefactos del conversor md→HTML reaparecieron una 3ª vez — ahora generados por MI</li>
+</ul>
+<p>  PROPIA bitácora (las sesiones que documentaban el fix citaban los patrones literales en</p>
+<p>  backticks, y el conversor los reconvertía). Fix de raíz: <code>_inline()</code> ahora protege el</p>
+<p>  contenido de los code spans con placeholders antes de procesar links/imágenes.</p>
+<ul>
+<li>Tres SVG salieron con texto cortado en el borde del viewBox (título derecho de VOLVE,</li>
+</ul>
+<p>  columna opus de la matriz, pie del flowchart, título del overburden) — se notó solo en</p>
+<p>  browser. Lección: con viewBox fijo, presupuestar el ancho ANTES (n_cols × cw + margen).</p>
         </div>
       </details>
     </li>
 
   </ul>
   <footer class="site">
-    <span data-lang="es">petro-agent · 2026 · Las entradas son el diario real del repositorio
-    (planning/bitacora/), sin ediciones.</span>
-    <span data-lang="en">petro-agent · 2026 · Entries are the repository's real journal
+    <span data-lang="es">petro-agent · Las entradas expandibles son el diario real del
+    repositorio (planning/bitacora/), sin ediciones.</span>
+    <span data-lang="en">petro-agent · The expandable entries are the repository's real journal
     (planning/bitacora/), unedited.</span>
   </footer>
 </section>

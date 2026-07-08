@@ -430,8 +430,8 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
 <text x="172" y="202" text-anchor="start" fill="var(--ink-muted)" font-size="10"><tspan data-lang="es">celda = zonas con tope ≥700 m (bloque consolidado) / pozos del batch</tspan><tspan data-lang="en">cell = zones with top ≥700 m (consolidated block) / batch wells</tspan></text>
 </svg>
       <div class="cap">
-        <span data-lang="es"><b>La matriz que aisló la palanca.</b> Cada celda: cuántas zonas con tope ≥700 m (el bloque consolidado real) eligió esa config. El thinking ENCIENDE la zonificación profunda en los híbridos que corrían apagados (ultra 0/4→3/3; el gemelo qwen 0/4→2/3) y no arregla a los rígidos (super) ni a los que ya razonan (gpt-5 empeora). Cuatro familias de vendors, mismo patrón.</span>
-        <span data-lang="en"><b>The matrix that isolated the lever.</b> Each cell: how many zones with top ≥700 m (the real consolidated block) that config chose. Thinking SWITCHES ON deep zoning in hybrids that ran dormant (ultra 0/4→3/3; the qwen twin 0/4→2/3), and fixes neither the rigid (super) nor those already reasoning (gpt-5 gets worse). Four vendor families, same pattern.</span>
+        <span data-lang="es"><b>La matriz que aisló la palanca.</b> Cada celda: cuántas zonas con tope ≥700 m (el bloque consolidado real) eligió esa config. El thinking ENCIENDE la zonificación profunda en los híbridos que corrían apagados (ultra 0/4→3/3; el gemelo qwen 0/4→2/3) y no arregla a los rígidos (super) ni a los que ya razonan (gpt-5 empeora). Cuatro familias de vendors, mismo patrón. Las celdas «—» no son ceros: esa configuración NO SE CORRIÓ para ese modelo — el pool evolucionó con el proyecto (glm-5.2 y opus-4.8 entraron en la fase final de pago; nano solo existe como free; el leg sin-thinking corrió con el pool de su momento).</span>
+        <span data-lang="en"><b>The matrix that isolated the lever.</b> Each cell: how many zones with top ≥700 m (the real consolidated block) that config chose. Thinking SWITCHES ON deep zoning in hybrids that ran dormant (ultra 0/4→3/3; the qwen twin 0/4→2/3), and fixes neither the rigid (super) nor those already reasoning (gpt-5 gets worse). Four vendor families, same pattern. The “—” cells are not zeros: that configuration WAS NOT RUN for that model — the pool evolved with the project (glm-5.2 and opus-4.8 joined in the final paid leg; nano only exists as free; the no-thinking leg ran with its moment's pool).</span>
       </div>
     </div>
 
@@ -503,11 +503,11 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
         <span data-lang="es"><b>Tres personalidades, una curva cada una</b> (tope de zona elegido
         por iteración; banda ámbar = topes productores). nano explora, empeora dos veces y clava el
         óptimo en la 4ª; super aprende un paso y se sella; gpt-oss rebota somero sin brújula. La
-        iteración no mejora a nadie: amplifica lo que cada modelo ya es.</span>
+        iteración no mejora a nadie: amplifica lo que cada modelo ya es. ¿Por qué solo tres? El experimento exigía hasta 15 ciclos por modelo en un pozo fijo bajo la cuota gratuita diaria: se eligieron tres personalidades opuestas del pool free (rígido 120B · explorador 30B con thinking · 20B sin brújula). La curva de gpt-oss se corta en el ciclo 10 por 429 persistente del proveedor — no es convergencia.</span>
         <span data-lang="en"><b>Three personalities, one curve each</b> (chosen zone top per
         iteration; amber band = producing tops). nano explores, gets worse twice and nails the
         optimum on the 4th; super learns one step and seals; gpt-oss bounces shallow with no
-        compass. Iteration upgrades nobody: it amplifies what each model already is.</span>
+        compass. Iteration upgrades nobody: it amplifies what each model already is. Why only three? The experiment demanded up to 15 cycles per model on a fixed well under the free daily quota: three opposite personalities were picked from the free pool (rigid 120B · exploring 30B with thinking · compass-less 20B). gpt-oss's curve cuts at cycle 10 due to persistent provider 429s — that is not convergence.</span>
       </div>
     </div>
     <li><span data-lang="es"><b>Goodhart aparece solo.</b> Si el "éxito" es que el validador

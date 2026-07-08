@@ -197,6 +197,14 @@ pre.ledger .k{color:var(--water)} pre.ledger .v{color:var(--oil)}
 .legend span{display:inline-flex;align-items:center;gap:.4rem}
 .legend i{width:.7rem;height:.7rem;border-radius:3px;display:inline-block}
 details{font-family:var(--font-sans);font-size:.85rem;margin:.6rem 0}
+.reports-more{margin:.7rem 0}
+.reports-more>summary{font:650 .95rem var(--font-sans);color:var(--ink-primary);
+  background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);
+  padding:.85rem 1.1rem;box-shadow:var(--shadow);list-style-position:inside;
+  transition:transform var(--t-fast) var(--ease)}
+.reports-more>summary:hover{transform:translateY(-2px)}
+.reports-more>summary img{width:1.15em;height:1.15em;vertical-align:-3px}
+.reports-more[open]>summary{border-radius:var(--radius) var(--radius) 0 0}
 summary{cursor:pointer;color:var(--ink-muted)}
 footer.site{border-top:1px solid var(--border);margin-top:3rem;padding:2rem 0;
   font:500 .82rem var(--font-sans);color:var(--ink-muted)}
@@ -247,6 +255,7 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
   <a href="#informes"><span data-lang="es">Informes finales</span><span data-lang="en">Final reports</span></a>
   <a href="#veredicto"><span data-lang="es">¿Junior o senior?</span><span data-lang="en">Junior or senior?</span></a>
   <a href="#honestidad"><span data-lang="es">Honestidad</span><span data-lang="en">Honesty</span></a>
+  <a href="#meaculpa"><span data-lang="es">Mea culpa</span><span data-lang="en">Mea culpa</span></a>
   <a href="#reproducibilidad"><span data-lang="es">Reproducibilidad</span><span data-lang="en">Reproducibility</span></a>
 </nav>
 
@@ -492,6 +501,7 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
         </tbody>
       </table>
     </details>
+    <p style="font:400 .8rem var(--font-sans);color:var(--ink-muted);margin:.5rem 0 0"><span data-lang="es">gemma-4-26b no tiene barra «revisor»: su corrida v7 nunca completó (429 upstream persistente del endpoint gratuito, documentado) — se muestra solo su modo autor.</span><span data-lang="en">gemma-4-26b has no “reviewer” bar: its v7 run never completed (persistent upstream 429 on the free endpoint, documented) — only its author mode is shown.</span></p>
   </div>
 
   <h3><span data-lang="es">2 · La identidad analítica es del modelo, no de la seed</span>
@@ -921,6 +931,78 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
       (opus ≈0.68–1.00, never overlapping the mid pack ≈0.30–0.52), and under the widened
       yardstick opus and free-ultra-thinking are <b>co-leaders</b> — the tiebreak depends on
       whether the stick rewards precision or recall, never on rock choice.</span></li>
+  </ul>
+</section>
+
+<section id="meaculpa" class="reveal">
+  <h2><span data-lang="es">Mea culpa: lo que faltó — y el camino a futuro</span><span data-lang="en">Mea culpa: what was missing — and the road ahead</span></h2>
+  <p>
+    <span data-lang="es">Un proyecto que presume de honestidad tiene que aplicársela a sí mismo.
+    Estas son las deudas reales del trabajo — cada una con lo que haríamos para saldarla:</span>
+    <span data-lang="en">A project that brags about honesty has to apply it to itself. These are
+    the work's real debts — each with what we would do to settle it:</span>
+  </p>
+  <ul style="line-height:1.85">
+    <li><span data-lang="es"><b>Sin datos duros de calibración.</b> No hubo núcleo, ni Rw medido,
+      ni registros de producción atados a intervalos: por eso la abstención es el techo permanente
+      de Kansas y la vara es un baseline declarado, no verdad de terreno. <i>A futuro:</i> cruzar
+      contra la producción histórica por lease (KGS la publica) y conseguir un estudio de núcleo —
+      cerraría el lazo que ninguna corrida pudo cerrar.</span>
+      <span data-lang="en"><b>No hard calibration data.</b> No core, no measured Rw, no production
+      tied to intervals: that's why abstention is Kansas's permanent ceiling and the yardstick is a
+      declared baseline, not ground truth. <i>Ahead:</i> cross against historical per-lease
+      production (KGS publishes it) and obtain a core study — it would close the loop no run
+      could.</span></li>
+    <li><span data-lang="es"><b>La vara la escribió el constructor.</b> La verificamos con tres
+      ciclos deterministas, pero sigue siendo UNA interpretación. <i>A futuro:</i> un benchmark
+      ciego con petrofísicos humanos independientes interpretando los mismos pozos — la vara
+      dejaría de ser de la casa.</span>
+      <span data-lang="en"><b>The yardstick was written by the builder.</b> We verified it with
+      three deterministic cycles, but it remains ONE interpretation. <i>Ahead:</i> a blind
+      benchmark with independent human petrophysicists on the same wells — the yardstick would
+      stop being in-house.</span></li>
+    <li><span data-lang="es"><b>Se analiza ~25% de las curvas adquiridas.</b> El canon usa 5–6 de
+      las ~20–26 curvas por LAS; el SP entró al final (y confirmó el Rw), pero microlog, perfiles
+      de invasión y el neutrón vintage quedaron a medio explotar. <i>A futuro:</i> explotar el
+      censo completo — hay 50 pozos vintage esperando su método.</span>
+      <span data-lang="en"><b>~25% of acquired curves get analyzed.</b> The canon uses 5–6 of the
+      ~20–26 curves per LAS; SP entered late (and confirmed Rw), but microlog, invasion profiles
+      and vintage neutron remain half-exploited. <i>Ahead:</i> exploit the full census — 50
+      vintage wells are waiting for their method.</span></li>
+    <li><span data-lang="es"><b>Ningún agente adoptó la evidencia de calibración.</b> La banda
+      SP→Rw existía y ninguno la incorporó a sus parámetros: calibrar Rw/m/n con datos duros quedó
+      en «nadie». <i>A futuro:</i> medir palancas de adopción de evidencia — el escalón exacto
+      entre junior alto y mid.</span>
+      <span data-lang="en"><b>No agent adopted the calibration evidence.</b> The SP→Rw band
+      existed and none folded it into its parameters: calibrating Rw/m/n with hard data ended at
+      “nobody”. <i>Ahead:</i> measure evidence-adoption levers — the exact step between high
+      junior and mid.</span></li>
+    <li><span data-lang="es"><b>Huecos de batch por infraestructura.</b> gpt-5 (v14 default) quedó
+      en 2/4 pozos y qwen-thinking cerró 3/4 con su metrics reconstruido del log — cuotas y
+      créditos agotados a mitad de corrida, documentados pero huecos al fin. <i>A futuro:</i>
+      completar esos batches y re-emitir el leaderboard.</span>
+      <span data-lang="en"><b>Batch holes from infrastructure.</b> gpt-5 (v14 default) ended at
+      2/4 wells and qwen-thinking closed 3/4 with metrics reconstructed from its log — quotas and
+      credits died mid-run, documented but holes nonetheless. <i>Ahead:</i> complete those batches
+      and re-issue the leaderboard.</span></li>
+    <li><span data-lang="es"><b>Un solo campo de desarrollo y promesas sin cuantificar.</b>
+      Schaben + VOLVE de regresión no prueban generalización a otras cuencas; y el «no te
+      reemplaza, te multiplica» no tiene medición con humanos reales. <i>A futuro:</i> un tercer
+      campo a ciegas, y un estudio de tiempo-ahorrado con petrofísicos usando estos informes como
+      borrador.</span>
+      <span data-lang="en"><b>One development field and unquantified promises.</b> Schaben + a
+      VOLVE regression don't prove generalization to other basins; and “it doesn't replace you, it
+      multiplies you” has no measurement with real humans. <i>Ahead:</i> a third field, blind, and
+      a time-saved study with petrophysicists using these reports as a draft.</span></li>
+    <li><span data-lang="es"><b>El runtime local quedó atrás.</b> El proyecto corre local por
+      diseño (Ollama), pero todo el juicio medido vino de modelos frontier en la nube usada como
+      instrumento. <i>A futuro:</i> destilar las conductas ganadoras (zonificar, reintentar,
+      revisar borradores) hacia el modelo local — que la autonomía barata alcance el juicio
+      caro.</span>
+      <span data-lang="en"><b>The local runtime fell behind.</b> The project runs locally by
+      design (Ollama), yet all the measured judgment came from frontier models used as an
+      instrument. <i>Ahead:</i> distill the winning behaviors (zoning, retrying, draft revision)
+      into the local model — let cheap autonomy reach expensive judgment.</span></li>
   </ul>
 </section>
 
