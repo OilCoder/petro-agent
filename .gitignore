@@ -1,5 +1,5 @@
-# Claude Code
-.claude/settings.local.json
+# Claude Code (local tooling — not published)
+.claude/
 
 # Python
 __pycache__/
@@ -16,8 +16,8 @@ data/
 models/
 outputs/
 
-# Project planning and design files, screenshots, etc.
-planning/diseno/
+# Project planning, journal and design files (local — not published)
+planning/
 screenshots/
 
 # Debug scaffolding (always gitignored)
