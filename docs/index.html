@@ -164,6 +164,10 @@ a.report-card{border-bottom:1px solid var(--border)}
 .report-card:hover{transform:translateY(-2px)}
 .report-card .doc{width:2.6rem;height:3.3rem;border-radius:4px;flex:none;
   background:linear-gradient(160deg,var(--g1,var(--oil)) 0%,var(--g2,var(--water)) 120%)}
+.report-card .logo{width:3rem;height:3rem;border-radius:10px;flex:none;background:#fff;
+  border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--shadow)}
+.report-card .logo img{width:62%;height:62%;object-fit:contain;display:block}
 .report-card h4{margin:0;font-size:.95rem}
 .report-card .meta{font:500 .76rem var(--font-sans);color:var(--ink-muted)}
 pre.ledger{background:var(--surface-2);border:1px solid var(--border);
@@ -652,28 +656,28 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
     No. 4</b> (15-135-24,881, the hardest in the set) appears in both the summit's version and
     the best agent's so the comparison reads directly:</span>
   </p>
-  <a class="report-card" href="reports/summit_field.html" style="--g1:var(--cat-5);--g2:var(--oil)">
-    <div class="doc"></div><div>
+  <a class="report-card" href="reports/summit_field.html">
+    <div class="logo"><img src="assets/claude.svg" alt="Claude" loading="lazy"></div><div>
     <h4><span data-lang="es">Informe de campo</span><span data-lang="en">Field report</span> · <span class="mono">summit v3</span></h4>
     <div class="meta"><span data-lang="es">72 pozos en dos clases etiquetadas · mapa PLSS · techo CONTAMINADO declarado (el analista conocía el proyecto)</span><span data-lang="en">72 wells in two labeled classes · PLSS map · declared CONTAMINATED ceiling (the analyst knew the project)</span></div></div>
   </a>
-  <a class="report-card" href="reports/summit_24881.html" style="--g1:var(--cat-5);--g2:var(--water)">
-    <div class="doc"></div><div>
+  <a class="report-card" href="reports/summit_24881.html">
+    <div class="logo"><img src="assets/claude.svg" alt="Claude" loading="lazy"></div><div>
     <h4>May Schneider No. 4 · <span class="mono">summit v3</span></h4>
     <div class="meta"><span class="mono">15-135-24,881</span> · <span data-lang="es">zona 900–1382.6 m · evidencia SP→Rw con asunciones declaradas · MHI</span><span data-lang="en">zone 900–1382.6 m · SP→Rw evidence with declared assumptions · MHI</span></div></div>
   </a>
-  <a class="report-card" href="reports/opus_24881.html" style="--g1:var(--oil);--g2:var(--oil-strong)">
-    <div class="doc"></div><div>
+  <a class="report-card" href="reports/opus_24881.html">
+    <div class="logo"><img src="assets/claude.svg" alt="Claude" loading="lazy"></div><div>
     <h4>May Schneider No. 4 · <span class="mono">claude-opus-4.8</span> + thinking 🏆</h4>
     <div class="meta"><span class="mono">15-135-24,881</span> · <span data-lang="es">EL MEJOR POZO DE AGENTE: zona 1150–1350 m · pay real 13.0 m · PHIE 0.146 plausible · convergencia legítima</span><span data-lang="en">THE BEST AGENT WELL: zone 1150–1350 m · real 13.0 m pay · plausible PHIE 0.146 · legitimate convergence</span></div></div>
   </a>
-  <a class="report-card" href="reports/glm_25990.html" style="--g1:var(--water);--g2:var(--cat-3)">
-    <div class="doc"></div><div>
+  <a class="report-card" href="reports/glm_25990.html">
+    <div class="logo"><img src="assets/zai.svg" alt="Z.ai" loading="lazy"></div><div>
     <h4>KT Schaben No. 2-31 · <span class="mono">glm-5.2</span> + thinking</h4>
     <div class="meta"><span class="mono">15-135-25990</span> · <span data-lang="es">zona 900–1376 m en su debut · ~$2 el batch — la frontera calidad/costo</span><span data-lang="en">zone 900–1376 m on debut · ~$2 per batch — the quality/cost frontier</span></div></div>
   </a>
-  <a class="report-card" href="reports/ultra_think_25990.html" style="--g1:var(--oil);--g2:var(--cat-2)">
-    <div class="doc"></div><div>
+  <a class="report-card" href="reports/ultra_think_25990.html">
+    <div class="logo"><img src="assets/nvidia.svg" alt="NVIDIA" loading="lazy"></div><div>
     <h4>KT Schaben No. 2-31 · <span class="mono">nemotron-ultra</span> free + thinking</h4>
     <div class="meta"><span class="mono">15-135-25990</span> · <span data-lang="es">zona 700–1323 m · $0 · el mejor gratuito (0→3/3 profundas al encender el thinking)</span><span data-lang="en">zone 700–1323 m · $0 · best free model (0→3/3 deep zones once thinking is on)</span></div></div>
   </a>
