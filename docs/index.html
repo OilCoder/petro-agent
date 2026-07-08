@@ -253,13 +253,13 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
   <h1><span data-lang="es">El LLM decide.<br>El motor calcula.<br>Nadie miente.</span><span data-lang="en">The LLM decides.<br>The engine computes.<br>Nobody lies.</span></h1>
   <p class="lede">
     <span data-lang="es">petro-agent convierte registros de pozo (LAS) en informes petrofísicos
-    completos — Vsh, porosidad, saturación, net pay, incertidumbre — <b>sin humano en el loop</b>.
-    Cada número sale de código determinista probado; el modelo de lenguaje solo elige métodos,
+    completos — Vsh, porosidad, saturación, net pay, incertidumbre — <b>sin intervención humana
+    en el proceso</b>. Cada número sale de código determinista; el modelo solo elige métodos,
     intervalos y análisis, y redacta. Cuando el resultado no es creíble, el informe lo dice en
     su portada.</span>
     <span data-lang="en">petro-agent turns well logs (LAS) into complete petrophysical reports —
-    Vsh, porosity, saturation, net pay, uncertainty — <b>with no human in the loop</b>. Every
-    number comes from tested deterministic code; the language model only chooses methods,
+    Vsh, porosity, saturation, net pay, uncertainty — <b>with no human intervention in the
+    process</b>. Every number comes from deterministic code; the model only chooses methods,
     intervals and analyses, and writes prose. When the result isn't credible, the report says so
     on its front page.</span>
   </p>
@@ -315,10 +315,10 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
   </aside>
   <p>
     <span data-lang="es">No promete "siempre correcto". Promete algo más útil: <b>honesto sobre
-    cuánto acierta, y demostrable</b> — versiones pineadas, seeds, hashes de configuración y un
+    cuánto acierta, y demostrable</b> — versiones, seeds, hashes de configuración y un
     ledger JSON por pozo que registra cada decisión y cada degradación.</span>
     <span data-lang="en">It doesn't promise "always right." It promises something more useful:
-    <b>honest about how much it gets right, and provably so</b> — pinned versions, seeds, config
+    <b>honest about how much it gets right, and provably so</b> — versions, seeds, config
     hashes, and a per-well JSON ledger recording every decision and every degradation.</span>
   </p>
 </section>
@@ -327,7 +327,7 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
   <h2><span data-lang="es">El invariante</span><span data-lang="en">The invariant</span></h2>
   <div class="callout">
     <div class="t"><span data-lang="es">Regla no negociable</span><span data-lang="en">Non-negotiable rule</span></div>
-    <span data-lang="es">Todo número sale de una función vetada de la librería petrofísica —
+    <span data-lang="es">Todo número sale de una función validada de la librería petrofísica —
     congelada, versionada y cubierta por golden tests (cotas físicas, monotonía, casos
     analíticos). El agente <b>selecciona y parametriza</b>; nunca escribe una ecuación en
     runtime. El orquestador (LangGraph) es determinista: un LLM jamás decide una compuerta.</span>
@@ -339,23 +339,24 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
   <p>
     <span data-lang="es">La prueba de que el muro aguanta: cuando dos modelos distintos toman la
     misma decisión (mismo método, mismo intervalo), el net pay resultante es <b>bit-idéntico</b>
-    — 365.8 m en el pozo 25945 para gemma-4-26b y nemotron-ultra, calculado dos veces por el
-    mismo motor. La variación entre informes es 100% variación de <i>criterio</i>, nunca de
-    aritmética.</span>
+    — 365.8 m en el pozo <b>Ken &amp; Travis Schaben No. 1-31</b> (25945) para gemma-4-26b y
+    nemotron-ultra, calculado dos veces por el mismo motor. La variación entre informes es 100%
+    variación de <i>criterio</i>, nunca de aritmética.</span>
     <span data-lang="en">Proof the wall holds: when two different models make the same decision
     (same method, same interval), the resulting net pay is <b>bit-identical</b> — 365.8 m on
-    well 25945 for both gemma-4-26b and nemotron-ultra, computed twice by the same engine.
-    Variation across reports is 100% variation in <i>judgment</i>, never in arithmetic.</span>
+    well <b>Ken &amp; Travis Schaben No. 1-31</b> (25945) for both gemma-4-26b and
+    nemotron-ultra, computed twice by the same engine. Variation across reports is 100%
+    variation in <i>judgment</i>, never in arithmetic.</span>
   </p>
 </section>
 
 <section id="metodologia" class="reveal">
   <h2><span data-lang="es">Metodología</span><span data-lang="en">Methodology</span></h2>
   <p>
-    <span data-lang="es">El pozo atraviesa un pipeline donde cada caja declara quién manda en
-    ella. Solo las cajas ámbar consultan al LLM — y solo para <i>decidir</i>:</span>
-    <span data-lang="en">The well flows through a pipeline where every box declares who is in
-    charge. Only the amber boxes consult the LLM — and only to <i>decide</i>:</span>
+    <span data-lang="es">El pozo atraviesa un pipeline donde cada etapa declara quién manda en
+    ella. Solo las etapas ámbar consultan al LLM — y solo para <i>decidir</i>:</span>
+    <span data-lang="en">The well flows through a pipeline where every stage declares who is in
+    charge. Only the amber stages consult the LLM — and only to <i>decide</i>:</span>
   </p>
   <div class="pipe">
     <div class="stage"><span class="who">engine</span><b>LAS → QC</b>
@@ -514,14 +515,15 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
   <div class="callout">
     <div class="t"><span data-lang="es">Hito — la primera zona</span><span data-lang="en">Milestone — the first zone</span></div>
     <span data-lang="es"><b>qwen3-max</b> eligió la primera zona de interés de todo el proyecto
-    (pozo 24,938: 265.5–353.6 m) — una vez en ~43 pozos-corrida. La decisión más difícil del
-    dominio apareció solo cuando autoría, información y veracidad estuvieron alineadas a la vez,
-    y solo en frontier: el entorno era condición necesaria; el juicio del modelo es el factor
-    restante.</span>
+    (pozo <b>Schwien No. 2-13</b>, 15-135-24,938: 265.5–353.6 m) — una vez en ~43 pozos-corrida.
+    La decisión más difícil del dominio apareció solo cuando autoría, información y veracidad
+    estuvieron alineadas a la vez, y solo en frontier: el entorno era condición necesaria; el
+    juicio del modelo es el factor restante.</span>
     <span data-lang="en"><b>qwen3-max</b> chose the project's first zone of interest ever
-    (well 24,938: 265.5–353.6 m) — once in ~43 well-runs. The domain's hardest decision appeared
-    only when authorship, information and truthfulness were aligned at once, and only in a
-    frontier model: the environment was necessary; model judgment is the remaining factor.</span>
+    (well <b>Schwien No. 2-13</b>, 15-135-24,938: 265.5–353.6 m) — once in ~43 well-runs. The
+    domain's hardest decision appeared only when authorship, information and truthfulness were
+    aligned at once, and only in a frontier model: the environment was necessary; model judgment
+    is the remaining factor.</span>
   </div>
   <p>
     <span data-lang="es">Y el modo autor reveló <b>personalidades analíticas</b> nítidas en los
@@ -643,12 +645,12 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
   <p>
     <span data-lang="es">Estos son los informes FINALES, íntegros, tal como los produjo cada
     analista — figuras, tablas de método, banner de abstención cuando corresponde. El pozo
-    24,881 (el más difícil del set) aparece en la versión del summit y en la del mejor agente
-    para que la comparación se lea directamente:</span>
+    <b>May Schneider No. 4</b> (15-135-24,881, el más difícil del set) aparece en la versión del
+    summit y en la del mejor agente para que la comparación se lea directamente:</span>
     <span data-lang="en">These are the FINAL reports, unabridged, exactly as each analyst
-    produced them — figures, method tables, abstention banner where due. Well 24,881 (the
-    hardest in the set) appears in both the summit's version and the best agent's so the
-    comparison reads directly:</span>
+    produced them — figures, method tables, abstention banner where due. Well <b>May Schneider
+    No. 4</b> (15-135-24,881, the hardest in the set) appears in both the summit's version and
+    the best agent's so the comparison reads directly:</span>
   </p>
   <a class="report-card" href="reports/summit_field.html" style="--g1:var(--cat-5);--g2:var(--oil)">
     <div class="doc"></div><div>
@@ -657,23 +659,23 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
   </a>
   <a class="report-card" href="reports/summit_24881.html" style="--g1:var(--cat-5);--g2:var(--water)">
     <div class="doc"></div><div>
-    <h4>15-135-24,881 · <span class="mono">summit v3</span></h4>
-    <div class="meta"><span data-lang="es">zona 900–1382.6 m · evidencia SP→Rw con asunciones declaradas · MHI</span><span data-lang="en">zone 900–1382.6 m · SP→Rw evidence with declared assumptions · MHI</span></div></div>
+    <h4>May Schneider No. 4 · <span class="mono">summit v3</span></h4>
+    <div class="meta"><span class="mono">15-135-24,881</span> · <span data-lang="es">zona 900–1382.6 m · evidencia SP→Rw con asunciones declaradas · MHI</span><span data-lang="en">zone 900–1382.6 m · SP→Rw evidence with declared assumptions · MHI</span></div></div>
   </a>
   <a class="report-card" href="reports/opus_24881.html" style="--g1:var(--oil);--g2:var(--oil-strong)">
     <div class="doc"></div><div>
-    <h4>15-135-24,881 · <span class="mono">claude-opus-4.8</span> + thinking 🏆</h4>
-    <div class="meta"><span data-lang="es">EL MEJOR POZO DE AGENTE: zona 1150–1350 m · pay real 13.0 m · PHIE 0.146 plausible · convergencia legítima</span><span data-lang="en">THE BEST AGENT WELL: zone 1150–1350 m · real 13.0 m pay · plausible PHIE 0.146 · legitimate convergence</span></div></div>
+    <h4>May Schneider No. 4 · <span class="mono">claude-opus-4.8</span> + thinking 🏆</h4>
+    <div class="meta"><span class="mono">15-135-24,881</span> · <span data-lang="es">EL MEJOR POZO DE AGENTE: zona 1150–1350 m · pay real 13.0 m · PHIE 0.146 plausible · convergencia legítima</span><span data-lang="en">THE BEST AGENT WELL: zone 1150–1350 m · real 13.0 m pay · plausible PHIE 0.146 · legitimate convergence</span></div></div>
   </a>
   <a class="report-card" href="reports/glm_25990.html" style="--g1:var(--water);--g2:var(--cat-3)">
     <div class="doc"></div><div>
-    <h4>15-135-25990 · <span class="mono">glm-5.2</span> + thinking</h4>
-    <div class="meta"><span data-lang="es">zona 900–1376 m en su debut · ~$2 el batch — la frontera calidad/costo</span><span data-lang="en">zone 900–1376 m on debut · ~$2 per batch — the quality/cost frontier</span></div></div>
+    <h4>KT Schaben No. 2-31 · <span class="mono">glm-5.2</span> + thinking</h4>
+    <div class="meta"><span class="mono">15-135-25990</span> · <span data-lang="es">zona 900–1376 m en su debut · ~$2 el batch — la frontera calidad/costo</span><span data-lang="en">zone 900–1376 m on debut · ~$2 per batch — the quality/cost frontier</span></div></div>
   </a>
   <a class="report-card" href="reports/ultra_think_25990.html" style="--g1:var(--oil);--g2:var(--cat-2)">
     <div class="doc"></div><div>
-    <h4>15-135-25990 · <span class="mono">nemotron-ultra</span> free + thinking</h4>
-    <div class="meta"><span data-lang="es">zona 700–1323 m · $0 · el mejor gratuito (0→3/3 profundas al encender el thinking)</span><span data-lang="en">zone 700–1323 m · $0 · best free model (0→3/3 deep zones once thinking is on)</span></div></div>
+    <h4>KT Schaben No. 2-31 · <span class="mono">nemotron-ultra</span> free + thinking</h4>
+    <div class="meta"><span class="mono">15-135-25990</span> · <span data-lang="es">zona 700–1323 m · $0 · el mejor gratuito (0→3/3 profundas al encender el thinking)</span><span data-lang="en">zone 700–1323 m · $0 · best free model (0→3/3 deep zones once thinking is on)</span></div></div>
   </a>
 </section>
 
