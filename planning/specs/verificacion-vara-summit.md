@@ -20,10 +20,27 @@ calcular):
 3. **Peor caso (§3):** rehacer el leaderboard con la vara más hostil que sobreviva §1+§2 y
    emitir el veredicto.
 
-> **Resumen ejecutivo:** _(se completa al cerrar §3)_. Avance §1: el ranking del top-9 es
-> estable frente a perturbaciones de ±100 m; **opus queda rank 1 en 6 de 7 escenarios** y el
-> top-5 no se reordena. La falla estéril de gpt-5+thinking (precisión 0.0) persiste en los 7
-> escenarios — no es artefacto de la vara.
+> **Resumen ejecutivo — ¿es correcta la vara? Sí para lo que afirma; con banda en el techo
+> fino.** Tres pruebas deterministas coinciden:
+> - **La decisión que la vara mide (¿roca productora profunda o esponja somera?) es sólida.**
+>   El ranking del top no se reordena bajo ±100 m de perturbación (§1); las 6 bases de mis
+>   ventanas coinciden con la física del LAS (§2); y bajo la vara MÁS hostil (topes físicos
+>   someros que favorecen a los zonificadores someros, §3) el top tier sigue siendo el mismo
+>   grupo de zonificadores profundos con thinking.
+> - **El veredicto del proyecto NO depende de mis bordes exactos.** "Metodología + thinking →
+>   zonificadores profundos en 4 familias" aguanta las 3 pruebas sin excepción. opus conserva
+>   **4/4 zonas y precisión 1.00 incluso con la vara ensanchada**.
+> - **Lo único que sí se mueve con la vara: el puesto #1 exacto.** opus es 1º bajo mi pick y
+>   en 6/7 escenarios de §1, pero cae a 2º (tras nemotron-ultra-thinking) bajo la vara física
+>   ensanchada — y solo por el desempate de **cobertura** (su ventana apretada captura menos
+>   de una zona más ancha), nunca por elegir mal la roca. Corrección honesta al informe de
+>   evaluación: presentar a **opus y nemotron-ultra-thinking como co-líderes** (top tier), no
+>   como un 1º/2º limpio, y reportar la precisión mediana **con banda**, no como punto.
+>
+> **Respuesta directa al usuario:** la vara sirve como *ejemplo de lo que un modelo debe
+> entender* (la elección de intervalo es robusta) y como *techo alcanzable* (opus lo roza),
+> con una salvedad medida: mi **tope** carga un juicio interpretativo que la densidad sola no
+> certifica, así que el techo se reporta como banda y el 1º exacto como empate de co-líderes.
 
 Fuente reproducible: `debug/dbg_vara_sensitivity.py`, `dbg_vara_refute.py`,
 `dbg_vara_worstcase.py` (en `debug/`, gitignored). Todos leen `outputs/` y `data/`
@@ -151,3 +168,67 @@ la base:
 que ensanchan la zona y por tanto favorecen a los agentes que zonificaron somero). Si opus
 sigue rankeando primero incluso cuando la vara se estira hacia arriba hasta la roca
 competente, el veredicto es a prueba de mi juicio.
+
+---
+
+## §3 — Ciclo 3: peor caso combinado y veredicto
+
+**Método.** Se recalcula el leaderboard completo (16 corridas v12–v14) usando, por pozo, la
+vara **más hostil** que sobrevivió R16+R17: la ventana anclada a la física del §2 — tope =
+roca competente continua (someró, `p_sust`), base = último dato válido. Esto ENSANCHA la zona
+hacia arriba, premiando la cobertura de los agentes que zonificaron somero y castigando la
+ventana apretada y profunda de opus. Es el escenario que más puede reordenar el ranking.
+
+### Vara hostil por pozo (tope físico → base)
+
+| pozo | summit | hostil (física) |
+|---|---|---|
+| 24,881 | 900–1383 | **294**–1383 |
+| 24,937 | 900–1335 | **989**–1335 |
+| 25,399 | 900–1341 | **504**–1341 |
+| 25402 | 900–1340 | **546**–1340 |
+| 25990 | 1000–1376 | **947**–1370 |
+| 26002 | 900–1360 | **378**–1357 |
+
+### Leaderboard bajo la vara hostil
+
+| # hostil | corrida | prof | prec med | cob med | # base |
+|:--:|---|:--:|:--:|:--:|:--:|
+| **1** | nemotron-ultra free +think | 3/3 | 1.00 | 0.62 | 2 |
+| **2** | **opus-4.8 +think** | **4/4** | **1.00** | 0.42 | **1** |
+| 3 | glm-5.2 +think | 3/4 | 1.00 | 1.00 | 3 |
+| 4 | gpt-5 (v13) | 2/4 | 0.92 | 0.31 | 4 |
+| 5 | qwen3-max-thinking | 1/4 | 1.00 | 1.00 | 5 |
+| … | … | | | | |
+| 16 | gpt-5 (v12) | 0/4 | 0.00 | 0.00 | 16 |
+
+### Veredicto — las 3 preguntas
+
+1. **¿opus sigue 4/4 zonas y primero?** Zonas: **sí, 4/4 e intacto** bajo toda vara (su
+   elección de roca profunda no depende de mis bordes). Primero: **1º bajo mi pick y en 6/7
+   escenarios de §1; 2º bajo la vara física ensanchada**, superado por nemotron-ultra-thinking
+   solo en el desempate de cobertura (ventana apretada = menos cobertura de una zona más
+   ancha), nunca por precisión (mantiene 1.00) ni por elegir mal la roca. → **co-líder del top
+   tier**, no un 1º indiscutible.
+2. **¿Aguanta "metodología+thinking → zonificadores profundos en 4 familias"?** **Sí, sin
+   excepción.** El top del leaderboard es siempre el mismo grupo de zonificadores profundos con
+   thinking (opus, nemotron-ultra-think, glm, qwen-think); las fallas estériles (gpt-5+think
+   cob 0.17; v12-gpt5 0.00) siguen al fondo bajo cualquier vara. Esta conclusión es invariante.
+3. **¿Qué cifras del informe de evaluación deben re-enunciarse con banda?**
+   - El **puesto #1 exacto**: presentar a **opus y nemotron-ultra-thinking como co-líderes**,
+     no como 1º/2º limpio (el orden depende de si la vara premia precisión o cobertura).
+   - La **precisión mediana** como banda (opus ≈0.68–1.00 según perturbación de §1), aunque su
+     separación del pelotón medio (≈0.30–0.52) se conserva.
+   - La **cobertura** es la más sensible al tope (0.42→0.62→1.00 según ensanche); tratarla como
+     indicador cualitativo, no como cifra fina.
+   - **No cambia:** el binario zona-profunda/somera, las 6 bases, las 2 convergencias legítimas
+     de opus, y el ordenamiento grueso acierto/falla.
+
+### Cierre
+
+La vara del summit es un **baseline honesto y útil**: mide bien lo que afirma medir (la
+decisión de intervalo y la base), y su único punto blando —el tope de zona productora, que la
+densidad sola no certifica— queda **acotado y reportado como banda**, no escondido. El
+veredicto del proyecto sobrevive a las tres pruebas. Ninguna cifra del informe de evaluación
+se altera salvo las re-enunciadas arriba con banda/co-liderazgo, y ese cambio se hace
+explícito.

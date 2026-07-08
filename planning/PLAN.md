@@ -179,11 +179,11 @@ Done when: para cada pozo usado en las comparaciones finales, los criterios fís
 - [x] Clasificar cada borde (defendido ≤50 m; débil >50 m) + ventana alternativa física para los débiles (2026-07-07)
 - [x] §2 del spec: tabla pozo a pozo + veredicto (6/6 bases defendidas; topes uniformes ~900 m = marcador regional, no pick por densidad; densidad necesaria no suficiente) (2026-07-07)
 
-### Phase R18 — Vara del summit, ciclo 3: peor caso combinado y veredicto
+### Phase R18 — Vara del summit, ciclo 3: peor caso combinado y veredicto (COMPLETED)
 Done when: `debug/dbg_vara_worstcase.py` recalcula el leaderboard completo usando como vara las ventanas alternativas más hostiles que sobrevivieron R16+R17 (por pozo: la física de R17 si difiere, y el peor escenario de R16), y §3 del spec responde explícitamente: (1) ¿opus sigue 4/4 zonas y primero?, (2) ¿la conclusión "metodología+thinking → zonificadores profundos en 4 familias" aguanta?, (3) ¿qué cifras del informe de evaluación deben re-enunciarse con banda en vez de punto? Resumen ejecutivo al tope del spec.
-- [ ] `debug/dbg_vara_worstcase.py`: construir la vara hostil combinada (R17 física por pozo + peor escenario R16) y recalcular precisión/cobertura/ranking finales
-- [ ] Escribir §3 del spec (veredicto a las 3 preguntas) + resumen ejecutivo en §0
-- [ ] Registrar el ciclo en `planning/bitacora/2026-07-07.md` (sección nueva, con errores y hallazgos)
+- [x] `debug/dbg_vara_worstcase.py`: vara hostil (tope físico someró por pozo) + recálculo de precisión/cobertura/ranking (2026-07-07)
+- [x] §3 del spec + resumen §0: opus 4/4 y precisión 1.00 intactos; co-líder con ultra-think bajo vara ensanchada; veredicto del proyecto invariante (2026-07-07)
+- [x] Registrar el ciclo en `planning/bitacora/2026-07-07.md` (2026-07-07)
 
 ## Conventions
 - Cada fórmula nueva entra al registry SOLO con golden test (bounds, monotonía, caso analítico, NaN passthrough).
