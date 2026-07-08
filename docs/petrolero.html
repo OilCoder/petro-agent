@@ -228,8 +228,8 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
   </div>
   <nav class="tabs" aria-label="Narrativas / Narratives">
     <a href="index.html" data-tab="index"><span data-lang="es">Inicio</span><span data-lang="en">Home</span></a>
-    <a href="petrolero.html" data-tab="petrolero">🛢️ <span data-lang="es">Petróleo</span><span data-lang="en">Petroleum</span></a>
-    <a href="ingenieria.html" data-tab="ingenieria">🖥️ <span data-lang="es">Ing. de software</span><span data-lang="en">Software eng.</span></a>
+    <a href="petrolero.html" data-tab="petrolero">🛢️ <span data-lang="es">Ingeniero petrofísico</span><span data-lang="en">Petrophysical engineer</span></a>
+    <a href="ingenieria.html" data-tab="ingenieria">🖥️ <span data-lang="es">Ingeniero de software</span><span data-lang="en">Software engineer</span></a>
     <a href="proceso.html" data-tab="proceso">📓 <span data-lang="es">Bitácora</span><span data-lang="en">Journal</span></a>
   </nav>
 </header>
@@ -274,6 +274,32 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
     the logged column — reads ~1.75 g/cc RHOB: unconsolidated, washed-out rock where computed
     "porosity" is sponge fiction. Any analyst cuts it before computing anything.</span>
   </p>
+  <div class="callout">
+    <div class="t"><span data-lang="es">Por qué elegimos ESTE campo: una trampa a propósito</span><span data-lang="en">Why we chose THIS field: a deliberate trap</span></div>
+    <span data-lang="es">Schaben engaña al lector principiante — y esa es exactamente su virtud
+    como banco de pruebas. Dos tercios de la columna muestran "porosidades" espectaculares
+    (0.35–0.40) que un novato leería como cientos de metros de net pay; el pay real es delgado
+    (2–13 m), está apilado en el bloque profundo y solo aparece si primero se elige bien el
+    intervalo. Eso convierte al campo en un filtro perfecto: <b>no se puede aprobar calculando
+    bien — solo se aprueba analizando bien</b>. Aplicar las fórmulas perfectamente sobre la
+    columna completa da la respuesta perfecta a la pregunta equivocada. Ventajas adicionales:
+    la respuesta correcta es verificable con geología pública (KGS documenta que el Mississippiano
+    profundo es lo que produce — cualquiera puede buscar los API en su base de datos); mezcla
+    registros modernos (25 pozos clase A) y vintage (46 clase B) para probar el manejo de datos
+    imperfectos; y todo el dataset es público y reproducible. Si un modelo converge aquí, es
+    señal de criterio, no de suerte.</span>
+    <span data-lang="en">Schaben deceives the beginner reader — and that is precisely its virtue
+    as a test bench. Two thirds of the column shows spectacular "porosities" (0.35–0.40) that a
+    novice would read as hundreds of meters of net pay; the real pay is thin (2–13 m), stacked
+    in the deep block, and only appears if you first choose the interval correctly. That makes
+    the field a perfect filter: <b>you cannot pass by computing well — only by analyzing
+    well</b>. Applying the formulas perfectly to the full column yields the perfect answer to
+    the wrong question. Further advantages: the correct answer is verifiable against public
+    geology (KGS documents that the deep Mississippian is what produces — anyone can look up the
+    API numbers in its database); it mixes modern logs (25 class-A wells) and vintage ones (46
+    class-B) to test handling of imperfect data; and the whole dataset is public and
+    reproducible. If a model converges here, it's signal, not luck.</span>
+  </div>
   <p>
     <span data-lang="es">Durante diez versiones, NINGÚN agente lo recortó: promediaban la columna
     completa, la porosidad promedio salía 0.35–0.40, el net pay salía de 200–470 m — y el sistema,
@@ -285,14 +311,14 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
     formulas: it was interval judgment.</span>
   </p>
   <figure class="did">
-    <img src="reports/fig_summit_24881/15-135-24881-00-00_composite.png" alt="Composite log of well 15-135-24,881" loading="lazy">
+    <img src="reports/fig_summit_24881/15-135-24881-00-00_composite.png" alt="Composite log of well 15-135-24881" loading="lazy">
     <figcaption>
-      <span data-lang="es"><b>Cómo leer un registro compuesto</b> (pozo 24,881): cada pista es una
+      <span data-lang="es"><b>Cómo leer un registro compuesto</b> (pozo API 15-135-24881): cada pista es una
       curva contra la profundidad — GR (arcillosidad), resistividad, densidad-neutrón (porosidad).
       Fíjate en la densidad del tramo somero: la roca "floja" lee ~1.75 g/cc y produce porosidades
       de esponja. La zona evaluable empieza donde la densidad se sostiene &gt;2.35 g/cc — eso es lo
       que los agentes tenían que VER.</span>
-      <span data-lang="en"><b>How to read a composite log</b> (well 24,881): each track is a curve
+      <span data-lang="en"><b>How to read a composite log</b> (well API 15-135-24881): each track is a curve
       against depth — GR (shaliness), resistivity, density-neutron (porosity). Watch the shallow
       density: "loose" rock reads ~1.75 g/cc and yields sponge porosities. The evaluable zone
       starts where density holds &gt;2.35 g/cc — that is what the agents had to SEE.</span>
@@ -313,7 +339,7 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
 <text x="112" y="127" text-anchor="end" fill="var(--ink-muted)" font-size="10">487 m</text>
 <text x="112" y="211" text-anchor="end" fill="var(--ink-muted)" font-size="10">915 m</text>
 <text x="112" y="294" text-anchor="end" fill="var(--ink-muted)" font-size="10">1343 m</text>
-<text x="120" y="28" text-anchor="start" fill="var(--ink-primary)" font-size="12" font-weight="700"><tspan data-lang="es">pozo 25954 — densidad por tramo</tspan><tspan data-lang="en">well 25954 — density by interval</tspan></text>
+<text x="120" y="28" text-anchor="start" fill="var(--ink-primary)" font-size="12" font-weight="700"><tspan data-lang="es">pozo 15-135-25954 — densidad por tramo</tspan><tspan data-lang="en">well 15-135-25954 — density by interval</tspan></text>
 <text x="420" y="28" text-anchor="start" fill="var(--ink-primary)" font-size="12" font-weight="700"><tspan data-lang="es">efecto de recortar la esponja</tspan><tspan data-lang="en">effect of cutting the sponge</tspan></text>
 <text x="420" y="70" text-anchor="start" fill="var(--ink-muted)" font-size="10"><tspan data-lang="es">PHIE medio</tspan><tspan data-lang="en">mean PHIE</tspan></text>
 <text x="420" y="96" fill="var(--cat-4)" font-size="20" font-weight="700">0.229</text>
@@ -361,12 +387,12 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
   </table>
   <div class="callout">
     <div class="t"><span data-lang="es">El pozo que todos fallan</span><span data-lang="en">The well everyone fails</span></div>
-    <span data-lang="es">15-135-24,881 tiene la sección somera más engañosa del set. Todos los
+    <span data-lang="es">15-135-24881 tiene la sección somera más engañosa del set. Todos los
     agentes se quedaron arriba (topes 184–480 m)… hasta opus: <b>1150–1350 m, pay 13.0 m, PHIE
     0.146, convergencia legítima</b> — dentro de mi ventana de 900–1382.6 y más apretada.
     <a href="reports/opus_24881.html">El informe está publicado íntegro</a>, junto al
     <a href="reports/summit_24881.html">mío del mismo pozo</a>.</span>
-    <span data-lang="en">15-135-24,881 has the most deceptive shallow section in the set. Every
+    <span data-lang="en">15-135-24881 has the most deceptive shallow section in the set. Every
     agent stayed shallow (tops 184–480 m)… until opus: <b>1150–1350 m, 13.0 m pay, PHIE 0.146,
     legitimate convergence</b> — inside my 900–1382.6 window and tighter.
     <a href="reports/opus_24881.html">Its full report is published</a>, next to

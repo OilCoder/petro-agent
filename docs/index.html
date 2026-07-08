@@ -168,6 +168,7 @@ a.report-card{border-bottom:1px solid var(--border)}
   border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
   box-shadow:var(--shadow)}
 .report-card .logo img{width:62%;height:62%;object-fit:contain;display:block}
+.report-card .logo svg{width:60%;height:60%;display:block}
 .report-card h4{margin:0;font-size:.95rem}
 .report-card .meta{font:500 .76rem var(--font-sans);color:var(--ink-muted)}
 pre.ledger{background:var(--surface-2);border:1px solid var(--border);
@@ -228,8 +229,8 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
   </div>
   <nav class="tabs" aria-label="Narrativas / Narratives">
     <a href="index.html" data-tab="index"><span data-lang="es">Inicio</span><span data-lang="en">Home</span></a>
-    <a href="petrolero.html" data-tab="petrolero">🛢️ <span data-lang="es">Petróleo</span><span data-lang="en">Petroleum</span></a>
-    <a href="ingenieria.html" data-tab="ingenieria">🖥️ <span data-lang="es">Ing. de software</span><span data-lang="en">Software eng.</span></a>
+    <a href="petrolero.html" data-tab="petrolero">🛢️ <span data-lang="es">Ingeniero petrofísico</span><span data-lang="en">Petrophysical engineer</span></a>
+    <a href="ingenieria.html" data-tab="ingenieria">🖥️ <span data-lang="es">Ingeniero de software</span><span data-lang="en">Software engineer</span></a>
     <a href="proceso.html" data-tab="proceso">📓 <span data-lang="es">Bitácora</span><span data-lang="en">Journal</span></a>
   </nav>
 </header>
@@ -313,9 +314,17 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
   </p>
   <aside class="note">
     <span data-lang="es">Datos: 198 pozos de Kansas (Schaben, paleozoico) para desarrollo; VOLVE
-    (Mar del Norte, Equinor) como regresión contra interpretación pública.</span>
+    (Mar del Norte, Equinor) como regresión contra interpretación pública. Schaben se eligió a
+    propósito por tramposo: dos tercios de su columna parecen porosidad espectacular y son
+    esponja somera — el net pay real es delgado y profundo. Un campo así no se aprueba
+    calculando bien, solo analizando bien: el filtro exacto que queremos para medir criterio
+    (<a href="petrolero.html#campo">por qué, en detalle</a>).</span>
     <span data-lang="en">Data: 198 Kansas wells (Schaben, Paleozoic) for development; VOLVE
-    (North Sea, Equinor) as regression against a public interpretation.</span>
+    (North Sea, Equinor) as regression against a public interpretation. Schaben was picked
+    deliberately because it deceives: two thirds of its column looks like spectacular porosity
+    and is shallow sponge — the real net pay is thin and deep. Such a field can't be passed by
+    computing well, only by analyzing well: exactly the filter we want for measuring judgment
+    (<a href="petrolero.html#campo">why, in detail</a>).</span>
   </aside>
   <p>
     <span data-lang="es">No promete "siempre correcto". Promete algo más útil: <b>honesto sobre
@@ -343,12 +352,12 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
   <p>
     <span data-lang="es">La prueba de que el muro aguanta: cuando dos modelos distintos toman la
     misma decisión (mismo método, mismo intervalo), el net pay resultante es <b>bit-idéntico</b>
-    — 365.8 m en el pozo <b>Ken &amp; Travis Schaben No. 1-31</b> (25945) para gemma-4-26b y
+    — 365.8 m en el pozo <b>Ken &amp; Travis Schaben No. 1-31</b> (API 15-135-25945) para gemma-4-26b y
     nemotron-ultra, calculado dos veces por el mismo motor. La variación entre informes es 100%
     variación de <i>criterio</i>, nunca de aritmética.</span>
     <span data-lang="en">Proof the wall holds: when two different models make the same decision
     (same method, same interval), the resulting net pay is <b>bit-identical</b> — 365.8 m on
-    well <b>Ken &amp; Travis Schaben No. 1-31</b> (25945) for both gemma-4-26b and
+    well <b>Ken &amp; Travis Schaben No. 1-31</b> (API 15-135-25945) for both gemma-4-26b and
     nemotron-ultra, computed twice by the same engine. Variation across reports is 100%
     variation in <i>judgment</i>, never in arithmetic.</span>
   </p>
@@ -357,31 +366,37 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
 <section id="metodologia" class="reveal">
   <h2><span data-lang="es">Metodología</span><span data-lang="en">Methodology</span></h2>
   <p>
-    <span data-lang="es">El pozo atraviesa un pipeline donde cada etapa declara quién manda en
-    ella. Solo las etapas ámbar consultan al LLM — y solo para <i>decidir</i>:</span>
-    <span data-lang="en">The well flows through a pipeline where every stage declares who is in
-    charge. Only the amber stages consult the LLM — and only to <i>decide</i>:</span>
+    <span data-lang="es">La mejor forma de entender el sistema es seguir el viaje de un pozo:
+    entra como un archivo LAS crudo y sale como un informe donde cada cifra tiene un origen
+    trazable. En cada parada del camino hay un responsable declarado — <b>el motor determinista
+    (azul)</b> hace todo lo que se puede probar con un test, y <b>el agente (ámbar)</b> aporta lo
+    único que el código no puede aportar: criterio.</span>
+    <span data-lang="en">The best way to understand the system is to follow a well's journey: it
+    enters as a raw LAS file and leaves as a report where every figure has a traceable origin.
+    At each stop there is a declared owner — <b>the deterministic engine (blue)</b> does
+    everything a test can prove, and <b>the agent (amber)</b> contributes the one thing code
+    cannot: judgment.</span>
   </p>
   <div class="pipe">
-    <div class="stage"><span class="who">engine</span><b>LAS → QC</b>
-      <span data-lang="es">carga, máscaras físicas, aborta si &gt;80% inusable</span>
-      <span data-lang="en">load, physical masks, aborts if &gt;80% unusable</span></div>
+    <div class="stage"><span class="who">engine</span><b>1 · <span data-lang="es">Llega el pozo</span><span data-lang="en">The well arrives</span></b>
+      <span data-lang="es">el motor carga el LAS, normaliza unidades y curvas, enmascara lecturas físicamente imposibles — y aborta si &gt;80% del registro es inusable</span>
+      <span data-lang="en">the engine loads the LAS, normalizes units and curves, masks physically impossible readings — and aborts if &gt;80% of the log is unusable</span></div>
     <div class="arrow">→</div>
-    <div class="stage llm"><span class="who">agent</span><b>Analyst loop</b>
-      <span data-lang="es">observa evidencia → elige zona/métodos/análisis, un paso a la vez</span>
-      <span data-lang="en">observes evidence → picks zone/methods/analyses, one step at a time</span></div>
+    <div class="stage llm"><span class="who">agent</span><b>2 · <span data-lang="es">El agente analiza</span><span data-lang="en">The agent analyzes</span></b>
+      <span data-lang="es">estudia la evidencia (perfiles, figuras, estadística del campo) y toma las decisiones de un analista: qué intervalo evaluar, con qué métodos, qué análisis extra pedir</span>
+      <span data-lang="en">studies the evidence (profiles, figures, field statistics) and makes an analyst's decisions: which interval to evaluate, with which methods, which extra analyses to request</span></div>
     <div class="arrow">→</div>
-    <div class="stage"><span class="who">engine</span><b>Vetted compute</b>
-      <span data-lang="es">Larionov·Simandoux·MC — golden-tested</span>
-      <span data-lang="en">Larionov·Simandoux·MC — golden-tested</span></div>
+    <div class="stage"><span class="who">engine</span><b>3 · <span data-lang="es">El motor calcula</span><span data-lang="en">The engine computes</span></b>
+      <span data-lang="es">cada elección se ejecuta con funciones congeladas y cubiertas por golden tests (Larionov, Simandoux, Monte Carlo) — el agente jamás toca la aritmética</span>
+      <span data-lang="en">each choice runs through frozen, golden-tested functions (Larionov, Simandoux, Monte Carlo) — the agent never touches the arithmetic</span></div>
     <div class="arrow">→</div>
-    <div class="stage"><span class="who">engine</span><b>Validators + gate</b>
-      <span data-lang="es">objeciones tipadas → tier / abstención sobre la cadena FINAL</span>
-      <span data-lang="en">typed objections → tier / abstention on the FINAL chain</span></div>
+    <div class="stage"><span class="who">engine</span><b>4 · <span data-lang="es">La física objeta</span><span data-lang="en">Physics objects</span></b>
+      <span data-lang="es">validadores objetan el resultado final: cada objeción baja el tier de confianza y puede forzar la abstención — ningún LLM decide una compuerta</span>
+      <span data-lang="en">validators object to the final result: each objection lowers the confidence tier and can force abstention — no LLM ever decides a gate</span></div>
     <div class="arrow">→</div>
-    <div class="stage llm"><span class="who">agent</span><b>Prose</b>
-      <span data-lang="es">redacta; un verificador ata cada cifra al ledger</span>
-      <span data-lang="en">writes; a claim-verifier ties every figure to the ledger</span></div>
+    <div class="stage llm"><span class="who">agent</span><b>5 · <span data-lang="es">El agente redacta</span><span data-lang="en">The agent writes</span></b>
+      <span data-lang="es">escribe y relee su borrador; un verificador ata cada cifra de la prosa al ledger — un número sin respaldo se rechaza</span>
+      <span data-lang="en">writes and rereads its draft; a verifier ties every figure in the prose to the ledger — an unbacked number is rejected</span></div>
   </div>
   <p>
     <span data-lang="es">Tres mecanismos hacen el loop medible y seguro: (1) el <b>frontier de
@@ -389,7 +404,7 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
     física no es una opinión; (2) <b>fallbacks deterministas señalizados</b>: si el modelo calla,
     el default canónico avanza un peldaño y queda registrado como default, no como mérito del
     agente; (3) <b>evidencia antes de elegir</b>: el agente puede pedirle al motor la comparación
-    numérica de todos los métodos vetados (<code>compare_methods</code>) antes de comprometerse
+    numérica de todos los métodos validados (<code>compare_methods</code>) antes de comprometerse
     con uno.</span>
     <span data-lang="en">Three mechanisms make the loop measurable and safe: (1) the <b>action
     frontier</b> only offers physically valid steps (PHIE requires Vsh; Sw requires PHIE) —
@@ -435,6 +450,7 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
     </div>
     <svg viewBox="0 0 640 210" role="img" aria-label="Interpretive choices per well: reviewer vs author">
       <g font-family="system-ui,sans-serif" font-size="12">
+        <text x="120" y="18" fill="currentColor" opacity=".6" font-size="11"><tspan data-lang="es">elecciones interpretativas por pozo (método, zona, análisis — mediana del batch)</tspan><tspan data-lang="en">interpretive choices per well (method, zone, analyses — batch median)</tspan></text>
         <!-- gridlines -->
         <g stroke="currentColor" opacity=".12">
           <line x1="120" y1="30" x2="120" y2="180"/><line x1="120" y1="180" x2="620" y2="180"/>
@@ -519,12 +535,12 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
   <div class="callout">
     <div class="t"><span data-lang="es">Hito — la primera zona</span><span data-lang="en">Milestone — the first zone</span></div>
     <span data-lang="es"><b>qwen3-max</b> eligió la primera zona de interés de todo el proyecto
-    (pozo <b>Schwien No. 2-13</b>, 15-135-24,938: 265.5–353.6 m) — una vez en ~43 pozos-corrida.
+    (pozo <b>Schwien No. 2-13</b>, 15-135-24938: 265.5–353.6 m) — una vez en ~43 pozos-corrida.
     La decisión más difícil del dominio apareció solo cuando autoría, información y veracidad
     estuvieron alineadas a la vez, y solo en frontier: el entorno era condición necesaria; el
     juicio del modelo es el factor restante.</span>
     <span data-lang="en"><b>qwen3-max</b> chose the project's first zone of interest ever
-    (well <b>Schwien No. 2-13</b>, 15-135-24,938: 265.5–353.6 m) — once in ~43 well-runs. The
+    (well <b>Schwien No. 2-13</b>, 15-135-24938: 265.5–353.6 m) — once in ~43 well-runs. The
     domain's hardest decision appeared only when authorship, information and truthfulness were
     aligned at once, and only in a frontier model: the environment was necessary; model judgment
     is the remaining factor.</span>
@@ -635,7 +651,7 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
   </p>
   <table>
     <thead><tr>
-      <th><span data-lang="es">Ronda</span><span data-lang="en">Round</span></th>
+      <th><span data-lang="es">Fase experimental</span><span data-lang="en">Experimental phase</span></th>
       <th><span data-lang="es">Condición añadida</span><span data-lang="en">Condition added</span></th>
       <th><span data-lang="es">Efecto medido</span><span data-lang="en">Measured effect</span></th></tr></thead>
     <tbody>
@@ -675,19 +691,19 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
     página dedicada:</span>
     <span data-lang="en">The full project reads through three doors, each with its own page:</span>
   </p>
-  <a class="report-card" href="petrolero.html" style="--g1:var(--oil);--g2:var(--oil-strong)">
-    <div class="doc"></div><div>
-    <h4>🛢️ <span data-lang="es">Para el petrofísico</span><span data-lang="en">For the petrophysicist</span></h4>
+  <a class="report-card" href="petrolero.html">
+    <div class="logo" style="color:var(--oil)"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" /></svg></div><div>
+    <h4><span data-lang="es">Para el ingeniero petrofísico</span><span data-lang="en">For the petrophysical engineer</span></h4>
     <div class="meta"><span data-lang="es">la roca, la zona, la evidencia SP→Rw, dónde fallan como analistas y la calibración junior/senior</span><span data-lang="en">the rock, the zone, the SP→Rw evidence, where they fail as analysts, and the junior/senior calibration</span></div></div>
   </a>
-  <a class="report-card" href="ingenieria.html" style="--g1:var(--water);--g2:var(--cat-3)">
-    <div class="doc"></div><div>
-    <h4>🖥️ <span data-lang="es">Para el ingeniero de software</span><span data-lang="en">For the software engineer</span></h4>
-    <div class="meta"><span data-lang="es">la arquitectura, las 4 rondas de palancas con sus números, costos medidos y lecciones de sistemas de agentes</span><span data-lang="en">the architecture, the 4 lever rounds with their numbers, measured costs, and agent-system lessons</span></div></div>
+  <a class="report-card" href="ingenieria.html">
+    <div class="logo" style="color:var(--water)"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="m18 16 4-4-4-4" /><path d="m6 8-4 4 4 4" /><path d="m14.5 4-5 16" /></svg></div><div>
+    <h4><span data-lang="es">Para el ingeniero de software</span><span data-lang="en">For the software engineer</span></h4>
+    <div class="meta"><span data-lang="es">la arquitectura, las 4 fases experimentales con sus números, costos medidos y lecciones de sistemas de agentes</span><span data-lang="en">the architecture, the 4 experimental phases with their numbers, measured costs, and agent-system lessons</span></div></div>
   </a>
-  <a class="report-card" href="proceso.html" style="--g1:var(--cat-5);--g2:var(--cat-2)">
-    <div class="doc"></div><div>
-    <h4>📓 <span data-lang="es">El proceso (bitácora)</span><span data-lang="en">The process (journal)</span></h4>
+  <a class="report-card" href="proceso.html">
+    <div class="logo" style="color:var(--cat-5)"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4" /><path d="M2 6h4" /><path d="M2 10h4" /><path d="M2 14h4" /><path d="M2 18h4" /><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" /></svg></div><div>
+    <h4><span data-lang="es">El proceso (bitácora)</span><span data-lang="en">The process (journal)</span></h4>
     <div class="meta"><span data-lang="es">el diario de desarrollo completo, día a día — cada decisión de diseño con el error que la motivó</span><span data-lang="en">the full development journal, day by day — every design decision with the mistake that motivated it</span></div></div>
   </a>
 </section>
@@ -695,40 +711,47 @@ html[data-lang-active="en"] [data-lang="en"]{display:revert}
 <section id="informes" class="reveal">
   <h2><span data-lang="es">Informes finales</span><span data-lang="en">Final reports</span></h2>
   <p>
-    <span data-lang="es">Estos son los informes FINALES, íntegros, tal como los produjo cada
-    analista — figuras, tablas de método, banner de abstención cuando corresponde. El pozo
-    <b>May Schneider No. 4</b> (15-135-24,881, el más difícil del set) aparece en la versión del
-    summit y en la del mejor agente para que la comparación se lea directamente:</span>
-    <span data-lang="en">These are the FINAL reports, unabridged, exactly as each analyst
-    produced them — figures, method tables, abstention banner where due. Well <b>May Schneider
-    No. 4</b> (15-135-24,881, the hardest in the set) appears in both the summit's version and
-    the best agent's so the comparison reads directly:</span>
+    <span data-lang="es">Todos los informes se publican íntegros, tal como los produjo cada
+    analista. Una aclaración importante: aquí hay <b>dos manos de Anthropic distintas</b>. La
+    vara (el <i>summit</i>) la escribió <b>claude-fable-5</b> — el mismo modelo que construyó el
+    sistema, y por eso su techo se declara CONTAMINADO. Los agentes evaluados
+    (<b>claude-opus-4.8</b>, glm-5.2, nemotron-ultra) corrieron sin ese contexto: mismo logo en
+    dos de las fichas, roles opuestos.</span>
+    <span data-lang="en">Every report is published unabridged, exactly as each analyst produced
+    it. One important clarification: there are <b>two different Anthropic hands</b> here. The
+    yardstick (the <i>summit</i>) was written by <b>claude-fable-5</b> — the same model that
+    built the system, which is why its ceiling is declared CONTAMINATED. The evaluated agents
+    (<b>claude-opus-4.8</b>, glm-5.2, nemotron-ultra) ran without that context: same logo on two
+    of the cards, opposite roles.</span>
   </p>
   <a class="report-card" href="reports/summit_field.html">
     <div class="logo"><img src="assets/claude.svg" alt="Claude" loading="lazy"></div><div>
-    <h4><span data-lang="es">Informe de campo</span><span data-lang="en">Field report</span> · <span class="mono">summit v3</span></h4>
-    <div class="meta"><span data-lang="es">72 pozos en dos clases etiquetadas · mapa PLSS · techo CONTAMINADO declarado (el analista conocía el proyecto)</span><span data-lang="en">72 wells in two labeled classes · PLSS map · declared CONTAMINATED ceiling (the analyst knew the project)</span></div></div>
+    <h4><span data-lang="es">Informe de campo — el informe principal</span><span data-lang="en">Field report — the main report</span> · <span class="mono">claude-fable-5 · summit v3</span></h4>
+    <div class="meta"><span data-lang="es">72 pozos en dos clases etiquetadas · mapa PLSS · cada pozo enlaza su informe individual · techo CONTAMINADO declarado (el analista conocía el proyecto)</span><span data-lang="en">72 wells in two labeled classes · PLSS map · every well links to its individual report · declared CONTAMINATED ceiling (the analyst knew the project)</span></div></div>
   </a>
-  <a class="report-card" href="reports/summit_24881.html">
-    <div class="logo"><img src="assets/claude.svg" alt="Claude" loading="lazy"></div><div>
-    <h4>May Schneider No. 4 · <span class="mono">summit v3</span></h4>
-    <div class="meta"><span class="mono">15-135-24,881</span> · <span data-lang="es">zona 900–1382.6 m · evidencia SP→Rw con asunciones declaradas · MHI</span><span data-lang="en">zone 900–1382.6 m · SP→Rw evidence with declared assumptions · MHI</span></div></div>
-  </a>
-  <a class="report-card" href="reports/opus_24881.html">
-    <div class="logo"><img src="assets/claude.svg" alt="Claude" loading="lazy"></div><div>
-    <h4>May Schneider No. 4 · <span class="mono">claude-opus-4.8</span> + thinking 🏆</h4>
-    <div class="meta"><span class="mono">15-135-24,881</span> · <span data-lang="es">EL MEJOR POZO DE AGENTE: zona 1150–1350 m · pay real 13.0 m · PHIE 0.146 plausible · convergencia legítima</span><span data-lang="en">THE BEST AGENT WELL: zone 1150–1350 m · real 13.0 m pay · plausible PHIE 0.146 · legitimate convergence</span> · <a href="reports/opus_field.html"><span data-lang="es">su informe de campo →</span><span data-lang="en">its field report →</span></a></div></div>
-  </a>
-  <a class="report-card" href="reports/glm_25990.html">
-    <div class="logo"><img src="assets/zai.svg" alt="Z.ai" loading="lazy"></div><div>
-    <h4>KT Schaben No. 2-31 · <span class="mono">glm-5.2</span> + thinking</h4>
-    <div class="meta"><span class="mono">15-135-25990</span> · <span data-lang="es">zona 900–1376 m en su debut · ~$2 el batch — la frontera calidad/costo</span><span data-lang="en">zone 900–1376 m on debut · ~$2 per batch — the quality/cost frontier</span> · <a href="reports/glm_field.html"><span data-lang="es">su informe de campo →</span><span data-lang="en">its field report →</span></a></div></div>
-  </a>
-  <a class="report-card" href="reports/ultra_think_25990.html">
-    <div class="logo"><img src="assets/nvidia.svg" alt="NVIDIA" loading="lazy"></div><div>
-    <h4>KT Schaben No. 2-31 · <span class="mono">nemotron-ultra</span> free + thinking</h4>
-    <div class="meta"><span class="mono">15-135-25990</span> · <span data-lang="es">zona 700–1323 m · $0 · el mejor gratuito (0→3/3 profundas al encender el thinking)</span><span data-lang="en">zone 700–1323 m · $0 · best free model (0→3/3 deep zones once thinking is on)</span> · <a href="reports/ultra_field.html"><span data-lang="es">su informe de campo →</span><span data-lang="en">its field report →</span></a></div></div>
-  </a>
+  <details class="reports-more">
+    <summary><span data-lang="es">Los 4 informes más relevantes para comparar — el pozo más difícil del set en dos manos (vara vs mejor agente) y los dos mejores por costo ▾</span><span data-lang="en">The 4 most relevant reports to compare — the set's hardest well in two hands (yardstick vs best agent) plus the two best by cost ▾</span></summary>
+    <a class="report-card" href="reports/summit_24881.html">
+      <div class="logo"><img src="assets/claude.svg" alt="Claude" loading="lazy"></div><div>
+      <h4>May Schneider No. 4 · <span class="mono">claude-fable-5 · summit v3</span></h4>
+      <div class="meta"><span class="mono">API 15-135-24881</span> · <span data-lang="es">la vara en el pozo más difícil: zona 900–1382.6 m · evidencia SP→Rw con asunciones declaradas · MHI</span><span data-lang="en">the yardstick on the hardest well: zone 900–1382.6 m · SP→Rw evidence with declared assumptions · MHI</span></div></div>
+    </a>
+    <a class="report-card" href="reports/opus_24881.html">
+      <div class="logo"><img src="assets/claude.svg" alt="Claude" loading="lazy"></div><div>
+      <h4>May Schneider No. 4 · <span class="mono">claude-opus-4.8</span> + thinking 🏆</h4>
+      <div class="meta"><span class="mono">API 15-135-24881</span> · <span data-lang="es">EL MEJOR POZO DE AGENTE, mismo pozo que la vara: zona 1150–1350 m · pay real 13.0 m · PHIE 0.146 plausible · convergencia legítima</span><span data-lang="en">THE BEST AGENT WELL, same well as the yardstick: zone 1150–1350 m · real 13.0 m pay · plausible PHIE 0.146 · legitimate convergence</span> · <a href="reports/opus_field.html"><span data-lang="es">su informe de campo →</span><span data-lang="en">its field report →</span></a></div></div>
+    </a>
+    <a class="report-card" href="reports/glm_25990.html">
+      <div class="logo"><img src="assets/zai.svg" alt="Z.ai" loading="lazy"></div><div>
+      <h4>KT Schaben No. 2-31 · <span class="mono">glm-5.2</span> + thinking</h4>
+      <div class="meta"><span class="mono">API 15-135-25990</span> · <span data-lang="es">zona 900–1376 m en su debut · ~$2 el batch — la frontera calidad/costo</span><span data-lang="en">zone 900–1376 m on debut · ~$2 per batch — the quality/cost frontier</span> · <a href="reports/glm_field.html"><span data-lang="es">su informe de campo →</span><span data-lang="en">its field report →</span></a></div></div>
+    </a>
+    <a class="report-card" href="reports/ultra_think_25990.html">
+      <div class="logo"><img src="assets/nvidia.svg" alt="NVIDIA" loading="lazy"></div><div>
+      <h4>KT Schaben No. 2-31 · <span class="mono">nemotron-ultra</span> free + thinking</h4>
+      <div class="meta"><span class="mono">API 15-135-25990</span> · <span data-lang="es">zona 700–1323 m · $0 · el mejor gratuito (0→3/3 profundas al encender el thinking)</span><span data-lang="en">zone 700–1323 m · $0 · best free model (0→3/3 deep zones once thinking is on)</span> · <a href="reports/ultra_field.html"><span data-lang="es">su informe de campo →</span><span data-lang="en">its field report →</span></a></div></div>
+    </a>
+  </details>
 </section>
 
 <section id="veredicto" class="reveal">
